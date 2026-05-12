@@ -1,0 +1,167 @@
+:root {
+  --cursor-default: url("/mat/light_color_quarter/Arrow.cur"), auto;
+  --cursor-pointer: url("/mat/light_color_quarter/Hand.cur"), pointer;
+  --cursor-text: url("/mat/light_color_quarter/IBeam.cur"), text;
+  --cursor-help: url("/mat/light_color_quarter/Help.cur"), help;
+  --cursor-wait: url("/mat/light_color_quarter/Wait.ani"), wait;
+  --cursor-progress: url("/mat/light_color_quarter/AppStarting.ani"), progress;
+  --cursor-crosshair: url("/mat/light_color_quarter/Cross.cur"), crosshair;
+  --cursor-not-allowed: url("/mat/light_color_quarter/NO.cur"), not-allowed;
+  --cursor-move: url("/mat/light_color_quarter/Sall.cur"), move;
+  --cursor-resize-x: url("/mat/light_color_quarter/Sh.cur"), ew-resize;
+  --cursor-resize-y: url("/mat/light_color_quarter/Sv.cur"), ns-resize;
+  --cursor-resize-nwse: url("/mat/light_color_quarter/sdl.cur"), nwse-resize;
+  --cursor-resize-nesw: url("/mat/light_color_quarter/Sdr.cur"), nesw-resize;
+  --cursor-up: url("/mat/light_color_quarter/UpArrow.cur"), n-resize;
+  --cursor-pen: url("/mat/light_color_quarter/Pen.cur"), crosshair;
+}
+
+html,
+body {
+  cursor: var(--cursor-default);
+}
+
+a,
+button,
+select,
+summary,
+label[for],
+[role="button"],
+[type="button"],
+[type="checkbox"],
+[type="color"],
+[type="file"],
+[type="image"],
+[type="radio"],
+[type="range"],
+[type="reset"],
+[type="submit"],
+[onclick],
+.btn,
+.button,
+.copy-button,
+.page-number,
+.extend,
+.menus_item,
+.menus_item_child,
+#rightside,
+#rightside *,
+#pagination *,
+#nav .site-page,
+.search-dialog .search-close-button,
+.local-search-hit-item,
+.aplayer * {
+  cursor: var(--cursor-pointer) !important;
+}
+
+input:not([type]),
+input[type="date"],
+input[type="datetime-local"],
+input[type="email"],
+input[type="month"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="text"],
+input[type="time"],
+input[type="url"],
+input[type="week"],
+textarea,
+[contenteditable=""],
+[contenteditable="true"],
+p,
+li,
+blockquote,
+figcaption,
+caption,
+td,
+th,
+code,
+pre,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.article-title,
+.article-meta-wrap,
+#article-container {
+  cursor: var(--cursor-text);
+}
+
+a *,
+button *,
+summary *,
+[role="button"] *,
+[onclick] * {
+  cursor: inherit !important;
+}
+
+:disabled,
+[disabled],
+[aria-disabled="true"],
+.disabled {
+  cursor: var(--cursor-not-allowed) !important;
+}
+
+.loading,
+.loading *,
+.pace,
+.pace *,
+[aria-busy="true"],
+[aria-busy="true"] * {
+  cursor: var(--cursor-progress) !important;
+}
+
+.wait,
+.wait * {
+  cursor: var(--cursor-wait) !important;
+}
+
+.help,
+[data-cursor="help"] {
+  cursor: var(--cursor-help) !important;
+}
+
+.crosshair,
+[data-cursor="crosshair"] {
+  cursor: var(--cursor-crosshair) !important;
+}
+
+.pen,
+[data-cursor="pen"] {
+  cursor: var(--cursor-pen) !important;
+}
+
+.move,
+[draggable="true"],
+[data-cursor="move"] {
+  cursor: var(--cursor-move) !important;
+}
+
+.resize-x,
+[data-cursor="resize-x"] {
+  cursor: var(--cursor-resize-x) !important;
+}
+
+.resize-y,
+[data-cursor="resize-y"] {
+  cursor: var(--cursor-resize-y) !important;
+}
+
+.resize-nwse,
+[data-cursor="resize-nwse"] {
+  cursor: var(--cursor-resize-nwse) !important;
+}
+
+.resize-nesw,
+[data-cursor="resize-nesw"] {
+  cursor: var(--cursor-resize-nesw) !important;
+}
+
+.up,
+[data-cursor="up"] {
+  cursor: var(--cursor-up) !important;
+}
