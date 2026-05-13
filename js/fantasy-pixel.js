@@ -20,10 +20,10 @@
     var context = canvas.getContext('2d');
     var items = [];
     var dpr = window.devicePixelRatio || 1;
-    var cssSize = Math.max(220, Math.round(canvas.getBoundingClientRect().width || 280));
+    var cssSize = Math.max(300, Math.round(canvas.getBoundingClientRect().width || 340));
     var center = cssSize / 2;
-    var radius = cssSize * 0.28;
-    var labelRadius = cssSize * 0.39;
+    var radius = cssSize * 0.24;
+    var labelRadius = cssSize * 0.36;
     var total = 0;
 
     try {
@@ -79,6 +79,42 @@
       }
     }
 
+    function drawPixelLabel(text, x, y, align) {
+      var paddingX = 6;
+      var paddingY = 4;
+      var textWidth;
+      var boxWidth;
+      var boxHeight = 22;
+      var boxX;
+      var boxY;
+
+      context.font = '700 13px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
+      textWidth = context.measureText(text).width;
+      boxWidth = Math.ceil(textWidth + paddingX * 2);
+      boxX = align === 'right' ? x - boxWidth : align === 'center' ? x - boxWidth / 2 : x;
+      boxY = y - boxHeight / 2;
+
+      boxX = Math.max(3, Math.min(cssSize - boxWidth - 3, boxX));
+      boxY = Math.max(3, Math.min(cssSize - boxHeight - 3, boxY));
+
+      context.fillStyle = 'rgba(44, 27, 10, 0.92)';
+      context.fillRect(Math.round(boxX), Math.round(boxY), boxWidth, boxHeight);
+      context.strokeStyle = '#d99b37';
+      context.lineWidth = 2;
+      context.strokeRect(Math.round(boxX), Math.round(boxY), boxWidth, boxHeight);
+
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#fff0b5';
+      context.shadowColor = '#050302';
+      context.shadowOffsetX = 2;
+      context.shadowOffsetY = 2;
+      context.shadowBlur = 0;
+      context.fillText(text, Math.round(boxX + boxWidth / 2), Math.round(boxY + boxHeight / 2 + 1));
+      context.shadowOffsetX = 0;
+      context.shadowOffsetY = 0;
+    }
+
     for (var level = 2; level <= 10; level += 2) {
       polygon(items.map(function (_, index) {
         return point(index, radius * level / 10);
@@ -110,17 +146,7 @@
       if (label.x < center - 20) align = 'right';
       if (label.x > center + 20) align = 'left';
 
-      context.font = '700 14px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
-      context.textAlign = align;
-      context.textBaseline = 'middle';
-      context.fillStyle = '#fff0b5';
-      context.shadowColor = '#050302';
-      context.shadowOffsetX = 2;
-      context.shadowOffsetY = 2;
-      context.shadowBlur = 0;
-      context.fillText((item.label || '') + ' ' + item.value + '/10', label.x, label.y);
-      context.shadowOffsetX = 0;
-      context.shadowOffsetY = 0;
+      drawPixelLabel((item.label || '') + ' ' + item.value + '/10', label.x, label.y, align);
     });
 
     context.fillStyle = '#3a250d';
