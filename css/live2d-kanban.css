@@ -1,0 +1,336 @@
+:root {
+  --hijiki-ink: #120c08;
+  --hijiki-panel: rgba(31, 19, 13, 0.9);
+  --hijiki-panel-soft: rgba(66, 39, 21, 0.86);
+  --hijiki-gold: #ffffff;
+  --hijiki-gold-bright: #ffffff;
+  --hijiki-red: #b94d39;
+  --hijiki-mint: #bdeacb;
+}
+
+.live2d-kanban {
+  --kanban-width: 282px;
+  --kanban-height: 390px;
+  position: fixed;
+  left: clamp(10px, 2.6vw, 34px);
+  right: auto;
+  bottom: clamp(18px, 4.8vh, 56px);
+  z-index: 1200;
+  width: var(--kanban-width);
+  height: var(--kanban-height);
+  color: var(--hijiki-gold-bright);
+  font-family: var(--pixel-font, "Microsoft YaHei", monospace);
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.live2d-kanban.is-dragging {
+  user-select: none;
+}
+
+.live2d-kanban *,
+.live2d-kanban *::before,
+.live2d-kanban *::after {
+  box-sizing: border-box;
+}
+
+.live2d-kanban button {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.live2d-kanban.is-hidden {
+  display: none;
+}
+
+.live2d-kanban.is-minimized {
+  width: 68px;
+  height: 68px;
+}
+
+.live2d-kanban.is-minimized .live2d-kanban__bubble,
+.live2d-kanban.is-minimized .live2d-kanban__controls,
+.live2d-kanban.is-minimized .live2d-kanban__stage {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.live2d-kanban:not(.is-minimized) .live2d-kanban__restore {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.live2d-kanban__bubble {
+  position: absolute;
+  left: 0;
+  right: auto;
+  bottom: calc(var(--kanban-height) - 44px);
+  z-index: 5;
+  width: min(244px, calc(100vw - 22px));
+  min-height: 46px;
+  padding: 9px 13px 10px;
+  color: #fff2be;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.68);
+  background:
+    linear-gradient(180deg, rgba(63, 37, 18, 0.96), rgba(24, 15, 10, 0.96));
+  border: 2px solid rgba(229, 189, 103, 0.88);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.34),
+    inset 0 0 0 2px rgba(97, 57, 25, 0.72);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms steps(4, end),
+    transform 180ms steps(4, end),
+    visibility 180ms;
+  pointer-events: none;
+}
+
+.live2d-kanban__bubble::after {
+  content: "";
+  position: absolute;
+  left: 44px;
+  right: auto;
+  bottom: -10px;
+  width: 18px;
+  height: 10px;
+  background: #2a190c;
+  clip-path: polygon(0 0, 100% 0, 52% 100%);
+}
+
+.live2d-kanban.is-talking .live2d-kanban__bubble,
+.live2d-kanban.is-error .live2d-kanban__bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.live2d-kanban__controls {
+  position: absolute;
+  left: 8px;
+  right: auto;
+  bottom: calc(var(--kanban-height) - 98px);
+  z-index: 6;
+  display: flex;
+  gap: 7px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: auto;
+}
+
+.live2d-kanban:hover .live2d-kanban__controls,
+.live2d-kanban:focus-within .live2d-kanban__controls {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.live2d-kanban__button {
+  position: relative;
+  cursor: pointer;
+  background:
+    linear-gradient(180deg, rgba(73, 43, 20, 0.98), rgba(24, 15, 9, 0.98));
+  border: 2px solid rgba(229, 189, 103, 0.9);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.42),
+    inset 0 0 0 2px rgba(103, 58, 24, 0.65);
+}
+
+.live2d-kanban__button {
+  width: 28px;
+  height: 28px;
+}
+
+.live2d-kanban__button:hover {
+  background:
+    linear-gradient(180deg, rgba(105, 62, 26, 0.98), rgba(39, 24, 13, 0.98));
+}
+
+.live2d-kanban__button:focus-visible,
+.live2d-kanban__restore:focus-visible {
+  outline: 2px solid var(--hijiki-gold-bright);
+  outline-offset: 3px;
+}
+
+.live2d-kanban__button::before,
+.live2d-kanban__button::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 12px;
+  height: 3px;
+  background: var(--hijiki-gold-bright);
+  box-shadow: 1px 1px 0 #070403;
+}
+
+.live2d-kanban__button[data-kanban-action="close"]::before {
+  transform: rotate(45deg);
+}
+
+.live2d-kanban__button[data-kanban-action="close"]::after {
+  transform: rotate(-45deg);
+}
+
+.live2d-kanban__button[data-kanban-action="minimize"]::after {
+  display: none;
+}
+
+.live2d-kanban__stage {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--kanban-width);
+  height: calc(var(--kanban-height) - 28px);
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.live2d-kanban.is-dragging .live2d-kanban__stage {
+  cursor: grabbing;
+}
+
+.live2d-kanban__stage::before {
+  content: "";
+  position: absolute;
+  right: 20px;
+  bottom: 8px;
+  width: 216px;
+  height: 54px;
+  background:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.48) 0 56%, transparent 58%),
+    linear-gradient(90deg, transparent 0 12px, rgba(229, 189, 103, 0.22) 12px 204px, transparent 204px);
+  filter: blur(1px);
+}
+
+.live2d-kanban__canvas-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.live2d-kanban__canvas-wrap::after {
+  display: none;
+  content: none;
+}
+
+.live2d-kanban__canvas {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+}
+
+.live2d-kanban__loading {
+  position: absolute;
+  left: 54px;
+  right: auto;
+  bottom: 116px;
+  z-index: 2;
+  width: 150px;
+  padding: 8px 12px;
+  color: var(--hijiki-gold-bright);
+  font-family: var(--pixel-font-en, monospace);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72);
+  background: var(--hijiki-panel);
+  border: 2px solid rgba(229, 189, 103, 0.76);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.34),
+    inset 0 0 0 2px rgba(97, 57, 25, 0.62);
+  pointer-events: none;
+}
+
+.live2d-kanban:not(.is-loading) .live2d-kanban__loading {
+  display: none;
+}
+
+.live2d-kanban__restore {
+  position: absolute;
+  left: 0;
+  right: auto;
+  bottom: 0;
+  z-index: 6;
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  background: url("/img/kanban/hijiki-black-cat.png") center / contain no-repeat;
+  border: 0;
+  box-shadow: none;
+  transition: opacity 160ms ease, visibility 160ms ease;
+  pointer-events: auto;
+}
+
+.live2d-kanban__restore:hover {
+  background: url("/img/kanban/hijiki-black-cat.png") center / contain no-repeat;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
+}
+
+.live2d-kanban__restore::before {
+  display: none;
+  content: none;
+}
+
+.live2d-kanban__restore::after {
+  display: none;
+  content: none;
+}
+
+@media (max-width: 760px) {
+  .live2d-kanban {
+    --kanban-width: 226px;
+    --kanban-height: 324px;
+    left: 10px;
+    right: auto;
+    bottom: 72px;
+  }
+
+  .live2d-kanban__bubble {
+    bottom: calc(var(--kanban-height) - 34px);
+    width: min(218px, calc(100vw - 20px));
+    font-size: 13px;
+  }
+
+  .live2d-kanban__controls {
+    bottom: calc(var(--kanban-height) - 78px);
+  }
+
+  .live2d-kanban__canvas-wrap::after {
+    right: 7px;
+    width: 204px;
+  }
+}
+
+@media (max-width: 420px) {
+  .live2d-kanban {
+    --kanban-width: 204px;
+    --kanban-height: 298px;
+    left: 4px;
+    right: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live2d-kanban__bubble,
+  .live2d-kanban__controls,
+  .live2d-kanban__stage,
+  .live2d-kanban__restore {
+    transition: none !important;
+  }
+}

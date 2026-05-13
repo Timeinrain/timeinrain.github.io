@@ -99,9 +99,6 @@
 
       context.fillStyle = 'rgba(44, 27, 10, 0.92)';
       context.fillRect(Math.round(boxX), Math.round(boxY), boxWidth, boxHeight);
-      context.strokeStyle = '#d99b37';
-      context.lineWidth = 2;
-      context.strokeRect(Math.round(boxX), Math.round(boxY), boxWidth, boxHeight);
 
       context.textAlign = 'center';
       context.textBaseline = 'middle';
@@ -376,14 +373,13 @@
         monster.innerHTML = [
           '<span class="footer-monster-shadow"></span>',
           '<span class="footer-bunny-core">',
+          '<span class="footer-bunny-tail"></span>',
           '<span class="footer-bunny-ear footer-bunny-ear-left"></span>',
           '<span class="footer-bunny-ear footer-bunny-ear-right"></span>',
-          '<span class="footer-bunny-body"></span>',
-          '<span class="footer-bunny-face"></span>',
+          '<span class="footer-bunny-head"></span>',
           '<span class="footer-bunny-eye footer-bunny-eye-left"></span>',
           '<span class="footer-bunny-eye footer-bunny-eye-right"></span>',
           '<span class="footer-bunny-nose"></span>',
-          '<span class="footer-bunny-scarf"></span>',
           '</span>'
         ].join('');
       } else {
@@ -393,7 +389,6 @@
         '<span class="footer-slime-body"></span>',
         '<span class="footer-slime-eye footer-slime-eye-left"></span>',
         '<span class="footer-slime-eye footer-slime-eye-right"></span>',
-        '<span class="footer-slime-mouth"></span>',
         '</span>'
         ].join('');
       }
@@ -664,7 +659,107 @@
     startLoop();
   }
 
+  function saveTheme(mode) {
+    var expiry = Date.now() + 2 * 86400000;
+
+    if (window.btf && window.btf.saveToLocal && typeof window.btf.saveToLocal.set === 'function') {
+      window.btf.saveToLocal.set('theme', mode, 2);
+      return;
+    }
+
+    try {
+      localStorage.setItem('theme', JSON.stringify({
+        value: mode,
+        expiry: expiry
+      }));
+    } catch (error) {
+      // Local storage can be unavailable in private or restricted contexts.
+    }
+  }
+
+  function notifyThemeChange(mode) {
+    var themeChange = window.globalFn && window.globalFn.themeChange;
+
+    if (!themeChange) return;
+
+    Object.keys(themeChange).forEach(function (key) {
+      if (typeof themeChange[key] === 'function') {
+        themeChange[key](mode);
+      }
+    });
+  }
+
+  function setTheme(mode) {
+    var metaThemeColor = document.querySelector('meta[name="theme-color"]');
+
+    if (window.btf && mode === 'dark' && typeof window.btf.activateDarkMode === 'function') {
+      window.btf.activateDarkMode();
+    } else if (window.btf && mode === 'light' && typeof window.btf.activateLightMode === 'function') {
+      window.btf.activateLightMode();
+    } else {
+      document.documentElement.setAttribute('data-theme', mode);
+    }
+
+    saveTheme(mode);
+
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', mode === 'dark' ? '#0d1110' : '#211a13');
+    }
+
+    notifyThemeChange(mode);
+  }
+
+  function initRightsideControls() {
+    var rightside = document.getElementById('rightside');
+
+    if (!rightside || rightside.dataset.pixelControlsReady === 'true') return;
+
+    rightside.dataset.pixelControlsReady = 'true';
+
+    rightside.addEventListener('click', function (event) {
+      var target = event.target.closest('#darkmode, #go-up, #rightside-config');
+      var hideLayout;
+      var mode;
+
+      if (!target || !rightside.contains(target)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (target.id === 'darkmode') {
+        mode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        setTheme(mode);
+        return;
+      }
+
+      if (target.id === 'go-up') {
+        if (window.btf && typeof window.btf.scrollToDest === 'function') {
+          window.btf.scrollToDest(0, 500);
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+        return;
+      }
+
+      hideLayout = rightside.querySelector('#rightside-config-hide');
+      if (hideLayout) {
+        if (hideLayout.classList.contains('show')) {
+          hideLayout.classList.add('status');
+          window.setTimeout(function () {
+            hideLayout.classList.remove('status');
+          }, 300);
+        }
+
+        hideLayout.classList.toggle('show');
+      }
+    }, true);
+  }
+
   function initFantasyPixel() {
+    initRightsideControls();
     initAdventurerRadar();
     initCareerMap();
     initFooterSlimeGame();
