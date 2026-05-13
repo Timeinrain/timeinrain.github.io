@@ -1,4 +1,26 @@
-@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap");
+@font-face {
+  font-family: "Ark Pixel 12px Proportional SC";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("/fonts/ark-pixel-12px-proportional-zh_cn.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Ark Pixel 12px Proportional Latin";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("/fonts/ark-pixel-12px-proportional-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Pixelify Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("https://cdn.jsdelivr.net/fontsource/fonts/pixelify-sans:vf@latest/latin-wght-normal.woff2") format("woff2-variations");
+}
 
 @font-face {
   font-family: "Fusion Pixel 12px Proportional SC";
@@ -12,18 +34,21 @@
 
 :root {
   --pixel-font: "Ark Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional zh_hans", "Pixelify Sans", "Zpix", "Minecraft AE", "Microsoft YaHei", monospace;
-  --pixel-font-en: "Pixelify Sans", "Ark Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional SC", "Zpix", monospace;
-  --pixel-mono: "Ark Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional SC", "Pixelify Sans", "Courier New", monospace;
+  --pixel-font-en: "Pixelify Sans", "Ark Pixel 12px Proportional Latin", "Ark Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional SC", "Zpix", monospace;
+  --pixel-mono: "Ark Pixel 12px Proportional Latin", "Ark Pixel 12px Proportional SC", "Fusion Pixel 12px Proportional SC", "Pixelify Sans", "Courier New", monospace;
   --pixel-bg: transparent;
   --pixel-ink: #160f0a;
   --pixel-paper-ink: #2b1709;
-  --pixel-paper-muted: #6f4b24;
+  --pixel-paper-muted: #4b2b12;
   --pixel-paper-soft: #d8af69;
   --pixel-paper-edge: #8a5524;
   --pixel-gold: #d6a044;
   --pixel-gold-bright: #ffe08d;
   --pixel-brass: #a45b22;
   --pixel-blue: #b9e8ff;
+  --pixel-link: #073852;
+  --pixel-link-hover: #082e43;
+  --pixel-link-visited: #3c1857;
   --pixel-moss: #7f9d58;
   --pixel-text: #f8e9b8;
   --pixel-muted: #cab887;
@@ -71,6 +96,26 @@ select {
   image-rendering: pixelated;
 }
 
+#web_bg::before,
+[data-theme="dark"] #web_bg::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(5, 8, 7, 0.42) !important;
+}
+
+#content-inner,
+#footer,
+#page-header:not(.full_page),
+#nav.show,
+#web_bg.bg-animation,
+canvas:not(#ribbon-canvas) {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
 #body-wrap,
 #content-inner,
 main.layout,
@@ -102,18 +147,19 @@ main.layout,
 
 #page-header.full_page #site-title {
   display: block;
-  width: min(88vw, 960px);
-  aspect-ratio: 2029 / 768;
+  width: min(92vw, 1040px);
+  aspect-ratio: 2940 / 735;
   margin: 0 auto;
   overflow: hidden;
   color: transparent !important;
   font-size: 0 !important;
   line-height: 0;
   text-shadow: none !important;
-  background: url("/img/pixel-medieval/title-logo.png") center / contain no-repeat;
+  background: url("/img/pixel-medieval/title-logo-blog-medieval.png") center top / 100% auto no-repeat;
   filter:
     drop-shadow(0 10px 0 rgba(0, 0, 0, 0.32))
-    drop-shadow(0 0 22px rgba(65, 154, 230, 0.28));
+    drop-shadow(0 0 18px rgba(255, 217, 121, 0.2))
+    drop-shadow(0 0 28px rgba(65, 154, 230, 0.3));
 }
 
 #page-header:not(.full_page) #site-title,
@@ -136,13 +182,32 @@ main.layout,
 }
 
 #site-subtitle {
-  display: none !important;
+  display: block !important;
+  width: min(92vw, 860px);
+  min-height: 1.6em;
+  margin: clamp(0.2rem, 1.2vw, 0.85rem) auto 0;
+  color: #fff0b6 !important;
+  font-family: var(--pixel-font) !important;
+  font-size: clamp(1rem, 2.1vw, 1.55rem) !important;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  text-shadow:
+    2px 2px 0 #1c0c04,
+    0 0 12px rgba(255, 202, 97, 0.32) !important;
+}
+
+#site-subtitle .typed-cursor,
+.typed-cursor {
+  color: var(--pixel-gold-bright) !important;
+  font-family: var(--pixel-font-en) !important;
+  text-shadow: 2px 2px 0 #1c0c04 !important;
 }
 
 #nav {
   min-height: 58px;
   border-bottom: 2px solid rgba(225, 171, 76, 0.5);
-  background: linear-gradient(180deg, rgba(35, 25, 15, 0.78), rgba(17, 19, 17, 0.48)) !important;
+  background: rgba(28, 21, 15, 0.72) !important;
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(2px);
 }
@@ -159,8 +224,8 @@ main.layout,
 
 #blog-info .nav-site-title .site-name {
   display: inline-block;
-  width: clamp(136px, 16vw, 210px);
-  height: 50px;
+  width: clamp(154px, 18vw, 220px);
+  height: 56px;
   overflow: hidden;
   color: transparent !important;
   font-size: 0 !important;
@@ -265,18 +330,32 @@ main.layout,
 .tag-cloud-list,
 .search-dialog {
   color: var(--pixel-paper-ink) !important;
-  border: 3px solid var(--pixel-paper-edge);
+  border: 3px solid var(--pixel-paper-edge) !important;
   border-radius: 3px !important;
-  background:
-    linear-gradient(180deg, rgba(255, 247, 204, 0.18), rgba(114, 64, 22, 0.1)),
-    url("/img/pixel-medieval/parchment-panel.png") center / 100% 100% no-repeat,
-    #d9b16b !important;
+  background: rgba(244, 218, 153, 0.9) !important;
   box-shadow:
     0 0 0 2px #211007,
-    0 0 0 5px rgba(218, 171, 89, 0.38),
-    9px 9px 0 rgba(0, 0, 0, 0.38),
-    inset 0 0 28px rgba(92, 45, 12, 0.22) !important;
+    7px 7px 0 rgba(0, 0, 0, 0.32),
+    inset 0 0 0 2px rgba(255, 240, 181, 0.32),
+    inset 0 0 22px rgba(95, 48, 14, 0.16) !important;
   text-shadow: none !important;
+}
+
+.card-widget::before,
+.recent-post-item::before,
+#recent-posts > .recent-post-item::before,
+#aside-content .card-widget::before,
+#post::before,
+#page::before,
+#archive::before,
+#tag::before,
+#category::before,
+.article-sort::before,
+.category-lists::before,
+.tag-cloud-list::before,
+.search-dialog::before {
+  display: none !important;
+  content: none !important;
 }
 
 .recent-post-item:hover,
@@ -284,10 +363,16 @@ main.layout,
   transform: translate(-2px, -3px);
   box-shadow:
     0 0 0 2px #211007,
-    0 0 0 5px rgba(255, 213, 122, 0.68),
-    12px 12px 0 rgba(0, 0, 0, 0.44),
-    0 0 24px rgba(255, 199, 91, 0.18),
-    inset 0 0 28px rgba(92, 45, 12, 0.2) !important;
+    9px 9px 0 rgba(0, 0, 0, 0.38),
+    0 0 18px rgba(255, 199, 91, 0.16),
+    inset 0 0 0 2px rgba(255, 240, 181, 0.34),
+    inset 0 0 22px rgba(95, 48, 14, 0.14) !important;
+}
+
+.recent-post-item:hover::before,
+.card-widget:hover::before {
+  display: none !important;
+  content: none !important;
 }
 
 .article-title,
@@ -295,7 +380,7 @@ main.layout,
 .tag-cloud-list a,
 #aside-content .item-headline span,
 #aside-content .card-info .author-info-name {
-  color: #8c4814 !important;
+  color: #5f2a0b !important;
   font-family: var(--pixel-font-en) !important;
   letter-spacing: 0.06em;
   text-shadow:
@@ -321,25 +406,70 @@ main.layout,
 .article-title:hover,
 .category-list-link:hover,
 .tag-cloud-list a:hover {
-  color: #b8671e !important;
+  color: #381d08 !important;
 }
 
 .article-meta-wrap,
 .post-meta,
 .post-meta-date,
-.post-meta a,
 .content,
 #article-container,
 #aside-content,
-#aside-content a,
 .announcement_content,
 .site-data,
-.site-data a,
 .local-search-input input,
 #local-search-results {
   color: var(--pixel-paper-ink) !important;
   font-family: var(--pixel-font) !important;
   text-shadow: none !important;
+}
+
+#article-container a:not(.headerlink),
+.post-content a:not(.headerlink) {
+  color: var(--pixel-link) !important;
+  border-bottom: 2px dotted rgba(21, 80, 106, 0.72);
+  background:
+    linear-gradient(180deg, transparent 58%, rgba(185, 232, 255, 0.34) 58% 86%, transparent 86%);
+  font-weight: 700;
+  text-decoration: none !important;
+  text-shadow: 1px 1px 0 rgba(255, 239, 183, 0.86) !important;
+}
+
+#article-container a:not(.headerlink):visited,
+.post-content a:not(.headerlink):visited {
+  color: var(--pixel-link-visited) !important;
+  border-bottom-color: rgba(91, 50, 122, 0.68);
+  background:
+    linear-gradient(180deg, transparent 58%, rgba(214, 188, 255, 0.28) 58% 86%, transparent 86%);
+}
+
+#article-container a:not(.headerlink):hover,
+.post-content a:not(.headerlink):hover {
+  color: var(--pixel-link-hover) !important;
+  border-bottom-color: var(--pixel-link-hover);
+  background:
+    linear-gradient(180deg, transparent 48%, rgba(132, 218, 255, 0.48) 48% 88%, transparent 88%);
+}
+
+#aside-content a,
+.site-data a,
+.aside-list .title,
+.toc-link,
+#local-search-results a,
+.search-dialog a {
+  color: #3a210d !important;
+  font-weight: 700;
+  text-decoration: none !important;
+  text-shadow: none !important;
+}
+
+#aside-content a:hover,
+.site-data a:hover,
+.aside-list .title:hover,
+.toc-link:hover,
+#local-search-results a:hover,
+.search-dialog a:hover {
+  color: var(--pixel-link) !important;
 }
 
 .article-meta-wrap,
@@ -466,7 +596,7 @@ button:hover {
 #article-container h2,
 #article-container h3,
 #article-container h4 {
-  color: #7a3710 !important;
+  color: #4f2108 !important;
   border-bottom: 2px solid rgba(130, 76, 29, 0.38);
   font-family: var(--pixel-font-en) !important;
   letter-spacing: 0.06em;
@@ -515,6 +645,11 @@ hr {
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
 }
 
+#rightside {
+  opacity: 0.9 !important;
+  transform: translate(-58px, 0) !important;
+}
+
 .local-search-input input {
   border: 2px solid rgba(117, 72, 29, 0.58) !important;
   border-radius: 2px !important;
@@ -523,9 +658,7 @@ hr {
 
 #footer {
   border-top: 4px solid rgba(107, 86, 52, 0.86);
-  background:
-    linear-gradient(180deg, rgba(7, 10, 8, 0.32), rgba(7, 10, 8, 0.8)),
-    url("/img/pixel-medieval/hero-castle.png") center bottom / cover no-repeat !important;
+  background: url("/img/pixel-medieval/grassland-layout.png") center bottom / cover no-repeat !important;
 }
 
 .pixel-spark {
@@ -565,8 +698,8 @@ hr {
   }
 
   #blog-info .nav-site-title .site-name {
-    width: 148px;
-    height: 44px;
+    width: 154px;
+    height: 52px;
   }
 
   #nav .menus_item span,
@@ -580,8 +713,16 @@ hr {
   #page {
     box-shadow:
       0 0 0 2px #211007,
-      0 0 0 4px rgba(218, 171, 89, 0.32),
-      5px 5px 0 rgba(0, 0, 0, 0.36),
-      inset 0 0 24px rgba(92, 45, 12, 0.2) !important;
+      5px 5px 0 rgba(0, 0, 0, 0.3),
+      inset 0 0 0 2px rgba(255, 240, 181, 0.28),
+      inset 0 0 18px rgba(95, 48, 14, 0.14) !important;
+  }
+
+  .card-widget::before,
+  .recent-post-item::before,
+  #post::before,
+  #page::before {
+    display: none !important;
+    content: none !important;
   }
 }
