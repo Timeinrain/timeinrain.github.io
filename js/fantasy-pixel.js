@@ -379,19 +379,26 @@
       spawnTimer = window.setTimeout(function () {
         spawnTimer = null;
         spawnSlime();
-      }, delay || randomBetween(active ? 650 : 1400, active ? 1500 : 2800));
+      }, delay || randomBetween(active ? 420 : 1200, active ? 980 : 2200));
     }
 
-    function spawnSlime() {
+    function spawnSlime(options) {
       var footerWidth = footer.clientWidth;
       var footerHeight = footer.clientHeight;
       var side = Math.random() > 0.5 ? 'right' : 'left';
       var slime = createSlime();
       var safeTarget = clamp(randomBetween(76, footerWidth - 120), 52, Math.max(52, footerWidth - 116));
 
+      options = options || {};
+
       if (currentSlime || footerWidth < 180 || footerHeight < 180) {
-        scheduleSpawn(1200);
+        scheduleSpawn(active ? 520 : 1200);
         return;
+      }
+
+      if (typeof options.targetX === 'number') {
+        safeTarget = clamp(options.targetX, 70, Math.max(70, footerWidth - 116));
+        side = safeTarget < footerWidth / 2 ? 'left' : 'right';
       }
 
       field.appendChild(slime);
@@ -400,11 +407,11 @@
       currentSlime = {
         node: slime,
         start: performance.now(),
-        duration: randomBetween(1250, 1750),
+        duration: options.quick ? randomBetween(1150, 1450) : randomBetween(1450, 2100),
         startX: side === 'left' ? -96 : footerWidth + 96,
         endX: safeTarget,
-        groundY: footerHeight - randomBetween(76, 94),
-        jump: randomBetween(72, 116),
+        groundY: footerHeight - randomBetween(92, 116),
+        jump: randomBetween(92, 142),
         defeated: false
       };
 
@@ -486,10 +493,25 @@
     }
 
     footer.addEventListener('mouseenter', function (event) {
+      var footerRect = footer.getBoundingClientRect();
+
       active = true;
       footer.classList.add('is-sword-zone');
       sword.classList.add('is-visible');
       updateSword(event);
+
+      if (!currentSlime) {
+        if (spawnTimer) {
+          window.clearTimeout(spawnTimer);
+          spawnTimer = null;
+        }
+
+        spawnSlime({
+          quick: true,
+          targetX: event.clientX - footerRect.left + randomBetween(-120, 120)
+        });
+      }
+
       startLoop();
     });
 
