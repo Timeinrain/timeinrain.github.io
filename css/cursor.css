@@ -1,19 +1,19 @@
 :root {
-  --cursor-default: url("/mat/light_color_quarter/Arrow.cur"), auto;
-  --cursor-pointer: url("/mat/light_color_quarter/Hand.cur"), pointer;
-  --cursor-text: url("/mat/light_color_quarter/IBeam.cur"), text;
-  --cursor-help: url("/mat/light_color_quarter/Help.cur"), help;
-  --cursor-wait: url("/mat/light_color_quarter/Wait.ani"), wait;
-  --cursor-progress: url("/mat/light_color_quarter/AppStarting.ani"), progress;
-  --cursor-crosshair: url("/mat/light_color_quarter/Cross.cur"), crosshair;
-  --cursor-not-allowed: url("/mat/light_color_quarter/NO.cur"), not-allowed;
-  --cursor-move: url("/mat/light_color_quarter/Sall.cur"), move;
-  --cursor-resize-x: url("/mat/light_color_quarter/Sh.cur"), ew-resize;
-  --cursor-resize-y: url("/mat/light_color_quarter/Sv.cur"), ns-resize;
-  --cursor-resize-nwse: url("/mat/light_color_quarter/sdl.cur"), nwse-resize;
-  --cursor-resize-nesw: url("/mat/light_color_quarter/Sdr.cur"), nesw-resize;
-  --cursor-up: url("/mat/light_color_quarter/UpArrow.cur"), n-resize;
-  --cursor-pen: url("/mat/light_color_quarter/Pen.cur"), crosshair;
+  --cursor-default: url("/img/pixel-medieval/cursors/default.png") 10 2, auto;
+  --cursor-pointer: url("/img/pixel-medieval/cursors/pointer.png") 10 2, pointer;
+  --cursor-text: url("/img/pixel-medieval/cursors/text.png") 6 24, text;
+  --cursor-help: url("/img/pixel-medieval/cursors/help.png") 10 2, help;
+  --cursor-wait: url("/img/pixel-medieval/cursors/wait.png") 14 14, wait;
+  --cursor-progress: url("/img/pixel-medieval/cursors/progress.png") 10 2, progress;
+  --cursor-crosshair: url("/img/pixel-medieval/cursors/crosshair.png") 15 15, crosshair;
+  --cursor-not-allowed: url("/img/pixel-medieval/cursors/not_allowed.png") 12 12, not-allowed;
+  --cursor-move: url("/img/pixel-medieval/cursors/move.png") 14 14, move;
+  --cursor-resize-x: url("/img/pixel-medieval/cursors/resize_x.png") 14 8, ew-resize;
+  --cursor-resize-y: url("/img/pixel-medieval/cursors/resize_y.png") 12 8, ns-resize;
+  --cursor-resize-nwse: url("/img/pixel-medieval/cursors/resize_nwse.png") 8 8, nwse-resize;
+  --cursor-resize-nesw: url("/img/pixel-medieval/cursors/resize_nesw.png") 8 8, nesw-resize;
+  --cursor-up: url("/img/pixel-medieval/cursors/up.png") 14 4, n-resize;
+  --cursor-pen: url("/img/pixel-medieval/cursors/pen.png") 6 24, crosshair;
 }
 
 html,
