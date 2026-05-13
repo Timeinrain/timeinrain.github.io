@@ -2,8 +2,8 @@
   --hijiki-ink: #120c08;
   --hijiki-panel: rgba(31, 19, 13, 0.9);
   --hijiki-panel-soft: rgba(66, 39, 21, 0.86);
-  --hijiki-gold: #ffffff;
-  --hijiki-gold-bright: #ffffff;
+  --hijiki-gold: #e5bd67;
+  --hijiki-gold-bright: #fff1b7;
   --hijiki-red: #b94d39;
   --hijiki-mint: #bdeacb;
 }
@@ -204,13 +204,12 @@
 .live2d-kanban__stage::before {
   content: "";
   position: absolute;
-  right: 20px;
-  bottom: 8px;
+  right: 40px;
+  bottom: 30px;
   width: 216px;
   height: 54px;
   background:
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.48) 0 56%, transparent 58%),
-    linear-gradient(90deg, transparent 0 12px, rgba(229, 189, 103, 0.22) 12px 204px, transparent 204px);
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.48) 0 56%, transparent 58%);
   filter: blur(1px);
 }
 
