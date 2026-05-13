@@ -273,10 +273,10 @@
 
     var playground = document.createElement('div');
     playground.className = 'footer-slime-playground';
-    playground.setAttribute('aria-label', 'Slime hunt playground');
+    playground.setAttribute('aria-label', 'Magic monster playground');
     playground.innerHTML = [
       '<div class="footer-playground-hud" aria-live="polite">',
-      '<span>SLIME HUNT</span>',
+      '<span>MAGIC HUNT</span>',
       '<strong>0</strong>',
       '</div>',
       '<div class="footer-slime-field"></div>',
@@ -286,26 +286,30 @@
 
     var field = playground.querySelector('.footer-slime-field');
     var scoreNode = playground.querySelector('.footer-playground-hud strong');
-    var sword = document.createElement('div');
+    var wand = document.createElement('div');
     var active = false;
-    var currentSlime = null;
+    var monsters = [];
+    var pits = [];
     var rafId = null;
-    var spawnTimer = null;
-    var slashTimer = null;
+    var maintainTimer = null;
+    var castingTimer = null;
     var score = 0;
     var mouseX = 0;
     var mouseY = 0;
+    var minMonsters = 3;
+    var maxMonsters = 5;
 
-    sword.className = 'footer-sword-cursor';
-    sword.setAttribute('aria-hidden', 'true');
-    sword.innerHTML = [
-      '<span class="footer-sword-inner">',
-      '<span class="footer-sword-blade"></span>',
-      '<span class="footer-sword-guard"></span>',
-      '<span class="footer-sword-handle"></span>',
+    wand.className = 'footer-magic-cursor';
+    wand.setAttribute('aria-hidden', 'true');
+    wand.innerHTML = [
+      '<span class="footer-wand-inner">',
+      '<span class="footer-wand-crystal"></span>',
+      '<span class="footer-wand-ring"></span>',
+      '<span class="footer-wand-shaft"></span>',
+      '<span class="footer-wand-handle"></span>',
       '</span>'
     ].join('');
-    document.body.appendChild(sword);
+    document.body.appendChild(wand);
 
     function randomBetween(min, max) {
       return min + Math.random() * (max - min);
@@ -323,25 +327,41 @@
       return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
     }
 
-    function updateSword(event) {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-      sword.style.left = mouseX + 'px';
-      sword.style.top = mouseY + 'px';
-      sword.classList.add('is-slashing');
-
-      if (slashTimer) window.clearTimeout(slashTimer);
-      slashTimer = window.setTimeout(function () {
-        sword.classList.remove('is-slashing');
-      }, 180);
+    function liveMonsterCount() {
+      return monsters.filter(function (monster) {
+        return !monster.defeated && !monster.escaping;
+      }).length;
     }
 
-    function createSlime() {
-      var slime = document.createElement('div');
+    function updateWand(event) {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+      wand.style.left = mouseX + 'px';
+      wand.style.top = mouseY + 'px';
+    }
 
-      slime.className = 'footer-slime';
-      slime.setAttribute('aria-hidden', 'true');
-      slime.innerHTML = [
+    function createMonsterNode(type) {
+      var monster = document.createElement('div');
+
+      monster.className = 'footer-monster footer-' + type;
+      monster.setAttribute('aria-hidden', 'true');
+
+      if (type === 'bunny') {
+        monster.innerHTML = [
+          '<span class="footer-monster-shadow"></span>',
+          '<span class="footer-bunny-core">',
+          '<span class="footer-bunny-ear footer-bunny-ear-left"></span>',
+          '<span class="footer-bunny-ear footer-bunny-ear-right"></span>',
+          '<span class="footer-bunny-body"></span>',
+          '<span class="footer-bunny-face"></span>',
+          '<span class="footer-bunny-eye footer-bunny-eye-left"></span>',
+          '<span class="footer-bunny-eye footer-bunny-eye-right"></span>',
+          '<span class="footer-bunny-nose"></span>',
+          '<span class="footer-bunny-scarf"></span>',
+          '</span>'
+        ].join('');
+      } else {
+        monster.innerHTML = [
         '<span class="footer-slime-shadow"></span>',
         '<span class="footer-slime-core">',
         '<span class="footer-slime-body"></span>',
@@ -349,18 +369,19 @@
         '<span class="footer-slime-eye footer-slime-eye-right"></span>',
         '<span class="footer-slime-mouth"></span>',
         '</span>'
-      ].join('');
+        ].join('');
+      }
 
-      return slime;
+      return monster;
     }
 
-    function createBurst(x, y) {
-      for (var index = 0; index < 10; index++) {
+    function createMagicBurst(x, y, type) {
+      for (var index = 0; index < 14; index++) {
         var particle = document.createElement('span');
-        var angle = Math.PI * 2 * index / 10 + randomBetween(-0.18, 0.18);
-        var distance = randomBetween(24, 58);
+        var angle = Math.PI * 2 * index / 14 + randomBetween(-0.18, 0.18);
+        var distance = randomBetween(28, 70);
 
-        particle.className = 'footer-hit-burst';
+        particle.className = 'footer-hit-burst ' + (type === 'bunny' ? 'is-bunny-hit' : 'is-slime-hit');
         particle.style.left = x + 'px';
         particle.style.top = y + 'px';
         particle.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
@@ -373,119 +394,190 @@
       }
     }
 
-    function scheduleSpawn(delay) {
-      if (spawnTimer) window.clearTimeout(spawnTimer);
+    function scheduleMaintain(delay) {
+      if (maintainTimer) window.clearTimeout(maintainTimer);
 
-      spawnTimer = window.setTimeout(function () {
-        spawnTimer = null;
-        spawnSlime();
-      }, delay || randomBetween(active ? 420 : 1200, active ? 980 : 2200));
+      maintainTimer = window.setTimeout(function () {
+        maintainTimer = null;
+        maintainMonsters(active);
+        scheduleMaintain(randomBetween(850, 1500));
+      }, delay || randomBetween(700, 1200));
     }
 
-    function spawnSlime(options) {
+    function spawnMonster(options) {
       var footerWidth = footer.clientWidth;
       var footerHeight = footer.clientHeight;
       var side = Math.random() > 0.5 ? 'right' : 'left';
-      var slime = createSlime();
+      var type = Math.random() > 0.52 ? 'bunny' : 'slime';
+      var monsterNode;
+      var monster;
       var safeTarget = clamp(randomBetween(76, footerWidth - 120), 52, Math.max(52, footerWidth - 116));
 
       options = options || {};
 
-      if (currentSlime || footerWidth < 180 || footerHeight < 180) {
-        scheduleSpawn(active ? 520 : 1200);
+      if (footerWidth < 180 || footerHeight < 180 || liveMonsterCount() >= maxMonsters) {
         return;
       }
+
+      if (options.type) type = options.type;
 
       if (typeof options.targetX === 'number') {
         safeTarget = clamp(options.targetX, 70, Math.max(70, footerWidth - 116));
         side = safeTarget < footerWidth / 2 ? 'left' : 'right';
       }
 
-      field.appendChild(slime);
-      slime.classList.add(side === 'left' ? 'from-left' : 'from-right');
+      monsterNode = createMonsterNode(type);
+      field.appendChild(monsterNode);
+      monsterNode.classList.add(side === 'left' ? 'from-left' : 'from-right');
 
-      currentSlime = {
-        node: slime,
+      monster = {
+        node: monsterNode,
+        type: type,
         start: performance.now(),
-        duration: options.quick ? randomBetween(1150, 1450) : randomBetween(1450, 2100),
-        startX: side === 'left' ? -96 : footerWidth + 96,
+        duration: options.quick ? randomBetween(1250, 1650) : randomBetween(2300, 3600),
+        startX: side === 'left' ? -110 : footerWidth + 110,
         endX: safeTarget,
-        groundY: footerHeight - randomBetween(92, 116),
-        jump: randomBetween(92, 142),
+        groundY: footerHeight - randomBetween(type === 'bunny' ? 112 : 96, type === 'bunny' ? 150 : 128),
+        jump: randomBetween(type === 'bunny' ? 118 : 92, type === 'bunny' ? 168 : 140),
         defeated: false
       };
 
+      monsters.push(monster);
       startLoop();
     }
 
-    function defeatSlime() {
-      var slimeRect;
+    function maintainMonsters(fillToMax) {
+      var target = fillToMax ? maxMonsters : minMonsters + Math.floor(Math.random() * 2);
+      var guard = 0;
+
+      while (liveMonsterCount() < target && guard < maxMonsters) {
+        spawnMonster({ quick: fillToMax });
+        guard += 1;
+      }
+    }
+
+    function removeMonster(monster) {
+      var index = monsters.indexOf(monster);
+
+      if (index !== -1) monsters.splice(index, 1);
+      monster.node.remove();
+      maintainMonsters(active);
+    }
+
+    function defeatMonster(monster) {
+      var monsterRect;
       var fieldRect;
 
-      if (!currentSlime || currentSlime.defeated) return;
+      if (!monster || monster.defeated || monster.escaping) return;
 
-      currentSlime.defeated = true;
-      currentSlime.node.classList.add('is-defeated');
-      slimeRect = currentSlime.node.getBoundingClientRect();
+      monster.defeated = true;
+      monster.node.classList.add('is-defeated');
+      monsterRect = monster.node.getBoundingClientRect();
       fieldRect = field.getBoundingClientRect();
       score += 1;
       scoreNode.textContent = String(score);
-      createBurst(slimeRect.left - fieldRect.left + slimeRect.width / 2, slimeRect.top - fieldRect.top + slimeRect.height / 2);
-      sword.classList.add('is-slashing');
+      createMagicBurst(monsterRect.left - fieldRect.left + monsterRect.width / 2, monsterRect.top - fieldRect.top + monsterRect.height / 2, monster.type);
+      wand.classList.add('is-casting');
+      maintainMonsters(active);
 
-      window.setTimeout(function (slime) {
-        slime.remove();
-        currentSlime = null;
-        scheduleSpawn(randomBetween(600, 1300));
-      }, 560, currentSlime.node);
+      window.setTimeout(function () {
+        removeMonster(monster);
+      }, monster.type === 'bunny' ? 720 : 620);
     }
 
-    function checkCollision() {
-      var hitBox;
-
-      if (!active || !currentSlime || currentSlime.defeated) return;
-
-      hitBox = {
-        left: mouseX - 34,
-        top: mouseY - 54,
-        right: mouseX + 46,
-        bottom: mouseY + 20
+    function createMagicPit(event) {
+      var fieldRect = field.getBoundingClientRect();
+      var pit = document.createElement('span');
+      var localX = event.clientX - fieldRect.left;
+      var localY = event.clientY - fieldRect.top;
+      var magicPit = {
+        node: pit,
+        expiresAt: performance.now() + 2000
       };
 
-      if (overlaps(hitBox, currentSlime.node.getBoundingClientRect())) {
-        defeatSlime();
+      pit.className = 'footer-magic-pit';
+      pit.style.left = localX + 'px';
+      pit.style.top = localY + 'px';
+      field.appendChild(pit);
+      pits.push(magicPit);
+
+      wand.classList.add('is-casting');
+
+      if (castingTimer) window.clearTimeout(castingTimer);
+      castingTimer = window.setTimeout(function () {
+        wand.classList.remove('is-casting');
+      }, 420);
+
+      window.setTimeout(function () {
+        pit.remove();
+        pits = pits.filter(function (item) {
+          return item !== magicPit;
+        });
+      }, 2000);
+
+      checkMagicHits();
+    }
+
+    function checkMagicHits() {
+      if (!pits.length || !monsters.length) return;
+
+      pits.forEach(function (pit) {
+        var pitRect = pit.node.getBoundingClientRect();
+
+        monsters.forEach(function (monster) {
+          if (monster.defeated || monster.escaping) return;
+
+          if (overlaps(pitRect, monster.node.getBoundingClientRect())) {
+            defeatMonster(monster);
+          }
+        });
+      });
+    }
+
+    function clearExpiredPits(now) {
+      pits = pits.filter(function (pit) {
+        if (pit.expiresAt > now) return true;
+        pit.node.remove();
+        return false;
+      });
+    }
+
+    function escapeMonster(monster) {
+      if (!monster || monster.escaping || monster.defeated) return;
+
+      monster.escaping = true;
+      monster.node.classList.add('is-escaping');
+      maintainMonsters(active);
+
+      window.setTimeout(function () {
+        removeMonster(monster);
+      }, 360);
+    }
+
+    function moveMonster(monster, now) {
+      var progress = clamp((now - monster.start) / monster.duration, 0, 1);
+      var eased = easeOutCubic(progress);
+      var x = monster.startX + (monster.endX - monster.startX) * eased;
+      var y = monster.groundY - Math.sin(progress * Math.PI) * monster.jump;
+
+      monster.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+
+      if (progress >= 1) {
+        escapeMonster(monster);
       }
     }
 
     function loop(now) {
-      var progress;
-      var eased;
-      var x;
-      var y;
-
       rafId = null;
+      clearExpiredPits(now);
 
-      if (currentSlime && !currentSlime.defeated && !currentSlime.escaping) {
-        progress = clamp((now - currentSlime.start) / currentSlime.duration, 0, 1);
-        eased = easeOutCubic(progress);
-        x = currentSlime.startX + (currentSlime.endX - currentSlime.startX) * eased;
-        y = currentSlime.groundY - Math.sin(progress * Math.PI) * currentSlime.jump;
-        currentSlime.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-        checkCollision();
+      monsters.forEach(function (monster) {
+        if (!monster.defeated && !monster.escaping) moveMonster(monster, now);
+      });
 
-        if (progress >= 1) {
-          currentSlime.escaping = true;
-          currentSlime.node.classList.add('is-escaping');
+      checkMagicHits();
 
-          window.setTimeout(function (slime) {
-            if (currentSlime && currentSlime.node === slime) currentSlime = null;
-            slime.remove();
-            scheduleSpawn();
-          }, 320, currentSlime.node);
-        }
-      }
-
-      if (currentSlime || active) startLoop();
+      if (monsters.length || pits.length || active) startLoop();
     }
 
     function startLoop() {
@@ -496,17 +588,13 @@
       var footerRect = footer.getBoundingClientRect();
 
       active = true;
-      footer.classList.add('is-sword-zone');
-      sword.classList.add('is-visible');
-      updateSword(event);
+      footer.classList.add('is-magic-zone');
+      wand.classList.add('is-visible');
+      updateWand(event);
+      maintainMonsters(true);
 
-      if (!currentSlime) {
-        if (spawnTimer) {
-          window.clearTimeout(spawnTimer);
-          spawnTimer = null;
-        }
-
-        spawnSlime({
+      if (liveMonsterCount() < maxMonsters) {
+        spawnMonster({
           quick: true,
           targetX: event.clientX - footerRect.left + randomBetween(-120, 120)
         });
@@ -517,26 +605,37 @@
 
     footer.addEventListener('mousemove', function (event) {
       if (!active) return;
-      updateSword(event);
-      checkCollision();
+      updateWand(event);
+    });
+
+    footer.addEventListener('click', function (event) {
+      if (!active) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      updateWand(event);
+      createMagicPit(event);
     });
 
     footer.addEventListener('mouseleave', function () {
       active = false;
-      footer.classList.remove('is-sword-zone');
-      sword.classList.remove('is-visible', 'is-slashing');
+      footer.classList.remove('is-magic-zone');
+      wand.classList.remove('is-visible', 'is-casting');
     });
 
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden && spawnTimer) {
-        window.clearTimeout(spawnTimer);
-        spawnTimer = null;
-      } else if (!document.hidden && !currentSlime && !spawnTimer) {
-        scheduleSpawn(900);
+      if (document.hidden && maintainTimer) {
+        window.clearTimeout(maintainTimer);
+        maintainTimer = null;
+      } else if (!document.hidden && !maintainTimer) {
+        maintainMonsters(false);
+        scheduleMaintain(700);
       }
     });
 
-    scheduleSpawn(700);
+    maintainMonsters(false);
+    scheduleMaintain(900);
+    startLoop();
   }
 
   function initFantasyPixel() {
