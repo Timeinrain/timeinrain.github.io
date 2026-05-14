@@ -20,10 +20,11 @@
     var context = canvas.getContext('2d');
     var items = [];
     var dpr = window.devicePixelRatio || 1;
-    var cssSize = Math.max(300, Math.round(canvas.getBoundingClientRect().width || 340));
+    var measuredSize = Math.round(canvas.getBoundingClientRect().width || canvas.clientWidth || 0);
+    var cssSize = Math.min(420, measuredSize || 340);
     var center = cssSize / 2;
-    var radius = cssSize * 0.24;
-    var labelRadius = cssSize * 0.36;
+    var radius = cssSize * (cssSize < 260 ? 0.22 : 0.24);
+    var labelRadius = cssSize * (cssSize < 260 ? 0.34 : 0.36);
     var total = 0;
 
     try {
@@ -82,15 +83,16 @@
     function drawPixelLabel(text, x, y, align) {
       var paddingX = 6;
       var paddingY = 4;
+      var fontSize = cssSize < 240 ? 10 : cssSize < 320 ? 11 : 13;
       var textWidth;
       var boxWidth;
-      var boxHeight = 22;
+      var boxHeight = fontSize + paddingY * 2 + 2;
       var boxX;
       var boxY;
 
-      context.font = '700 13px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
+      context.font = '700 ' + fontSize + 'px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
       textWidth = context.measureText(text).width;
-      boxWidth = Math.ceil(textWidth + paddingX * 2);
+      boxWidth = Math.min(cssSize - 6, Math.ceil(textWidth + paddingX * 2));
       boxX = align === 'right' ? x - boxWidth : align === 'center' ? x - boxWidth / 2 : x;
       boxY = y - boxHeight / 2;
 
@@ -107,7 +109,7 @@
       context.shadowOffsetX = 2;
       context.shadowOffsetY = 2;
       context.shadowBlur = 0;
-      context.fillText(text, Math.round(boxX + boxWidth / 2), Math.round(boxY + boxHeight / 2 + 1));
+      context.fillText(text, Math.round(boxX + boxWidth / 2), Math.round(boxY + boxHeight / 2 + 1), Math.max(10, boxWidth - paddingX * 2));
       context.shadowOffsetX = 0;
       context.shadowOffsetY = 0;
     }
@@ -149,13 +151,16 @@
     context.fillStyle = '#3a250d';
     context.strokeStyle = '#e0a33e';
     context.lineWidth = 2;
-    context.fillRect(center - 62, center - 20, 124, 40);
-    context.strokeRect(center - 62, center - 20, 124, 40);
-    context.font = '700 17px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
+    var scoreBoxWidth = Math.min(124, Math.max(92, cssSize * 0.52));
+    var scoreBoxHeight = Math.min(40, Math.max(30, cssSize * 0.15));
+    var scoreFontSize = Math.min(17, Math.max(13, cssSize * 0.045));
+    context.fillRect(center - scoreBoxWidth / 2, center - scoreBoxHeight / 2, scoreBoxWidth, scoreBoxHeight);
+    context.strokeRect(center - scoreBoxWidth / 2, center - scoreBoxHeight / 2, scoreBoxWidth, scoreBoxHeight);
+    context.font = '700 ' + scoreFontSize + 'px "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = '#fff2b8';
-    context.fillText('总评 ' + (total / items.length).toFixed(1) + '/10', center, center + 1);
+    context.fillText('总评 ' + (total / items.length).toFixed(1) + '/10', center, center + 1, scoreBoxWidth - 8);
   }
 
   function initAdventurerRadar() {

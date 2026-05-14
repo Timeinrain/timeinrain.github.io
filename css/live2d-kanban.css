@@ -46,15 +46,64 @@
 }
 
 .live2d-kanban.is-minimized {
-  width: 68px;
-  height: 68px;
+  width: 44px;
+  height: 44px;
+  overflow: visible;
+}
+
+.live2d-kanban.is-minimized.is-hopping {
+  transition:
+    left 420ms cubic-bezier(0.24, 1.42, 0.42, 1),
+    top 420ms cubic-bezier(0.24, 1.42, 0.42, 1);
+}
+
+.live2d-kanban.is-minimized.is-meowing::before,
+.live2d-kanban.is-minimized.is-meowing::after {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.live2d-kanban.is-minimized.is-meowing::before {
+  content: "";
+  left: 23px;
+  bottom: 35px;
+  z-index: 7;
+  width: 8px;
+  height: 7px;
+  background: #2a190c;
+  clip-path: polygon(0 0, 100% 0, 20% 100%);
+  animation: live2d-cat-meow-pop 1600ms steps(4, end) both;
+}
+
+.live2d-kanban.is-minimized.is-meowing::after {
+  content: "\55b5\00007e";
+  left: 28px;
+  bottom: 39px;
+  z-index: 8;
+  min-width: 38px;
+  padding: 5px 8px 6px;
+  color: #fff2be;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.72);
+  background: linear-gradient(180deg, rgba(63, 37, 18, 0.96), rgba(24, 15, 10, 0.96));
+  border: 2px solid rgba(229, 189, 103, 0.88);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(97, 57, 25, 0.72);
+  animation: live2d-cat-meow-pop 1600ms steps(4, end) both;
 }
 
 .live2d-kanban.is-minimized .live2d-kanban__bubble,
 .live2d-kanban.is-minimized .live2d-kanban__controls,
 .live2d-kanban.is-minimized .live2d-kanban__stage {
+  display: none;
   opacity: 0;
   visibility: hidden;
+  transition: none;
   pointer-events: none;
 }
 
@@ -154,8 +203,7 @@
     linear-gradient(180deg, rgba(105, 62, 26, 0.98), rgba(39, 24, 13, 0.98));
 }
 
-.live2d-kanban__button:focus-visible,
-.live2d-kanban__restore:focus-visible {
+.live2d-kanban__button:focus-visible {
   outline: 2px solid var(--hijiki-gold-bright);
   outline-offset: 3px;
 }
@@ -170,14 +218,6 @@
   height: 3px;
   background: var(--hijiki-gold-bright);
   box-shadow: 1px 1px 0 #070403;
-}
-
-.live2d-kanban__button[data-kanban-action="close"]::before {
-  transform: rotate(45deg);
-}
-
-.live2d-kanban__button[data-kanban-action="close"]::after {
-  transform: rotate(-45deg);
 }
 
 .live2d-kanban__button[data-kanban-action="minimize"]::after {
@@ -197,7 +237,8 @@
   transition: opacity 180ms ease, visibility 180ms ease;
 }
 
-.live2d-kanban.is-dragging .live2d-kanban__stage {
+.live2d-kanban.is-dragging .live2d-kanban__stage,
+.live2d-kanban.is-dragging .live2d-kanban__restore {
   cursor: grabbing;
 }
 
@@ -262,23 +303,64 @@
 
 .live2d-kanban__restore {
   position: absolute;
-  left: 0;
+  left: 6px;
   right: auto;
-  bottom: 0;
+  bottom: 6px;
   z-index: 6;
-  width: 64px;
-  height: 64px;
+  display: block;
+  width: 32px;
+  height: 32px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
   cursor: pointer;
-  background: url("/img/kanban/hijiki-black-cat.png") center / contain no-repeat;
-  border: 0;
-  box-shadow: none;
-  transition: opacity 160ms ease, visibility 160ms ease;
+  color: transparent;
+  line-height: 0;
+  background: transparent url("/img/kanban/pixel-cat-head.svg") center / 32px 32px no-repeat !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  image-rendering: pixelated;
+  transition:
+    opacity 160ms ease,
+    visibility 160ms ease;
   pointer-events: auto;
+  touch-action: none;
+}
+
+.live2d-kanban.is-minimized .live2d-kanban__restore {
+  cursor: grab;
+}
+
+.live2d-kanban.is-minimized:not(.is-hopping):not(.is-dragging) .live2d-kanban__restore {
+  animation: live2d-cat-breathe 1180ms steps(3, end) infinite;
+  transform-origin: center bottom;
+}
+
+.live2d-kanban.is-minimized.is-hopping .live2d-kanban__restore {
+  animation: live2d-cat-hop 420ms steps(3, end);
+}
+
+.live2d-kanban.is-dragging .live2d-kanban__restore,
+.live2d-kanban.is-dragging .live2d-kanban__restore:hover {
+  background: transparent url("/img/kanban/pixel-cat-head-drag.svg") center / 32px 32px no-repeat !important;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.34));
 }
 
 .live2d-kanban__restore:hover {
-  background: url("/img/kanban/hijiki-black-cat.png") center / contain no-repeat;
+  background: transparent url("/img/kanban/pixel-cat-head.svg") center / 32px 32px no-repeat !important;
+  border: 0 !important;
+  box-shadow: none !important;
   filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
+}
+
+.live2d-kanban__restore:focus-visible {
+  outline: 0;
+  filter: drop-shadow(0 0 5px rgba(255, 241, 183, 0.78));
 }
 
 .live2d-kanban__restore::before {
@@ -289,6 +371,56 @@
 .live2d-kanban__restore::after {
   display: none;
   content: none;
+}
+
+@keyframes live2d-cat-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.2));
+  }
+
+  34% {
+    transform: translateY(-1px) scaleX(1.08) scaleY(0.95);
+    filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.24));
+  }
+
+  68% {
+    transform: translateY(-3px) scaleX(0.94) scaleY(1.12);
+    filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.18));
+  }
+}
+
+@keyframes live2d-cat-hop {
+  0% {
+    transform: translateY(0);
+  }
+
+  34% {
+    transform: translateY(-5px);
+  }
+
+  68% {
+    transform: translateY(2px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes live2d-cat-meow-pop {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+
+  18%,
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 760px) {
@@ -326,10 +458,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .live2d-kanban.is-minimized.is-hopping,
   .live2d-kanban__bubble,
   .live2d-kanban__controls,
   .live2d-kanban__stage,
   .live2d-kanban__restore {
     transition: none !important;
+  }
+
+  .live2d-kanban.is-minimized .live2d-kanban__restore {
+    animation: none !important;
+  }
+
+  .live2d-kanban.is-minimized.is-meowing::before,
+  .live2d-kanban.is-minimized.is-meowing::after {
+    animation: none !important;
   }
 }

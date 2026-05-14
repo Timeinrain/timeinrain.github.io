@@ -5,6 +5,11 @@
   var MODEL_URL = '/kanban/tororo_hijiki/tororo_hijiki/hijiki/runtime/hijiki.model3.json';
   var TALK_DURATION = 4600;
   var DRAG_THRESHOLD = 5;
+  var CAT_HOP_MIN_DELAY = 1600;
+  var CAT_HOP_MAX_DELAY = 2800;
+  var CAT_MEOW_MIN_DELAY = 7800;
+  var CAT_MEOW_MAX_DELAY = 12800;
+  var CAT_MEOW_DURATION = 1600;
 
   var DEPENDENCIES = [
     {
@@ -53,15 +58,22 @@
     root: null,
     idleTimer: null,
     talkTimer: null,
+    catHopTimer: null,
+    catHopClassTimer: null,
+    catMeowTimer: null,
+    catMeowClassTimer: null,
     resizeTimer: null,
     dragging: false,
     dragMoved: false,
     suppressClick: false,
     dragPointerId: null,
+    dragCaptureEl: null,
     dragStartX: 0,
     dragStartY: 0,
     dragStartLeft: 0,
-    dragStartTop: 0
+    dragStartTop: 0,
+    catHomeLeft: null,
+    catHomeTop: null
   };
 
   window.__timeinrainLive2dHijiki = state;
@@ -200,7 +212,6 @@
       '<div class="live2d-kanban__bubble" aria-live="polite"></div>',
       '<div class="live2d-kanban__controls">',
       '<button class="live2d-kanban__button" type="button" data-kanban-action="minimize"></button>',
-      '<button class="live2d-kanban__button" type="button" data-kanban-action="close"></button>',
       '</div>',
       '<button class="live2d-kanban__restore" type="button" data-kanban-action="restore"></button>',
       '<div class="live2d-kanban__stage">',
@@ -212,7 +223,6 @@
     ].join('');
 
     root.querySelector('[data-kanban-action="minimize"]').setAttribute('aria-label', '\u6536\u8d77\u770b\u677f');
-    root.querySelector('[data-kanban-action="close"]').setAttribute('aria-label', '\u5173\u95ed\u770b\u677f');
     root.querySelector('[data-kanban-action="restore"]').setAttribute('aria-label', '\u5c55\u5f00\u770b\u677f');
 
     document.body.appendChild(root);
@@ -230,6 +240,104 @@
     root.classList.toggle('is-minimized', minimized);
     root.classList.remove('is-talking');
     safelyStore(minimized ? '1' : '0');
+
+    if (minimized) {
+      setCatHome(root);
+      scheduleCatHop();
+      scheduleCatMeow();
+    } else {
+      stopCatIdle();
+    }
+  }
+
+  function setCatHome(root) {
+    var rect;
+
+    root = root || getRoot();
+    rect = root.getBoundingClientRect();
+    state.catHomeLeft = rect.left;
+    state.catHomeTop = rect.top;
+  }
+
+  function ensureCatHome(root) {
+    if (typeof state.catHomeLeft !== 'number' || typeof state.catHomeTop !== 'number') {
+      setCatHome(root);
+    }
+  }
+
+  function stopCatHop() {
+    window.clearTimeout(state.catHopTimer);
+    window.clearTimeout(state.catHopClassTimer);
+    state.catHopTimer = null;
+    state.catHopClassTimer = null;
+    getRoot().classList.remove('is-hopping');
+  }
+
+  function stopCatMeow() {
+    window.clearTimeout(state.catMeowTimer);
+    window.clearTimeout(state.catMeowClassTimer);
+    state.catMeowTimer = null;
+    state.catMeowClassTimer = null;
+    getRoot().classList.remove('is-meowing');
+  }
+
+  function stopCatIdle() {
+    stopCatHop();
+    stopCatMeow();
+  }
+
+  function scheduleCatHop() {
+    var delay = CAT_HOP_MIN_DELAY + Math.random() * (CAT_HOP_MAX_DELAY - CAT_HOP_MIN_DELAY);
+
+    window.clearTimeout(state.catHopTimer);
+    state.catHopTimer = window.setTimeout(function () {
+      var root = getRoot();
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var dx;
+      var dy;
+
+      if (!root.classList.contains('is-minimized') || root.classList.contains('is-hidden') || state.dragging || reduceMotion) {
+        if (root.classList.contains('is-minimized') && !root.classList.contains('is-hidden')) {
+          scheduleCatHop();
+        }
+        return;
+      }
+
+      ensureCatHome(root);
+      dx = Math.round(Math.random() * 14) - 7;
+      dy = Math.round(Math.random() * 12) - 8;
+
+      root.classList.add('is-hopping');
+      placeRoot(root, state.catHomeLeft + dx, state.catHomeTop + dy);
+      window.clearTimeout(state.catHopClassTimer);
+      state.catHopClassTimer = window.setTimeout(function () {
+        root.classList.remove('is-hopping');
+      }, 520);
+      scheduleCatHop();
+    }, delay);
+  }
+
+  function scheduleCatMeow() {
+    var delay = CAT_MEOW_MIN_DELAY + Math.random() * (CAT_MEOW_MAX_DELAY - CAT_MEOW_MIN_DELAY);
+
+    window.clearTimeout(state.catMeowTimer);
+    state.catMeowTimer = window.setTimeout(function () {
+      var root = getRoot();
+
+      if (!root.classList.contains('is-minimized') || root.classList.contains('is-hidden') || state.dragging || root.classList.contains('is-hopping')) {
+        if (root.classList.contains('is-minimized') && !root.classList.contains('is-hidden')) {
+          scheduleCatMeow();
+        }
+        return;
+      }
+
+      root.classList.add('is-meowing');
+      window.clearTimeout(state.catMeowClassTimer);
+      state.catMeowClassTimer = window.setTimeout(function () {
+        root.classList.remove('is-meowing');
+      }, CAT_MEOW_DURATION);
+      scheduleCatMeow();
+    }, delay);
   }
 
   function speak(text, duration) {
@@ -332,21 +440,38 @@
   function bindModelEvents() {
     var root = getRoot();
     var stage = root.querySelector('.live2d-kanban__stage');
+    var restore = root.querySelector('.live2d-kanban__restore');
 
     if (!stage || stage.dataset.hijikiEventsReady === 'true') return;
 
     stage.dataset.hijikiEventsReady = 'true';
 
     function startDrag(event) {
+      var actionButton;
+      var dragHandle;
       var rect;
 
       if (event.button !== undefined && event.button !== 0) return;
-      if (event.target.closest('[data-kanban-action]')) return;
+
+      actionButton = event.target.closest('[data-kanban-action]');
+      if (actionButton && actionButton.getAttribute('data-kanban-action') !== 'restore') return;
+
+      dragHandle = event.currentTarget;
+      window.clearTimeout(state.catHopTimer);
+      window.clearTimeout(state.catHopClassTimer);
+      window.clearTimeout(state.catMeowTimer);
+      window.clearTimeout(state.catMeowClassTimer);
+      state.catHopTimer = null;
+      state.catHopClassTimer = null;
+      state.catMeowTimer = null;
+      state.catMeowClassTimer = null;
+      root.classList.remove('is-hopping', 'is-meowing');
 
       rect = root.getBoundingClientRect();
       state.dragging = true;
       state.dragMoved = false;
       state.dragPointerId = event.pointerId;
+      state.dragCaptureEl = dragHandle;
       state.dragStartX = event.clientX;
       state.dragStartY = event.clientY;
       state.dragStartLeft = rect.left;
@@ -354,9 +479,9 @@
       root.classList.add('is-dragging');
       placeRoot(root, rect.left, rect.top);
 
-      if (stage.setPointerCapture) {
+      if (dragHandle && dragHandle.setPointerCapture) {
         try {
-          stage.setPointerCapture(event.pointerId);
+          dragHandle.setPointerCapture(event.pointerId);
         } catch (error) {
           // Pointer capture is best effort across browsers.
         }
@@ -381,11 +506,15 @@
     }
 
     function endDrag(event) {
+      var dragCaptureEl;
+
       if (!state.dragging || event.pointerId !== state.dragPointerId) return;
 
-      if (stage.releasePointerCapture) {
+      dragCaptureEl = state.dragCaptureEl || stage;
+
+      if (dragCaptureEl && dragCaptureEl.releasePointerCapture) {
         try {
-          stage.releasePointerCapture(event.pointerId);
+          dragCaptureEl.releasePointerCapture(event.pointerId);
         } catch (error) {
           // Pointer capture is best effort across browsers.
         }
@@ -394,10 +523,20 @@
       root.classList.remove('is-dragging');
       state.dragging = false;
       state.dragPointerId = null;
+      state.dragCaptureEl = null;
       state.suppressClick = state.dragMoved;
 
       if (state.dragMoved) {
+        if (root.classList.contains('is-minimized')) {
+          setCatHome(root);
+        }
+
         safelyStorePosition(root);
+      }
+
+      if (root.classList.contains('is-minimized')) {
+        scheduleCatHop();
+        scheduleCatMeow();
       }
 
       window.setTimeout(function () {
@@ -406,6 +545,9 @@
     }
 
     stage.addEventListener('pointerdown', startDrag, { passive: false });
+    if (restore) {
+      restore.addEventListener('pointerdown', startDrag, { passive: false });
+    }
     window.addEventListener('pointermove', drag, { passive: false });
     window.addEventListener('pointerup', endDrag, { passive: true });
     window.addEventListener('pointercancel', endDrag, { passive: true });
@@ -449,6 +591,12 @@
 
       if (!button || !root.contains(button)) return;
 
+      if (state.suppressClick) {
+        state.suppressClick = false;
+        event.preventDefault();
+        return;
+      }
+
       action = button.getAttribute('data-kanban-action');
 
       if (action === 'minimize') {
@@ -458,11 +606,6 @@
       if (action === 'restore') {
         setMinimized(false);
         speak('Hijiki \u56de\u6765\u4e86\uff0c\u7ee7\u7eed\u966a\u4f60\u3002');
-      }
-
-      if (action === 'close') {
-        root.classList.add('is-hidden');
-        root.classList.remove('is-talking');
       }
     });
   }
@@ -474,8 +617,14 @@
     window.addEventListener('resize', function () {
       window.clearTimeout(state.resizeTimer);
       state.resizeTimer = window.setTimeout(function () {
+        var root = getRoot();
+
         layoutModel();
         clampRootToViewport();
+
+        if (root.classList.contains('is-minimized')) {
+          setCatHome(root);
+        }
       }, 120);
     }, { passive: true });
   }
@@ -544,6 +693,9 @@
 
     if (safelyReadStore() === '1') {
       root.classList.add('is-minimized');
+      setCatHome(root);
+      scheduleCatHop();
+      scheduleCatMeow();
     }
 
     bindControls();

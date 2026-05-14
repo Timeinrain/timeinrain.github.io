@@ -2075,9 +2075,10 @@ hr {
 }
 
 .map-viewport {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 9px 9px 22px;
+  overflow: visible;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: clamp(5px, 1vw, 9px) clamp(5px, 1vw, 9px) clamp(14px, 2vw, 22px);
   scrollbar-color: var(--pixel-gold) rgba(20, 13, 8, 0.82);
 }
 
@@ -2099,10 +2100,12 @@ hr {
 .career-map-board {
   position: relative;
   width: min(100%, 1320px);
-  min-width: 980px;
+  min-width: 0;
+  max-width: 100%;
   aspect-ratio: 1672 / 941;
   margin: 0 auto;
   overflow: hidden;
+  box-sizing: border-box;
   border: 4px solid #5f3b1a;
   border-radius: 4px;
   background: #17130e;
@@ -2120,7 +2123,7 @@ hr {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 
@@ -2130,7 +2133,7 @@ hr {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  border: 12px solid rgba(36, 22, 10, 0.42);
+  border: clamp(4px, 1vw, 12px) solid rgba(36, 22, 10, 0.42);
   background:
     radial-gradient(circle at 18% 28%, rgba(255, 236, 158, 0.08), transparent 22%),
     radial-gradient(circle at 86% 30%, rgba(75, 18, 38, 0.3), transparent 26%),
@@ -2173,6 +2176,7 @@ hr {
 .career-map-widget img {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(6px 8px 0 rgba(0, 0, 0, 0.42));
@@ -2204,31 +2208,36 @@ hr {
   left: 50%;
   bottom: -0.35rem;
   display: inline-block;
-  min-width: max-content;
-  padding: 0.22rem 0.58rem;
+  width: max-content;
+  min-width: 0;
+  max-width: min(46vw, 9.5rem);
+  padding: clamp(0.12rem, 0.45vw, 0.22rem) clamp(0.34rem, 0.9vw, 0.58rem);
+  overflow: hidden;
   border: 2px solid #f8e7a4;
   background: rgba(31, 20, 10, 0.86);
   color: #fff2bc;
   font-family: var(--pixel-font) !important;
-  font-size: clamp(0.82rem, 1.25vw, 1rem);
+  font-size: clamp(0.62rem, 1.25vw, 1rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.2;
   transform: translateX(-50%);
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.48);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .widget-student {
   left: 19.5%;
   top: 57%;
-  width: 17.5%;
+  width: clamp(68px, 17.5%, 232px);
   animation-delay: -0.45s;
 }
 
 .widget-intern {
   left: 51%;
   top: 54%;
-  width: 18%;
+  width: clamp(70px, 18%, 238px);
   animation-delay: -1.35s;
   animation-duration: 3.6s;
 }
@@ -2236,7 +2245,7 @@ hr {
 .widget-work {
   left: 83%;
   top: 49%;
-  width: 16.5%;
+  width: clamp(64px, 16.5%, 218px);
   animation-delay: -2.15s;
   animation-duration: 3.9s;
 }
@@ -2267,6 +2276,7 @@ hr {
   width: min(36%, 430px);
   max-height: 0;
   overflow: hidden;
+  box-sizing: border-box;
   padding: 0 1rem;
   border: 3px solid #e0b861;
   border-radius: 3px;
@@ -2290,10 +2300,11 @@ hr {
 }
 
 .career-map-board.is-open .career-map-info {
-  max-height: 460px;
+  max-height: min(460px, calc(100% - 1rem));
   padding: 0.95rem 1.05rem 1rem;
   opacity: 1;
   pointer-events: none;
+  overflow-y: auto;
   transform: translateY(0) scaleY(1);
 }
 
@@ -2388,24 +2399,25 @@ hr {
   }
 
   .map-viewport {
-    margin-inline: -0.75rem;
+    margin-inline: 0;
     padding-inline: 0.75rem;
   }
 
   .career-map-board {
-    min-width: 760px;
+    width: 100%;
+    min-width: 0;
   }
 
   .widget-student {
-    width: 20.5%;
+    width: clamp(68px, 20.5%, 156px);
   }
 
   .widget-intern {
-    width: 21%;
+    width: clamp(70px, 21%, 160px);
   }
 
   .widget-work {
-    width: 19.5%;
+    width: clamp(64px, 19.5%, 148px);
   }
 
   .career-map-info,
@@ -2419,13 +2431,64 @@ hr {
   }
 
   .career-map-board.is-open .career-map-info {
-    max-height: 390px;
+    max-height: min(390px, calc(100% - 1rem));
   }
 
   .career-map-info-text {
     min-height: 7.2em;
     font-size: 0.82rem;
     line-height: 1.58;
+  }
+}
+
+@media (max-width: 520px) {
+  .map-viewport {
+    margin-inline: 0;
+    padding-inline: 0.35rem;
+  }
+
+  .career-map-board {
+    border-width: 3px;
+    box-shadow:
+      0 0 0 2px #120b05,
+      5px 5px 0 rgba(0, 0, 0, 0.34),
+      inset 0 0 0 2px rgba(255, 226, 151, 0.14);
+  }
+
+  .career-map-widget-title {
+    bottom: -0.28rem;
+    border-width: 1px;
+    letter-spacing: 0.02em;
+  }
+
+  .career-map-board.is-open .career-map-info {
+    padding: 0.58rem 0.64rem 0.68rem;
+  }
+
+  .career-map-info-close {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+  }
+
+  .career-map-info-kicker {
+    margin-right: 1.8rem !important;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+  }
+
+  .career-map-info-title {
+    margin-right: 1.8rem !important;
+    margin-bottom: 0.35rem !important;
+    font-size: 0.76rem !important;
+    line-height: 1.22;
+  }
+
+  .career-map-info-text {
+    min-height: 0;
+    font-size: 0.68rem;
+    line-height: 1.45;
   }
 }
 
@@ -2458,6 +2521,7 @@ hr {
   margin: 0 auto;
   color: #fff0b6;
   font-family: var(--pixel-font) !important;
+  box-sizing: border-box;
 }
 
 .pixel-profile-card-image {
@@ -2499,6 +2563,7 @@ hr {
   color: var(--pixel-dark-text);
   font-family: var(--pixel-font) !important;
   image-rendering: pixelated;
+  box-sizing: border-box;
 }
 
 #article-container .adventurer-card::before,
@@ -2583,11 +2648,14 @@ hr {
     "profile radar portrait"
     "tags tags portrait";
   gap: clamp(0.72rem, 1.4vw, 1rem);
+  min-width: 0;
 }
 
 #article-container .adventurer-panel {
   position: relative;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: clamp(0.72rem, 1.35vw, 1rem);
   border: 2px solid #a36a24;
   border-radius: 2px;
@@ -2729,17 +2797,22 @@ hr {
 
 #article-container .adventurer-radar-layout {
   display: grid;
-  grid-template-columns: minmax(178px, 0.8fr) minmax(210px, 1fr);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
   align-items: center;
   gap: clamp(0.72rem, 1.4vw, 1rem);
+  min-width: 0;
+  max-width: 100%;
 }
 
 #article-container .adventurer-radar-canvas {
   display: block;
   width: min(100%, 220px);
+  max-width: 100%;
+  height: auto;
   aspect-ratio: 1;
   margin: 0 auto;
   image-rendering: pixelated;
+  box-sizing: border-box;
 }
 
 #article-container .adventurer-score-list,
@@ -2752,13 +2825,16 @@ hr {
 #article-container .adventurer-score-list {
   display: grid;
   gap: 0.42rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 #article-container .adventurer-score-list li {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
   color: var(--pixel-dark-text);
   font-size: clamp(0.78rem, 1.05vw, 0.9rem);
   font-weight: 700;
@@ -2938,7 +3014,7 @@ hr {
 }
 
 #article-container .adventurer-radar-layout {
-  grid-template-columns: minmax(360px, 1.12fr) minmax(220px, 0.72fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.72fr);
   align-items: center;
   gap: clamp(1.1rem, 2vw, 1.5rem);
 }
@@ -2964,6 +3040,7 @@ hr {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 #article-container .adventurer-score-list li::after {
@@ -3984,7 +4061,7 @@ hr {
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.78) !important;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   #article-container .adventurer-radar-layout {
     grid-template-columns: 1fr;
   }
@@ -3996,6 +4073,12 @@ hr {
   #article-container .adventurer-score-list {
     width: min(100%, 520px);
     justify-self: center;
+  }
+
+  #article-container .adventurer-score-list span {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 }
 
@@ -4061,6 +4144,10 @@ hr {
 @media (max-width: 560px) {
   #article-container .adventurer-card {
     padding: 1rem;
+  }
+
+  #article-container .adventurer-radar-canvas {
+    width: min(100%, 320px);
   }
 
   #article-container .adventurer-stats div {
