@@ -1,9 +1,14 @@
 # 怪物动画素材
 
-这些像素怪物动画根据网站的中世纪像素风格和你提供的史莱姆、兔子原型生成。
+这组像素怪物按参考图重新设计：32px 原始像素、3 倍放大到 96px、透明背景、硬边像素轮廓。
 
-- 单帧尺寸：96 x 96px，透明 PNG。
-- 每个 `*_sheet.png` 都是横向精灵表。
-- `*.gif` 是快速预览文件；正式播放建议优先使用 PNG 精灵表。
-- `monster-animations.css` 提供可直接使用的 CSS 类，例如 `.monster-anim.slime-idle` 和 `.monster-anim.bunny-death`。
-- `monster-animations.json` 记录帧数、帧时长、精灵表、GIF 和逐帧 PNG 路径。
+- 小兔子：白色兔头、黑色硬描边、亮粉内耳和鼻子、极简黑色五官
+- 史莱姆：亮蓝果冻体、深蓝描边、青色高光、小黑眼
+
+- 角色：`slime`、`bunny`
+- 动作：`breathe`、`move`、`death`
+- 兼容旧命名：`idle` 文件和 `.monster-anim.*-idle` 类仍可使用，内容等同 `breathe`
+- 每个 `*_sheet.png` 是横向精灵表；`*.gif` 用于快速预览
+- `monster-animations.css` 提供可直接使用的类，例如 `.monster-anim.slime-breathe`、`.monster-anim.bunny-death`
+- `monster-animations.json` 记录帧数、帧时长、精灵表、GIF 和逐帧 PNG 路径
+- 生成脚本：`tools/generate-monster-animations.py`

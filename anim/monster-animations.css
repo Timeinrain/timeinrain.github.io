@@ -4,22 +4,24 @@
   width: 96px;
   height: 96px;
   background-repeat: no-repeat;
+  background-size: auto 96px;
   image-rendering: pixelated;
   vertical-align: middle;
 }
 
+.monster-anim.slime-breathe,
 .monster-anim.slime-idle {
-  background-image: url("/anim/slime_idle_sheet.png");
-  animation: slime-idle-frames 600ms steps(4) infinite;
+  background-image: url("/anim/slime_breathe_sheet.png");
+  animation: slime-breathe-frames 600ms steps(4, end) infinite;
 }
-@keyframes slime-idle-frames {
+@keyframes slime-breathe-frames {
   from { background-position: 0 0; }
   to { background-position: -384px 0; }
 }
 
 .monster-anim.slime-move {
   background-image: url("/anim/slime_move_sheet.png");
-  animation: slime-move-frames 630ms steps(6) infinite;
+  animation: slime-move-frames 630ms steps(6, end) infinite;
 }
 @keyframes slime-move-frames {
   from { background-position: 0 0; }
@@ -28,25 +30,26 @@
 
 .monster-anim.slime-death {
   background-image: url("/anim/slime_death_sheet.png");
-  animation: slime-death-frames 805ms steps(7) forwards;
+  animation: slime-death-frames 805ms steps(7, end) forwards;
 }
 @keyframes slime-death-frames {
   from { background-position: 0 0; }
   to { background-position: -672px 0; }
 }
 
+.monster-anim.bunny-breathe,
 .monster-anim.bunny-idle {
-  background-image: url("/anim/bunny_idle_sheet.png");
-  animation: bunny-idle-frames 600ms steps(4) infinite;
+  background-image: url("/anim/bunny_breathe_sheet.png");
+  animation: bunny-breathe-frames 600ms steps(4, end) infinite;
 }
-@keyframes bunny-idle-frames {
+@keyframes bunny-breathe-frames {
   from { background-position: 0 0; }
   to { background-position: -384px 0; }
 }
 
 .monster-anim.bunny-move {
   background-image: url("/anim/bunny_move_sheet.png");
-  animation: bunny-move-frames 570ms steps(6) infinite;
+  animation: bunny-move-frames 570ms steps(6, end) infinite;
 }
 @keyframes bunny-move-frames {
   from { background-position: 0 0; }
@@ -55,7 +58,7 @@
 
 .monster-anim.bunny-death {
   background-image: url("/anim/bunny_death_sheet.png");
-  animation: bunny-death-frames 840ms steps(7) forwards;
+  animation: bunny-death-frames 840ms steps(7, end) forwards;
 }
 @keyframes bunny-death-frames {
   from { background-position: 0 0; }

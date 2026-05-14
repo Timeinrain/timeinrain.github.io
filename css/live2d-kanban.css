@@ -41,6 +41,26 @@
   letter-spacing: 0;
 }
 
+[data-theme="dark"] .live2d-kanban .live2d-kanban__restore,
+[data-theme="dark"] .live2d-kanban .live2d-kanban__restore:hover {
+  color: transparent !important;
+  border: 0 !important;
+  background: transparent url("/img/kanban/pixel-cat-head.svg") center / 32px 32px no-repeat !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+[data-theme="dark"] .live2d-kanban .live2d-kanban__button {
+  color: transparent !important;
+  background:
+    linear-gradient(180deg, rgba(73, 43, 20, 0.98), rgba(24, 15, 9, 0.98)) !important;
+  border: 2px solid rgba(229, 189, 103, 0.9) !important;
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.42),
+    inset 0 0 0 2px rgba(103, 58, 24, 0.65) !important;
+  text-shadow: none !important;
+}
+
 .live2d-kanban.is-hidden {
   display: none;
 }
