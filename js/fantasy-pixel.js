@@ -1,4 +1,6 @@
 (function () {
+  var FOOTER_LIGHTNING_DURATION = 760;
+
   function createSpark(x, y) {
     var spark = document.createElement('span');
     spark.className = 'pixel-spark';
@@ -11,9 +13,67 @@
     }, 700);
   }
 
+  function footerPlaygroundAtPoint(event) {
+    var stage = document.getElementById('fantasy-footer-playground');
+    var rect;
+
+    if (!stage) return null;
+
+    if (event.target && event.target.closest && event.target.closest('#fantasy-footer-playground')) {
+      return stage;
+    }
+
+    rect = stage.getBoundingClientRect();
+
+    if (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    ) {
+      return stage;
+    }
+
+    return null;
+  }
+
+  function createFooterLightning(x, y) {
+    var lightning = document.createElement('span');
+
+    lightning.className = 'footer-magic-pit';
+    lightning.setAttribute('aria-hidden', 'true');
+    lightning.style.left = x + 'px';
+    lightning.style.top = y + 'px';
+    document.body.appendChild(lightning);
+
+    window.setTimeout(function () {
+      lightning.remove();
+    }, FOOTER_LIGHTNING_DURATION);
+
+    return lightning;
+  }
+
   document.addEventListener('click', function (event) {
+    var stage;
+    var lightning;
+
     if (event.button !== 0) return;
+
     createSpark(event.clientX, event.clientY);
+
+    stage = footerPlaygroundAtPoint(event);
+    if (!stage) return;
+
+    lightning = createFooterLightning(event.clientX, event.clientY);
+    document.dispatchEvent(new CustomEvent('footer:magic-cast', {
+      detail: {
+        clientX: event.clientX,
+        clientY: event.clientY,
+        effectNode: lightning
+      }
+    }));
   }, { passive: true });
 
   function drawAdventurerRadar(canvas) {
@@ -293,24 +353,47 @@
 
   function initFooterSlimeGame() {
     var footer = document.getElementById('footer');
+    var stage;
+    var playground;
 
-    if (!footer || footer.dataset.slimeGameReady === 'true') return;
+    if (!footer) return;
 
-    footer.dataset.slimeGameReady = 'true';
-    footer.classList.add('footer-slime-zone');
+    footer.classList.remove('footer-slime-zone', 'is-magic-zone');
+    stage = document.getElementById('fantasy-footer-playground');
 
-    var playground = document.createElement('div');
-    playground.className = 'footer-slime-playground';
-    playground.setAttribute('aria-label', 'Magic monster playground');
-    playground.innerHTML = [
-      '<div class="footer-playground-hud" aria-live="polite">',
-      '<span>MAGIC HUNT</span>',
-      '<strong>0</strong>',
-      '</div>',
-      '<div class="footer-slime-field"></div>',
-      '<div class="footer-playground-ground"></div>'
-    ].join('');
-    footer.insertBefore(playground, footer.firstChild);
+    if (!stage) {
+      stage = document.createElement('section');
+      stage.id = 'fantasy-footer-playground';
+      stage.className = 'footer-playground-zone footer-slime-zone';
+      stage.setAttribute('aria-label', 'Magic monster playground');
+      stage.innerHTML = [
+        '<div class="footer-slime-playground">',
+        '<div class="footer-playground-hud" aria-live="polite">',
+        '<span>MAGIC HUNT</span>',
+        '<strong>0</strong>',
+        '</div>',
+        '<div class="footer-slime-field"></div>',
+        '<div class="footer-effects-layer"></div>',
+        '<div class="footer-playground-ground"></div>',
+        '</div>'
+      ].join('');
+      footer.parentNode.insertBefore(stage, footer);
+    }
+
+    playground = stage.querySelector('.footer-slime-playground');
+    if (!playground) return;
+
+    var effectsLayer = playground.querySelector('.footer-effects-layer');
+
+    if (!effectsLayer) {
+      effectsLayer = document.createElement('div');
+      effectsLayer.className = 'footer-effects-layer';
+      playground.appendChild(effectsLayer);
+    }
+
+    if (stage.dataset.slimeGameReady === 'true') return;
+
+    stage.dataset.slimeGameReady = 'true';
 
     var field = playground.querySelector('.footer-slime-field');
     var scoreNode = playground.querySelector('.footer-playground-hud strong');
@@ -324,8 +407,15 @@
     var score = 0;
     var mouseX = 0;
     var mouseY = 0;
-    var minMonsters = 3;
+    var minMonsters = 4;
     var maxMonsters = 5;
+    var monsterSize = 32;
+    var magicPitDuration = FOOTER_LIGHTNING_DURATION;
+    var monsterSpawnDuration = 420;
+    var monsterSpawnEffectWidth = 64;
+    var monsterSpawnEffectHeight = 40;
+    var monsterSpawnEffectAnchorY = 24;
+    var monsterTypes = ['slime', 'bunny', 'ghost', 'flame'];
 
     wand.className = 'footer-magic-cursor';
     wand.setAttribute('aria-hidden', 'true');
@@ -347,8 +437,139 @@
       return Math.max(min, Math.min(max, value));
     }
 
-    function easeOutCubic(t) {
-      return 1 - Math.pow(1 - t, 3);
+    function easeInOut(t) {
+      return t * t * (3 - 2 * t);
+    }
+
+    function getMonsterFieldRange(footerWidth) {
+      var minTarget = monsterSize + 16;
+      var maxTarget = Math.max(minTarget, footerWidth - monsterSize - 16);
+
+      return {
+        min: minTarget,
+        max: maxTarget
+      };
+    }
+
+    function getMonsterEntryRange(side, footerWidth) {
+      var fieldRange = getMonsterFieldRange(footerWidth);
+      var maxEntryDepth = Math.min(180, Math.max(fieldRange.min, footerWidth * 0.3));
+
+      if (side === 'left') {
+        return {
+          min: fieldRange.min,
+          max: Math.min(fieldRange.max, maxEntryDepth)
+        };
+      }
+
+      return {
+        min: Math.max(fieldRange.min, footerWidth - maxEntryDepth),
+        max: fieldRange.max
+      };
+    }
+
+    function chooseMonsterEntryTarget(side, footerWidth, targetX) {
+      var range = getMonsterEntryRange(side, footerWidth);
+
+      if (typeof targetX === 'number') {
+        return clamp(targetX, range.min, range.max);
+      }
+
+      return randomBetween(range.min, range.max);
+    }
+
+    function chooseMonsterRoute(side, type, footerWidth, targetX, quick) {
+      var fromOutside = typeof targetX !== 'number' && Math.random() < (quick ? 0.34 : 0.24);
+      var fieldRange = getMonsterFieldRange(footerWidth);
+      var target;
+      var step;
+      var startX;
+
+      if (fromOutside) {
+        target = chooseMonsterEntryTarget(side, footerWidth, targetX);
+
+        return {
+          side: side,
+          fromOutside: true,
+          startX: side === 'left' ? -monsterSize - 28 : footerWidth + monsterSize + 28,
+          endX: target
+        };
+      }
+
+      target = typeof targetX === 'number' ?
+        clamp(targetX, fieldRange.min, fieldRange.max) :
+        randomBetween(fieldRange.min, fieldRange.max);
+      step = randomBetween(
+        type === 'ghost' ? 30 : 36,
+        quick ? 68 : type === 'bunny' ? 92 : 84
+      );
+
+      if (target - step < fieldRange.min) {
+        side = 'right';
+      } else if (target + step > fieldRange.max) {
+        side = 'left';
+      }
+
+      startX = side === 'left' ? target - step : target + step;
+
+      return {
+        side: side,
+        fromOutside: false,
+        startX: clamp(startX, fieldRange.min, fieldRange.max),
+        endX: target
+      };
+    }
+
+    function chooseMonsterHopCount(type, distance, quick) {
+      var maxHopDistance = type === 'bunny' ? 72 : type === 'ghost' ? 70 : type === 'flame' ? 62 : 64;
+      var desiredHops = Math.ceil(distance / maxHopDistance);
+
+      return clamp(desiredHops, 1, quick ? 3 : 4);
+    }
+
+    function chooseMonsterType() {
+      var missingTypes = monsterTypes.filter(function (type) {
+        return !monsters.some(function (monster) {
+          return monster.type === type && !monster.defeated && !monster.escaping;
+        });
+      });
+      var pool = missingTypes.length ? missingTypes : monsterTypes;
+
+      return pool[Math.floor(Math.random() * pool.length)] || 'slime';
+    }
+
+    function monsterGroundOffset(type) {
+      if (type === 'bunny') return randomBetween(44, 58);
+      if (type === 'ghost') return randomBetween(54, 72);
+      if (type === 'flame') return randomBetween(40, 55);
+      return randomBetween(38, 52);
+    }
+
+    function monsterJumpRange(type) {
+      if (type === 'bunny') return { min: 8, max: 12 };
+      if (type === 'ghost') return { min: 5, max: 8 };
+      if (type === 'flame') return { min: 7, max: 11 };
+      return { min: 6, max: 10 };
+    }
+
+    function monsterFootAnchorY(type) {
+      if (type === 'bunny') return 31;
+      if (type === 'ghost') return 27;
+      return 28;
+    }
+
+    function monsterIdleBob(type, elapsed) {
+      if (type === 'bunny') return Math.round(Math.sin(elapsed / 260) * 1.2);
+      if (type === 'ghost') return Math.round(Math.sin(elapsed / 340) * 1.7);
+      if (type === 'flame') return Math.round(Math.sin(elapsed / 220) * 1.1);
+      return Math.round(Math.sin(elapsed / 300) * 0.9);
+    }
+
+    function monsterDeathDuration(type) {
+      if (type === 'bunny') return 720;
+      if (type === 'ghost') return 760;
+      if (type === 'flame') return 680;
+      return 620;
     }
 
     function overlaps(a, b) {
@@ -373,18 +594,10 @@
 
       monster.className = 'footer-monster footer-' + type;
       monster.setAttribute('aria-hidden', 'true');
-
-      if (type === 'bunny') {
-        monster.innerHTML = [
-          '<span class="footer-monster-shadow"></span>',
-          '<span class="footer-bunny-core"></span>'
-        ].join('');
-      } else {
-        monster.innerHTML = [
-          '<span class="footer-monster-shadow"></span>',
-          '<span class="footer-slime-core"></span>'
-        ].join('');
-      }
+      monster.innerHTML = [
+        '<span class="footer-monster-shadow"></span>',
+        '<span class="footer-' + type + '-core"></span>'
+      ].join('');
 
       return monster;
     }
@@ -395,7 +608,7 @@
         var angle = Math.PI * 2 * index / 14 + randomBetween(-0.18, 0.18);
         var distance = randomBetween(28, 70);
 
-        particle.className = 'footer-hit-burst ' + (type === 'bunny' ? 'is-bunny-hit' : 'is-slime-hit');
+        particle.className = 'footer-hit-burst is-' + type + '-hit';
         particle.style.left = x + 'px';
         particle.style.top = y + 'px';
         particle.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
@@ -408,54 +621,101 @@
       }
     }
 
+    function createMonsterSpawnEffect(monster) {
+      var effect = document.createElement('img');
+
+      effect.className = 'footer-monster-spawn is-' + monster.type + '-spawn';
+      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=1';
+      effect.alt = '';
+      effect.width = monsterSpawnEffectWidth;
+      effect.height = monsterSpawnEffectHeight;
+      effect.setAttribute('aria-hidden', 'true');
+      effect.draggable = false;
+      effect.style.left = Math.round(monster.spawnFootX - monsterSpawnEffectWidth / 2) + 'px';
+      effect.style.top = Math.round(monster.spawnFootY - monsterSpawnEffectAnchorY) + 'px';
+      field.appendChild(effect);
+
+      window.setTimeout(function () {
+        effect.remove();
+      }, 540);
+    }
+
     function scheduleMaintain(delay) {
       if (maintainTimer) window.clearTimeout(maintainTimer);
 
       maintainTimer = window.setTimeout(function () {
         maintainTimer = null;
-        maintainMonsters(active);
+        maintainMonsters(false);
         scheduleMaintain(randomBetween(850, 1500));
       }, delay || randomBetween(700, 1200));
     }
 
     function spawnMonster(options) {
-      var footerWidth = footer.clientWidth;
-      var footerHeight = footer.clientHeight;
+      var footerWidth = stage.clientWidth;
+      var footerHeight = stage.clientHeight;
       var side = Math.random() > 0.5 ? 'right' : 'left';
-      var type = Math.random() > 0.52 ? 'bunny' : 'slime';
+      var type = chooseMonsterType();
       var monsterNode;
       var monster;
-      var safeTarget = clamp(randomBetween(76, footerWidth - 120), 52, Math.max(52, footerWidth - 116));
+      var distance;
+      var hopCount;
+      var hopDuration;
+      var spawnDelay;
+      var route;
+      var jumpRange;
+      var spawnAt;
+      var groundY;
 
       options = options || {};
 
-      if (footerWidth < 180 || footerHeight < 180 || liveMonsterCount() >= maxMonsters) {
+      if (footerWidth < 140 || footerHeight < 120 || liveMonsterCount() >= maxMonsters) {
         return;
       }
 
       if (options.type) type = options.type;
 
       if (typeof options.targetX === 'number') {
-        safeTarget = clamp(options.targetX, 70, Math.max(70, footerWidth - 116));
-        side = safeTarget < footerWidth / 2 ? 'left' : 'right';
+        side = options.targetX < footerWidth / 2 ? 'left' : 'right';
       }
 
+      route = chooseMonsterRoute(side, type, footerWidth, options.targetX, options.quick);
       monsterNode = createMonsterNode(type);
       field.appendChild(monsterNode);
-      monsterNode.classList.add(side === 'left' ? 'from-left' : 'from-right');
+      monsterNode.classList.add(route.side === 'left' ? 'from-left' : 'from-right');
+      distance = Math.abs(route.endX - route.startX);
+      hopCount = chooseMonsterHopCount(type, distance, options.quick);
+      hopDuration = type === 'flame' ? randomBetween(330, 470) : randomBetween(360, 520);
+      spawnDelay = Math.max(0, options.spawnDelay || 0);
+      spawnAt = performance.now() + spawnDelay;
+      jumpRange = monsterJumpRange(type);
+      groundY = footerHeight - monsterGroundOffset(type);
 
       monster = {
         node: monsterNode,
         type: type,
-        start: performance.now(),
-        duration: options.quick ? randomBetween(1250, 1650) : randomBetween(2300, 3600),
-        startX: side === 'left' ? -110 : footerWidth + 110,
-        endX: safeTarget,
-        groundY: footerHeight - randomBetween(type === 'bunny' ? 112 : 96, type === 'bunny' ? 150 : 128),
-        jump: randomBetween(type === 'bunny' ? 118 : 92, type === 'bunny' ? 168 : 140),
+        spawnAt: spawnAt,
+        spawned: route.fromOutside,
+        start: spawnAt + (route.fromOutside ? 0 : monsterSpawnDuration),
+        duration: hopCount * hopDuration,
+        hopCount: hopCount,
+        hopDuration: hopDuration,
+        fromOutside: route.fromOutside,
+        startX: route.startX,
+        endX: route.endX,
+        groundY: groundY,
+        spawnFootX: route.startX + monsterSize / 2,
+        spawnFootY: groundY + monsterFootAnchorY(type),
+        jump: randomBetween(jumpRange.min, jumpRange.max),
+        idleFor: options.quick ? randomBetween(1700, 2600) : randomBetween(4200, 7600),
+        settledAt: null,
         defeated: false
       };
 
+      if (!monster.fromOutside) {
+        monsterNode.classList.add('is-awaiting-spawn');
+      }
+
+      monsterNode.style.transform = 'translate(' + monster.startX + 'px, ' + monster.groundY + 'px)';
       monsters.push(monster);
       startLoop();
     }
@@ -465,7 +725,10 @@
       var guard = 0;
 
       while (liveMonsterCount() < target && guard < maxMonsters) {
-        spawnMonster({ quick: fillToMax });
+        spawnMonster({
+          quick: fillToMax,
+          spawnDelay: guard * randomBetween(fillToMax ? 120 : 180, fillToMax ? 260 : 360)
+        });
         guard += 1;
       }
     }
@@ -475,7 +738,7 @@
 
       if (index !== -1) monsters.splice(index, 1);
       monster.node.remove();
-      maintainMonsters(active);
+      maintainMonsters(false);
     }
 
     function defeatMonster(monster) {
@@ -492,27 +755,20 @@
       scoreNode.textContent = String(score);
       createMagicBurst(monsterRect.left - fieldRect.left + monsterRect.width / 2, monsterRect.top - fieldRect.top + monsterRect.height / 2, monster.type);
       wand.classList.add('is-casting');
-      maintainMonsters(active);
+      maintainMonsters(false);
 
       window.setTimeout(function () {
         removeMonster(monster);
-      }, monster.type === 'bunny' ? 720 : 620);
+      }, monsterDeathDuration(monster.type));
     }
 
     function createMagicPit(event) {
-      var fieldRect = field.getBoundingClientRect();
-      var pit = document.createElement('span');
-      var localX = event.clientX - fieldRect.left;
-      var localY = event.clientY - fieldRect.top;
+      var pit = event.effectNode || createFooterLightning(event.clientX, event.clientY);
       var magicPit = {
         node: pit,
-        expiresAt: performance.now() + 2000
+        expiresAt: performance.now() + magicPitDuration
       };
 
-      pit.className = 'footer-magic-pit';
-      pit.style.left = localX + 'px';
-      pit.style.top = localY + 'px';
-      field.appendChild(pit);
       pits.push(magicPit);
 
       wand.classList.add('is-casting');
@@ -527,9 +783,10 @@
         pits = pits.filter(function (item) {
           return item !== magicPit;
         });
-      }, 2000);
+      }, magicPitDuration);
 
       checkMagicHits();
+      startLoop();
     }
 
     function checkMagicHits() {
@@ -539,7 +796,7 @@
         var pitRect = pit.node.getBoundingClientRect();
 
         monsters.forEach(function (monster) {
-          if (monster.defeated || monster.escaping) return;
+          if (!monster.spawned || monster.defeated || monster.escaping) return;
 
           if (overlaps(pitRect, monster.node.getBoundingClientRect())) {
             defeatMonster(monster);
@@ -561,7 +818,6 @@
 
       monster.escaping = true;
       monster.node.classList.add('is-escaping');
-      maintainMonsters(active);
 
       window.setTimeout(function () {
         removeMonster(monster);
@@ -569,16 +825,63 @@
     }
 
     function moveMonster(monster, now) {
-      var progress = clamp((now - monster.start) / monster.duration, 0, 1);
-      var eased = easeOutCubic(progress);
-      var x = monster.startX + (monster.endX - monster.startX) * eased;
-      var y = monster.groundY - Math.sin(progress * Math.PI) * monster.jump;
+      var elapsed = now - monster.start;
+      var progress;
+      var hopIndex;
+      var hopProgress;
+      var fromProgress;
+      var toProgress;
+      var hopEase;
+      var fromX;
+      var toX;
+      var x;
+      var y;
+      var idleBob;
 
-      monster.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      if (!monster.spawned && now >= monster.spawnAt) {
+        monster.spawned = true;
+        monster.node.classList.remove('is-awaiting-spawn');
+        monster.node.classList.add('is-spawning');
+        createMonsterSpawnEffect(monster);
+
+        window.setTimeout(function () {
+          monster.node.classList.remove('is-spawning');
+        }, monsterSpawnDuration + 80);
+      }
+
+      if (elapsed < 0) {
+        monster.node.style.transform = 'translate(' + monster.startX + 'px, ' + monster.groundY + 'px)';
+        return;
+      }
+
+      hopIndex = Math.min(monster.hopCount - 1, Math.floor(elapsed / monster.hopDuration));
+      hopProgress = clamp((elapsed - hopIndex * monster.hopDuration) / monster.hopDuration, 0, 1);
+      fromProgress = hopIndex / monster.hopCount;
+      toProgress = (hopIndex + 1) / monster.hopCount;
+      hopEase = easeInOut(hopProgress);
+      fromX = monster.startX + (monster.endX - monster.startX) * fromProgress;
+      toX = monster.startX + (monster.endX - monster.startX) * toProgress;
+      x = Math.round(fromX + (toX - fromX) * hopEase);
+      y = Math.round(monster.groundY - Math.sin(hopProgress * Math.PI) * monster.jump * (hopIndex === 0 ? 1.08 : 1));
+      progress = clamp(elapsed / monster.duration, 0, 1);
 
       if (progress >= 1) {
-        escapeMonster(monster);
+        if (!monster.settledAt) {
+          monster.settledAt = now;
+          monster.node.classList.add('is-idling');
+        }
+
+        idleBob = monsterIdleBob(monster.type, now - monster.settledAt);
+        monster.node.style.transform = 'translate(' + Math.round(monster.endX) + 'px, ' + (Math.round(monster.groundY) + idleBob) + 'px)';
+
+        if (now - monster.settledAt >= monster.idleFor) {
+          escapeMonster(monster);
+        }
+
+        return;
       }
+
+      monster.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
     }
 
     function loop(now) {
@@ -598,42 +901,33 @@
       if (!rafId) rafId = window.requestAnimationFrame(loop);
     }
 
-    footer.addEventListener('mouseenter', function (event) {
-      var footerRect = footer.getBoundingClientRect();
-
+    stage.addEventListener('mouseenter', function (event) {
       active = true;
-      footer.classList.add('is-magic-zone');
+      stage.classList.add('is-magic-zone');
       wand.classList.add('is-visible');
       updateWand(event);
-      maintainMonsters(true);
-
-      if (liveMonsterCount() < maxMonsters) {
-        spawnMonster({
-          quick: true,
-          targetX: event.clientX - footerRect.left + randomBetween(-120, 120)
-        });
-      }
-
       startLoop();
     });
 
-    footer.addEventListener('mousemove', function (event) {
+    stage.addEventListener('mousemove', function (event) {
       if (!active) return;
       updateWand(event);
     });
 
-    footer.addEventListener('click', function (event) {
-      if (!active) return;
+    document.addEventListener('footer:magic-cast', function (event) {
+      if (!event.detail) return;
 
-      event.preventDefault();
-      event.stopPropagation();
-      updateWand(event);
-      createMagicPit(event);
+      updateWand(event.detail);
+      createMagicPit(event.detail);
     });
 
-    footer.addEventListener('mouseleave', function () {
+    stage.addEventListener('click', function (event) {
+      if (event.button === 0) event.preventDefault();
+    });
+
+    stage.addEventListener('mouseleave', function () {
       active = false;
-      footer.classList.remove('is-magic-zone');
+      stage.classList.remove('is-magic-zone');
       wand.classList.remove('is-visible', 'is-casting');
     });
 
@@ -715,7 +1009,14 @@
       '/img/pixel-medieval/hero-castle-day.png',
       '/img/pixel-medieval/hero-castle.png',
       '/img/pixel-medieval/grassland-layout.png',
-      '/img/pixel-medieval/forest-layout.png'
+      '/img/pixel-medieval/forest-layout.png',
+      '/anim/lightning_strike_sheet.png?v=9',
+      '/anim/ghost_move_sheet.png?v=32',
+      '/anim/ghost_idle_sheet.png?v=32',
+      '/anim/ghost_death_sheet.png?v=32',
+      '/anim/flame_move_sheet.png?v=32',
+      '/anim/flame_idle_sheet.png?v=32',
+      '/anim/flame_death_sheet.png?v=32'
     ];
 
     if (themeAssetsPreloaded || typeof window.Image !== 'function') return;
