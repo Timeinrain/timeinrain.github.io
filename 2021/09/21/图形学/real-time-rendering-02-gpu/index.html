@@ -1,0 +1,786 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《Real-Time Rendering》读书笔记（二） GPU | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="原文：知乎专栏  目录 Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《Real-Time Rendering》读书笔记（二） GPU">
+<meta property="og:url" content="https://timeinrain.github.io/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/index.html">
+<meta property="og:site_name" content="Timeinrain&#39;s Blog">
+<meta property="og:description" content="原文：知乎专栏  目录 Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://timeinrain.github.io/img/graphics/real-time-rendering-02-gpu/cover.jpg">
+<meta property="article:published_time" content="2021-09-21T12:35:20.000Z">
+<meta property="article:modified_time" content="2021-09-21T12:35:20.000Z">
+<meta property="article:author" content="timeinrain">
+<meta property="article:tag" content="Real-Time Rendering">
+<meta property="article:tag" content="图形学">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://timeinrain.github.io/img/graphics/real-time-rendering-02-gpu/cover.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "《Real-Time Rendering》读书笔记（二） GPU",
+  "url": "https://timeinrain.github.io/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/",
+  "image": "https://timeinrain.github.io/img/graphics/real-time-rendering-02-gpu/cover.jpg",
+  "datePublished": "2021-09-21T12:35:20.000Z",
+  "dateModified": "2021-09-21T12:35:20.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "timeinrain",
+      "url": "https://timeinrain.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://timeinrain.github.io/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d1110')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#211a13')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"You have switched to Traditional Chinese","cht_to_chs":"You have switched to Simplified Chinese","day_to_night":"You have switched to Dark Mode","night_to_day":"You have switched to Light Mode","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '《Real-Time Rendering》读书笔记（二） GPU',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/graphics/real-time-rendering-02-gpu/cover.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo"><span class="site-name">Timeinrain's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">《Real-Time Rendering》读书笔记（二） GPU</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">《Real-Time Rendering》读书笔记（二） GPU</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2021-09-21T12:35:20.000Z" title="Created 2021-09-21 20:35:20">2021-09-21</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2021-09-21T12:35:20.000Z" title="Updated 2021-09-21 20:35:20">2021-09-21</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>15mins</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>原文：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/412511947">知乎专栏</a></p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li>Overview</li>
+<li>数据并行架构</li>
+<li>GPU管线</li>
+<li>Programmable Shader Stage</li>
+<li>可编程Shading及API的演变</li>
+<li>Vertex Shader</li>
+<li>Tessellation Stage</li>
+<li>Geometry Shader</li>
+<li>Pixel Shader</li>
+<li>Merging Stage</li>
+<li>Compute Shader</li>
+</ul>
+<h3 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h3><p>在早期，由于图像生成过程包含十分频繁的各种操作，GPU应运而生。</p>
+<p>在速度上，GPU的计算速度是胜于CPU的。纵观GPU发展，其可编程性和可配置性都在逐步地提升，朝着Programmability和Flexibility的方向迈进，为图形编程人员提供了大量的可能。</p>
+<p>GPU的速度优势主要来源于对大量高平行化任务的集中计算。例如有固定硬件支持z-buffer的实现，支持快速贴图存取及其他buffer的存取以及快速计算triangle traversal等功能。</p>
+<p>Shader Core则是一些处理相对独立的微小处理器，例如坐标变换处理，颜色计算处理等。</p>
+<p>但同时，延迟也是在设计处理器时不可缺少的考虑因素，处理数据的inout时将会造成处理器的卡滞，这将会对性能有一定影响。</p>
+<h3 id="数据并行架构"><a href="#数据并行架构" class="headerlink" title="数据并行架构"></a>数据并行架构</h3><p>CPU拥有多个处理器，但通常按序列进行执行。为了降低延迟，许多CPU都拥有局部缓存，并拥有许多防止性能下降（stall）的多种技术手段。</p>
+<p>然而GPU却多是拥有着极多的处理器，并被称作<em><strong>Shader Cores</strong></em>。由于数据的相似程度高，这些数据可以由GPU执行并行处理。</p>
+<p>同时，这些指令调用又基本相互独立，并不十分需要共同的内存或者相互之间的数据共通。GPU对吞吐量进行优化，即数据处理的最大效率。由于没有设置足够的cache以及薄弱的逻辑控制，shader core的延迟总是比CPU来得严重。</p>
+<p>但我们可以通过SIMD（Single Instruction Multiple Data）思想，来缓解latency。定义上来说，每一个pixel shader的调用指令可以被称作一个thread，不同于CPU中的thread，该thread由一小块包含输入的空间，以及执行所需计算需要的寄存器组成。多个使用同一shader program的thread汇聚成股，在NVIDIA中被称作<em><strong>warps</strong></em>，在AMD中被称作<em><strong>wavefronts</strong></em>。而这些warp执行的shader program采用lock-step的方式。由于执行相同指令，故当遇到内存存取时，所有的thread都同样面临该问题。避免停滞，此时GPU将会更换为另一组warp进行处理，而先前的warp继续存取内存。如此往复，当处理好最后一组warp的时候，最先的warp的存取已经结束，此时再换位第一组warp继续执行指令。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-01.jpg" alt="图"></p>
+<h3 id="GPU管线"><a href="#GPU管线" class="headerlink" title="GPU管线"></a>GPU管线</h3><p>在先前引出的GPU的概念模型在具体实现时由不同的生产商自行决定实现方式，例如某些fixed-function的阶段有可能在添加一些附加指令之后变成了可配置等。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-02.jpg" alt="图"></p>
+<p>GPU实现了如上图显示的诸多功能，有些可配置，有些可编程，虚线标识的即为可选阶段。</p>
+<p><strong>Vertex Shader</strong>是完全可编程的，主要用于实现几何处理阶段。Tessellation和Geometry Shader都是可选择的阶段，但在某些GPU上是不支持的（例如某些移动端）。</p>
+<p><strong>Clipping</strong>阶段以及<strong>Triangle Setup &amp; Triangle Traversal</strong>都是固定功能阶段在硬件层面实现的。</p>
+<p><strong>Screen Mapping</strong>则由窗口以及视角设置影响，是可配置的部分。</p>
+<p><strong>Pixel Shader</strong>则是完全可编程的，尽管<strong>Merger</strong>阶段并非可编程，但其也是高度可配置的。</p>
+<h3 id="Programmable-Shader-Stage"><a href="#Programmable-Shader-Stage" class="headerlink" title="Programmable Shader Stage"></a>Programmable Shader Stage</h3><p>现代着色器程序使用的是统一着色器设计理念。所有的顶点、像素、几何等着色器使用共同的编程模型。</p>
+<p>它们拥有一套相同的<strong>Instruction Set Architecture（ISA）</strong>，实现该模型的处理器被称作<strong>Common-Shader Core</strong>，拥有这种Common-Shader Core的GPU则被称作拥有统一着色架构。用以根据不同的需求，由于都是使用Common-Shader Core，因此可以让GPU分配任务来均衡负载。</p>
+<p>基本数据类型是32位单精度浮点型标向量。</p>
+<p><em><strong>draw call</strong></em>意为绘制一组图元的指令，将会使得调用并执行一系列绘制这组图元需要的shader。</p>
+<p>每个可编程shader都拥有自己的两种输入：</p>
+<ul>
+<li><em><strong>uniform</strong></em><br>意为该输入在整个draw call过程中，不会有值的改变。</li>
+<li><em><strong>varying</strong></em><br>从三角形顶点或者光栅化中得到的输入。</li>
+</ul>
+<p>shader虚拟机提供多种特殊寄存器来存储各种不同的输入输出。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-03.jpg" alt="图"></p>
+<p>可以看到，varying input寄存器的大小比constant input寄存器的大小要小得多，这是由于varying input需要根据每个顶点或者像素分别存储，而自然就有它们本身大小的约束，但在一整个draw call中，constant input总是多次被用到。</p>
+<p>flow control 则是用于指令分支，主要与<strong>if</strong>以及<strong>case</strong>有关。Shader拥有与<em>uniform</em>输入相关的<em><strong>static flow control</strong></em>以及与<em>varying</em>输入相关的<em><strong>dynamic flow control</strong></em>。</p>
+<h3 id="可编程Shading及API的演变"><a href="#可编程Shading及API的演变" class="headerlink" title="可编程Shading及API的演变"></a>可编程Shading及API的演变</h3><p><img src="/img/graphics/real-time-rendering-02-gpu/image-04.jpg" alt="图"></p>
+<h3 id="Vertex-Shader"><a href="#Vertex-Shader" class="headerlink" title="Vertex Shader"></a>Vertex Shader</h3><p>顶点着色器是管线中的第一个着色器。</p>
+<p>三角形mesh主要由在模型表面相互联系的顶点构成，除此之外还可传入可选属性例如三角形的颜色、uv坐标、表面法线等。</p>
+<p>此处，三角形的表面法线并非由表面记录，而是记录在顶点上，而在渲染时，三角形mesh倾向于表示一个曲面，顶点法线仅用于表示该mesh的表面朝向，而非mesh本身的法线。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-05.jpg" alt="图"></p>
+<p>顶点着色器必须至少输出顶点的位置。</p>
+<p>顶点着色器并不能创造或者销毁顶点，并且由一个顶点生成的数据也不能传递给其他顶点，每个顶点都是独立处理的，因此达到并行。</p>
+<p>在vertex shader执行前通常会有输入聚合操作，实际上，获取数据并创建顶点在vertex shader层面实现，并对程序员不可见。</p>
+<p>一般来说，vertex shader输出的数据将会被传输到下一个阶段进行光栅化再是片段处理，但一些GPU也有tessellation及geometry shader阶段，在此阶段对这些数据有进一步处理。</p>
+<h3 id="Tessellation-Stage"><a href="#Tessellation-Stage" class="headerlink" title="Tessellation Stage"></a>Tessellation Stage</h3><p>Tessellation 阶段的存在允许我们渲染曲线表面。</p>
+<p>例如此阶段，GPU将曲线的隐式描述式转化为一系列显示的三角形数据，毕竟输送曲面描述式的准确程度大于直接传输三角形数据。</p>
+<p>同时，tessellation还能避免在某些情况下CPU与GPU之间的交流成为性能瓶颈，例如某些一直在变换形状的动画角色或物件。</p>
+<p>Tessellation可以根据摄像机视角的参数来对特定曲面以精度来生成三角形，同时估计质量与效率，即LOD技术（Level Of Detail）。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-06.jpg" alt="图"></p>
+<p>Tessellation阶段通常由三种元素构成：</p>
+<ul>
+<li>Hull Shader</li>
+<li>Tessellator</li>
+<li>Domain Shader</li>
+</ul>
+<h3 id="Hull-Shader"><a href="#Hull-Shader" class="headerlink" title="Hull Shader"></a><strong>Hull Shader</strong></h3><p>Hull Shader主要有两个功能：</p>
+<ul>
+<li>告知Tessellator应该以什么配置生成多少三角形</li>
+<li>对控制点进行处理</li>
+</ul>
+<p>同时，Hull shader也可选择对输入的表达式进行修改，或增加删除控制点等。然后Hull shader将会把control point数据与tessellation 控制数据一同输入到domain shader进行处理。</p>
+<h3 id="Tessellator"><a href="#Tessellator" class="headerlink" title="Tessellator"></a><strong>Tessellator</strong></h3><p>Tessellator是仅在tessellation中存在的固定功能阶段。</p>
+<p>它主要根据hull shader给出的信息，为传入的数据增加顶点，以便后续domain shader进行处理。</p>
+<p>信息包括：</p>
+<ul>
+<li>tessellation实施的表面类型：triangle、quadrilateral或是isoline</li>
+<li>tessellation factors</li>
+</ul>
+<p>其中，isoline主用于渲染毛发。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-07.jpg" alt="图"></p>
+<p>tessellation factors主要控制细分程度，它由内部及外部factor组成。内部factor主要决定每个三角面或者四边面将会被细分多少次，而外部factor主要决定边缘将会被分割多少次。</p>
+<p>通过允许分离控制，相邻的曲面边缘匹配，避免出现破面等现象。</p>
+<p>hull shader也可以通过设定外部tessellation factor为0或NaN来使tessellator放弃该输入。</p>
+<h3 id="Domain-Shader"><a href="#Domain-Shader" class="headerlink" title="Domain Shader"></a><strong>Domain Shader</strong></h3><p>domain shader则是利用先前传入的表面数据计算每个输出顶点的值，与vertex shader类似，domain shader的输入与输出一一对应，然后传递至管线之中。</p>
+<p>尽管系统听起来十分复杂，但其旨在高效且解放每个shader的功能复杂度。</p>
+<p>传递给hull shader的数据也经常不会经过任何二次修改，仅仅是简单地将其pass到下一个阶段。</p>
+<p>同时，该shader也被用于根据估计距离及屏幕大小来优化渲染，例如在渲染某些平原表面时。</p>
+<p>tessellator一般产生新顶点，告知其位置、组成的图元等数据。</p>
+<p>domain shader利用生成的点的重心坐标经由其表达式来生成这些顶点的位置信息、法向信息以及uv等vertex数据。</p>
+<h3 id="Geometry-Shader"><a href="#Geometry-Shader" class="headerlink" title="Geometry Shader"></a>Geometry Shader</h3><p>几何着色器可以将图元转变成另一种图元，这是Tessellation阶段无法完成的。</p>
+<p>例如将三角形通过创建line edge来以wireframe的形式渲染，然后再用总是面对摄像机的四边面代替line edge来模拟加粗的wireframe。</p>
+<p>geometry shader的输入是单个object以及与其有联系的顶点。</p>
+<p>这些object主要可能是一组三角形、线段或仅仅只是一个点。</p>
+<p>例如，每个三角形可以多输入三个相邻点，每个折线即可以使用两个相邻顶点进行处理。在DX11 SM5.0的环境下，甚至可以输入高达32个控制点的patch。（原文中提到因此Tessellation stage 对于生成patch更有效率，不知为何）</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-08.jpg" alt="图"></p>
+<p>几何着色器可以输出零或多个顶点数据，通常被认作是点、折线或三角形集。但几何着色器也可以什么都不生成，那么一个mesh就可以选择性地通过编辑顶点、增删图元来进行修改。</p>
+<p>**Geometry Shader被设计为修饰输入数据或生成有限数目的数据复制。**例如，可以通过复制生成cube map的六个面，也可高效地生成级联阴影映射以及一些生成可变大小的粒子、生成毛发以及在阴影相关算法中寻找物体边缘等。</p>
+<p>Geometry Shader也可以输出至多4个流数据，其中一个stream被传输至管线中，而其他的则可以输出到Render Target中用于其他用途。</p>
+<p>geometry shader严格地保证输入输出地图元顺序，尽管这将会需要额外的顺序控制进而对性能有一定影响。</p>
+<p>在draw call过程中，总共有三个部分可以进行工作创建：光栅化、细分阶段以及几何着色阶段。就资源及内存需求而言，集合着色器由于其高度可编程化，它的资源及内存需求用量是最不可预测的，因此并不十分鼓励使用，尤其涉及到移动端设备开发时。</p>
+<h3 id="Stream-Output"><a href="#Stream-Output" class="headerlink" title="Stream Output"></a><strong>Stream Output</strong></h3><p>标准状况下，GPU管线的数据传输从vertex shader到光栅化然后再是pixel shader，<em><strong>Stream Output</strong></em>的思想将在经过vertex shader 处理之后的顶点数据输出，不仅如此，光栅化阶段甚至可以完全被关闭，整个管线仅仅被用于一个非图形化功能的数据流处理器。</p>
+<p>传回的数据带来了交互式处理的可能，这些操作在流水模拟及其他粒子系统效果中十分有用。</p>
+<p>stream output传回的数据是浮点数的格式，因此会有一定程度的内存损耗。此外，stream output以图元为单位，而非顶点。如果此时输入一个mesh，在处理时多个三角形划分成多个顶点，三角形中共用点的信息将完全丢失，为此，更普遍的做法是将顶点作为图元集合输送。</p>
+<p>stream output的输入输出顺序也是得到保证的。</p>
+<h3 id="Pixel-Shader"><a href="#Pixel-Shader" class="headerlink" title="Pixel Shader"></a>Pixel Shader</h3><p>在顶点着色、细分以及集合着色完成之后，图元经由裁剪阶段然后进行光栅化操作。此些阶段都是相对而言为fixed-function阶段，但同时给予了一定程度的配置性。</p>
+<p>rasterizer则粗略地计算三角形以何种程度遮蔽某个像素格子。</p>
+<p>部分或完全遮蔽某像素的三角形部分被称作为fragment，即片段。</p>
+<p>三角形顶点存储的数据例如z-value等经由三角形表面在每个像素点上进行插值之后，被传递到pixel shader中进行处理。</p>
+<p>三角形数据的插值类型是由pixel shader指定的，一般情况下使用透视正确的插值方法，也有其他诸如屏幕空间的插值方法。</p>
+<p>在编程方面，经由插值的顶点数据的输出即是pixel shader的输入。此阶段，很多其他数据此时被暴露给GPU，例如screen position、可见性标志等。</p>
+<p>通常情况下，pixel shader计算得到该片段的颜色值，产生一个不透明颜色值或者选择性修改深度值，然后在merge阶段再处理最终颜色值。在pixel shader阶段我们也可以修改光栅化阶段产生的z值。模板测试buffer则通常不可修改，但可以被传入到merge阶段，DX11.3已经支持修改该值。在SM4.0中，雾计算以及透明度测试阶段已经从merge阶段迁移到了pixel shader 阶段。</p>
+<p>pixel shader同时也可以选择性不输出某些数据，例如clip plane：</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-09.jpg" alt="图"></p>
+<p>最初，pixel shader仅仅能将输入传输到merge 阶段，但随着发展，越来越多的指令可以在此阶段执行。由此，***Multiple Render Targets(MRT)***的理念应运而生。</p>
+<p>不同于直接将数据存储至颜色buffer或者z-buffer中，每个片段将可以生成多个不同类型的值输出到不同的buffer中，这些buffer被称作render target。</p>
+<p>render target通常拥有x-axis以及y-axis，不同的API支持不同的大小，数量也是4-8个不等。</p>
+<p>但尽管有着这些限制，MRT的功能依然十分强大。例如在一个pass中，可以选择输出color、物体标识以及世界坐标距离分别到不同的Render Target中。</p>
+<p>MRT的产生同时带来了一种新的渲染管线的出现，即为<strong>deferred shading</strong>延迟渲染。</p>
+<p>延迟渲染将可见性和着色分在不同的pass中处理。第一个pass将物体的位置材质存储到g-buffer中，第二个pass再进行光照以及其他效果的处理。</p>
+<p>pixel shader的局限性在于，它仅可以写获得到的那个片段数据，并不能读取近邻像素的数据，因此在pixel shader阶段，某个fragment不能直接将它的数据输出给临近的片段使用，同样也无法读取到临近片段的数据。但尽管如此，依然有许多其他方法弥补该不足，例如在这个pass中输出的数据可以在下一个pass中进行使用，亦或者可以使用image processing的手段来进行图像层面的处理。</p>
+<p>但也有例外，pixel shader可以间接地获取到临近片段的值。它们可以从梯度或者差分信息中直接获取到图像的临近片段变化这一信息，进而得知临近片段数据。</p>
+<p>而这种信息是在插值过程中每一片段的值在临近沿着x、y坐标变化时变化中产生的。</p>
+<p>（由于较为难以理解，放上原文：One is that the pixel shader can immediately access information for adjacent fragments during the computation of gradient or derivative information. The pixel shader is provided with the amounts by which any interpolated value changes per pixel along the x and y screen axes.）</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-10.jpg" alt="图"></p>
+<p>这类信息在纹理映射部分将会起到较大作用，例如纹理过滤。</p>
+<p>现代GPU通过使用2x2一组的fragment进行处理来实现以上特性。</p>
+<p>unified core 拥有着这种存储相邻数据的空间，它利用一组warp中的不同thread来存储这类数据。</p>
+<p>但也因此，这种梯度信息无法被有dynamic flow control的部分的shader获取到，因为在一组中的fragment必须都由共同的指令集处理，若有dynamic控制将会导致最后获取到的梯度信息无意义。</p>
+<p>DX11通过引进<em>Unordered Access View(UAV)<em>来支持随机位置的写访问权限，OpenGL将其命名为</em>Shader Storage Buffer Object(SSBO)</em>。由于pixel shader并行且无序执行，这种UAV是在其间共享的。</p>
+<p>同样，为了防止同时写的冲突操作造成数据丢失，GPU采用了原子操作定义的方式来避免同时写，但同时也带来了一定的阻滞（stall）可能。</p>
+<p>但即便有了原子操作，依然无法避免处理的乱序，在某些透明度物体层序渲染时会造成不理想的结果。在标准管线中，这些fragment将被在merger阶段重新排序。DX11.3引进了*Rasterizer order views(ROVs)*来确保fragment的处理顺序。与UAV类似，它允许随机读写，但不同之处在于它严格按照恰当的顺序来组织数据。在此阶段，若以恰当的方式来进行blending操作，则在merge阶段便不需要再做任何事情了，但若检测到有乱序存取，那么pixel shader便只能处于忙闲等待其之前的三角形处理完毕。</p>
+<h3 id="Merging-Stage"><a href="#Merging-Stage" class="headerlink" title="Merging Stage"></a>Merging Stage</h3><p>Merging Stage利用深度信息颜色信息等最终合并到frame buffer中作为最终的输出。</p>
+<p>此阶段，模板测试以及深度测试将派上用场。若可见性测试通过，则进行blending操作，通常情况下，对于不透明物体仅仅是颜色的替代。而真正的blending则是对于一些半透明物体及合成效果而言的。</p>
+<p>但考虑如下情况，在经历之前的各种shader操作之后发现该fragment其实并不可见，岂不是浪费了很多资源。因此，有许多GPU利用early-z方法来降低这种消耗。</p>
+<p>在pixel shader执行之前，先利用z-buffer比对筛去无用fragment，以降低pixel shader的资源浪费的方法被称作early-z方法。但若pixel shader中有选择改变z值或者抛弃某个fragment的操作，那么此ealry-z方法将不再适用。</p>
+<p>merging 阶段覆盖了从fixed-function阶段到fully-programmable的阶段，merging阶段尽管不可编程，但其是高度可配置的。</p>
+<p>例如我们可以利用颜色属性以及alpha值通过各种加减乘除的组合甚至比特位逻辑操作来混合颜色，来达到例如遮罩、透明度叠加、减色、正片叠底等图像效果。</p>
+<p>DX10允许两个颜色源与frame-buffer上的颜色进行blend，尽管无法与MRT适配。MRT有着其他的跨render target的blend手段。</p>
+<h3 id="Compute-Shader"><a href="#Compute-Shader" class="headerlink" title="Compute Shader"></a>Compute Shader</h3><p>相比于实现图形效果，GPU亦可以用于非图形领域计算，典型的即为深度学习神经网络训练。</p>
+<p>CUDA及OpenCL等平台将GPU用作一个强大的并行处理器。</p>
+<p>Compute Shader被以线程组的方式执行以保证同一组内的所有threads是同步执行。</p>
+<p>此外，由于CPU与GPU之间的交流不及GPU内部交流来得迅速，Compute Shader也有着性能方面的优势，因为其可以更加快速地获取到由GPU产生的数据，而不需要被GPU与CPU的交流延迟所影响。因此后处理效果也是Compute Shader的一个常用技术。</p>
+<p>Compute Shader在粒子系统中也依然十分有用，Compute Shader也便利了一系列mesh层面的操作，例如面部表情动画、裁剪网格、图像滤波、深度精度、阴影、景深等。</p>
+<p><img src="/img/graphics/real-time-rendering-02-gpu/image-11.jpg" alt="图"></p>
+<hr>
+<p>作者：randyczhang</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a><a class="post-meta__tags" href="/tags/Real-Time-Rendering/">Real-Time Rendering</a></div><div class="post-share"><div class="social-share" data-image="/img/graphics/real-time-rendering-02-gpu/cover.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - (\bold v &#x3D; (v_x\ v_y\ v_z\ 1)^T) Vector- (\bold v &#x3D; (v_x\ v_y\ v_z\ 0)^T) 所有的平移、旋转、缩放...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img class="cover" src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">《Real-Time Rendering》读书笔记（一） 渲染管线</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 整体架构 Application Geometry Processing Rasterization Pixel Processing Summary  整体架构渲染管线可以分为以下四个部分：   渲染速度可以用 frames per second(FPS)来定义。 采用流水线形式的渲染流程将由耗时最大的一个环节决定整体图像的渲染速度。因此，我们需要着重解决该瓶颈问题。  Application Stage应用程序阶段，由于基本在CPU上执行，故用户对此阶段有着完全控制。因此，若在此阶段实施一些优化，对后续的执行效率也会有比较大的帮助。 不过，某些采用Compute Shader的工作也被称为Application Stage，与在CPU上执行不同，该shader在GPU上执行，并将GPU视作高并行能力的处理器。 例如，碰撞检测将会在此阶段进行，输入输出响应、加速算法等渲染管线无法直接很好地处理的过程都会在此阶段实现。 Geometry Processing几何处理阶段主要分为以下四个substage：  Vertex Shading顶点着色需要解决两个...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img class="cover" src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-10-19</div><div class="info-item-2">《Real-Time Rendering》读书笔记（四）Shading Basics</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模型确定材质表现的首要步骤即是确定着色模型，着色模型即描述物体在一系列因素下表现出的颜色等。 着色模型通常有着一系列控制表面表现的属性例如表面颜色、顶点法向等，在选定着色模型之后紧接着就要指定这些属性。 通常情况下，一些重要的参数例如法向、光线方向等都以单位向量表示：  两个向量的夹角的余弦值大小即为两向量的对齐程度。 方程 $$\bold r &#x3D; 2(\bold n \cdot \bold l)\bold n - \bold l$$ 计算了理想反射方向，其中 r 为理想反射方向、 n 为法线法向、 l 为入射方向。 光源在现实中，光源往往十分复杂。自然界有多种不同大小、颜色、形状...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-00-catalog/" title="《Real-Time Rendering》读书笔记（目录）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（目录）</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 渲染管线 GPU Transforms Shading基础 Texturing Shadows 光照和颜色 基于物理的着色 Local Illumination Global Illumination Image-Space Effects Beyond Polygons Volumetric and Translucency Rendering 非真实感渲染 Polygonal Techniques Curves and Curved Surfaces Pipeline Optimization 加速算法 Efficient Shading 虚拟现实与增强现实 求交检测 图形硬件 未来展望   </div></div></div></a><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-26</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - (\bold v &#x3D; (v_x\ v_y\ v_z\ 1)^T) Vector- (\bold v &#x3D; (v_x\ v_y\ v_z\ 0)^T) 所有的平移、旋转、缩放...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img class="cover" src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（一） 渲染管线</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 整体架构 Application Geometry Processing Rasterization Pixel Processing Summary  整体架构渲染管线可以分为以下四个部分：   渲染速度可以用 frames per second(FPS)来定义。 采用流水线形式的渲染流程将由耗时最大的一个环节决定整体图像的渲染速度。因此，我们需要着重解决该瓶颈问题。  Application Stage应用程序阶段，由于基本在CPU上执行，故用户对此阶段有着完全控制。因此，若在此阶段实施一些优化，对后续的执行效率也会有比较大的帮助。 不过，某些采用Compute Shader的工作也被称为Application Stage，与在CPU上执行不同，该shader在GPU上执行，并将GPU视作高并行能力的处理器。 例如，碰撞检测将会在此阶段进行，输入输出响应、加速算法等渲染管线无法直接很好地处理的过程都会在此阶段实现。 Geometry Processing几何处理阶段主要分为以下四个substage：  Vertex Shading顶点着色需要解决两个...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>#card-visitor-map{display:none}</style>
+<div id="visitor-map-box" style="text-align:center;max-width:100%;overflow:hidden"></div>
+<script>
+(function () {
+  function syncVisitorMap () {
+    var card = document.getElementById('card-visitor-map')
+    var box = document.getElementById('visitor-map-box')
+    if (!card || !box) return
+    var home = !!document.getElementById('recent-posts')
+    card.style.display = home ? 'block' : 'none'
+    if (!home || box.dataset.mapLoaded) return
+    box.dataset.mapLoaded = '1'
+    var s = document.createElement('script')
+    s.type = 'text/javascript'
+    s.id = 'mmvst_globe'
+    s.src = 'https://mapmyvisitors.com/globe.js?d=lQIKiewKrqplSOJrDPKvAkx4IXPe0l9zHMbPb5vB4Fw'
+    box.appendChild(s)
+  }
+  syncVisitorMap()
+  document.addEventListener('pjax:complete', syncVisitorMap)
+})()
+</script>
+</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">目录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview"><span class="toc-number">1.1.</span> <span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">数据并行架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GPU%E7%AE%A1%E7%BA%BF"><span class="toc-number">1.3.</span> <span class="toc-text">GPU管线</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Programmable-Shader-Stage"><span class="toc-number">1.4.</span> <span class="toc-text">Programmable Shader Stage</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E7%BC%96%E7%A8%8BShading%E5%8F%8AAPI%E7%9A%84%E6%BC%94%E5%8F%98"><span class="toc-number">1.5.</span> <span class="toc-text">可编程Shading及API的演变</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Vertex-Shader"><span class="toc-number">1.6.</span> <span class="toc-text">Vertex Shader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tessellation-Stage"><span class="toc-number">1.7.</span> <span class="toc-text">Tessellation Stage</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hull-Shader"><span class="toc-number">1.8.</span> <span class="toc-text">Hull Shader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tessellator"><span class="toc-number">1.9.</span> <span class="toc-text">Tessellator</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Domain-Shader"><span class="toc-number">1.10.</span> <span class="toc-text">Domain Shader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Geometry-Shader"><span class="toc-number">1.11.</span> <span class="toc-text">Geometry Shader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Stream-Output"><span class="toc-number">1.12.</span> <span class="toc-text">Stream Output</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pixel-Shader"><span class="toc-number">1.13.</span> <span class="toc-text">Pixel Shader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Merging-Stage"><span class="toc-number">1.14.</span> <span class="toc-text">Merging Stage</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Compute-Shader"><span class="toc-number">1.15.</span> <span class="toc-text">Compute Shader</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/12/hello-world/" title="Hello World">Hello World</a><time datetime="2026-05-12T10:59:06.287Z" title="Created 2026-05-12 18:59:06">2026-05-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（四）Shading Basics"/></a><div class="content"><a class="title" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics">《Real-Time Rendering》读书笔记（四）Shading Basics</a><time datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（三） Transforms"/></a><div class="content"><a class="title" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms">《Real-Time Rendering》读书笔记（三） Transforms</a><time datetime="2021-09-26T09:43:01.000Z" title="Created 2021-09-26 17:43:01">2021-09-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（二） GPU"/></a><div class="content"><a class="title" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU">《Real-Time Rendering》读书笔记（二） GPU</a><time datetime="2021-09-21T12:35:20.000Z" title="Created 2021-09-21 20:35:20">2021-09-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（一） 渲染管线"/></a><div class="content"><a class="title" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线">《Real-Time Rendering》读书笔记（一） 渲染管线</a><time datetime="2021-09-14T12:26:28.000Z" title="Created 2021-09-14 20:26:28">2021-09-14</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/graphics/real-time-rendering-02-gpu/cover.jpg);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  const init = (el = document, path = location.pathname) => {
+    twikoo.init({
+      el: el.querySelector('#twikoo-wrap'),
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      },
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || path
+    })
+
+    
+
+    isShuoshuo && (window.shuoshuoComment.destroyTwikoo = () => {
+      if (el.children.length) {
+        el.innerHTML = ''
+        el.classList.add('no-comment')
+      }
+    })
+  }
+
+  const loadTwikoo = (el, path) => {
+    if (typeof twikoo === 'object') setTimeout(() => init(el, path), 0)
+    else btf.getScript('https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js').then(() => init(el, path))
+  }
+
+  if (isShuoshuo) {
+    'Twikoo' === 'Twikoo'
+      ? window.shuoshuoComment = { loadComment: loadTwikoo }
+      : window.loadOtherComment = loadTwikoo
+    return
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo()
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><script src="/js/fantasy-pixel.js"></script><script src="/js/live2d-kanban.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="Search for Posts" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div></body></html>

@@ -1,0 +1,987 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《Real-Time Rendering》读书笔记（三） Transforms | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《Real-Time Rendering》读书笔记（三） Transforms">
+<meta property="og:url" content="https://timeinrain.github.io/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/index.html">
+<meta property="og:site_name" content="Timeinrain&#39;s Blog">
+<meta property="og:description" content="原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://timeinrain.github.io/img/graphics/real-time-rendering-03-transforms/cover.jpg">
+<meta property="article:published_time" content="2021-09-26T09:43:01.000Z">
+<meta property="article:modified_time" content="2021-09-28T06:36:53.000Z">
+<meta property="article:author" content="timeinrain">
+<meta property="article:tag" content="Real-Time Rendering">
+<meta property="article:tag" content="图形学">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://timeinrain.github.io/img/graphics/real-time-rendering-03-transforms/cover.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "《Real-Time Rendering》读书笔记（三） Transforms",
+  "url": "https://timeinrain.github.io/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/",
+  "image": "https://timeinrain.github.io/img/graphics/real-time-rendering-03-transforms/cover.jpg",
+  "datePublished": "2021-09-26T09:43:01.000Z",
+  "dateModified": "2021-09-28T06:36:53.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "timeinrain",
+      "url": "https://timeinrain.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://timeinrain.github.io/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d1110')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#211a13')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"You have switched to Traditional Chinese","cht_to_chs":"You have switched to Simplified Chinese","day_to_night":"You have switched to Dark Mode","night_to_day":"You have switched to Light Mode","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '《Real-Time Rendering》读书笔记（三） Transforms',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/graphics/real-time-rendering-03-transforms/cover.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo"><span class="site-name">Timeinrain's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">《Real-Time Rendering》读书笔记（三） Transforms</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">《Real-Time Rendering》读书笔记（三） Transforms</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2021-09-26T09:43:01.000Z" title="Created 2021-09-26 17:43:01">2021-09-26</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2021-09-28T06:36:53.000Z" title="Updated 2021-09-28 14:36:53">2021-09-28</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">8.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>29mins</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>原文：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/414231222">知乎专栏</a></p>
+</blockquote>
+<p><strong>目录</strong></p>
+<ul>
+<li>Overview</li>
+<li>基础变换</li>
+<li>特殊矩阵变换及操作</li>
+<li>四元数</li>
+<li>顶点融合</li>
+<li>Morphing（变形）</li>
+<li>Geometry Cache Playback</li>
+<li>投影</li>
+</ul>
+<h3 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h3><p>Transform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。</p>
+<p>Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。</p>
+<p>Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。</p>
+<p><strong>因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。</strong></p>
+<p>为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。</p>
+<p>其中，向量的第四个维度是0，而点的第四个维度为1。</p>
+<p>Point - (\bold v &#x3D; (v_x\ v_y\ v_z\ 1)^T)</p>
+<p>Vector- (\bold v &#x3D; (v_x\ v_y\ v_z\ 0)^T)</p>
+<p>所有的平移、旋转、缩放、反射以及斜切矩阵都是仿射的。仿射变换的一大特性就是其变换不改变平行性。一个仿射变换也可由多个仿射变换符合叠加而成。</p>
+<p>基本标识：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-01.jpg" alt="图"></p>
+<p>其中，正交也代表着其转置矩阵就是其逆矩阵。</p>
+<h3 id="基础变换"><a href="#基础变换" class="headerlink" title="基础变换"></a>基础变换</h3><p>基础变换分为以下几个章节：</p>
+<ul>
+<li>平移</li>
+<li>旋转</li>
+<li>缩放</li>
+<li>斜切</li>
+<li>复合变换</li>
+<li>刚性变换</li>
+<li>法线变换</li>
+<li>逆矩阵计算</li>
+</ul>
+<h3 id="平移"><a href="#平移" class="headerlink" title="平移"></a>平移</h3><p>将某个实体以向量 (\bold t &#x3D; (t_x,t_y,t_z)) 进行平移可以采用以下矩阵表示：</p>
+<p>$$<br>\bold T(\bold t)&#x3D;\bold T(t_x,t_y,t_z)&#x3D;\begin{pmatrix}1&amp;0&amp;0&amp;t_x\0&amp;1&amp;0&amp;t_y\0&amp;0&amp;1&amp;t_z\0&amp;0&amp;0&amp;1 \end{pmatrix}<br>$$</p>
+<p>由于点的第四维是1而向量的第四维是0，故我们可以知道，对向量施加如上变换将不会影响其值。这也符合常理，毕竟向量本身只是某个方向某个长度大小，并不具备具体的位置信息。</p>
+<p>然而点与向量都会被其余的放射变换影响。</p>
+<p>平移矩阵的逆为： (\bold T^{-1}(\bold t)&#x3D;\bold T(-\bold t)) ，可知其逆为沿着相反方向平移。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-02.jpg" alt="图"></p>
+<p>有些情况下，某些API采用的此类型矩阵并非把变换因子附着在最后一列，而是填写在最后一行，这两种矩阵分别是row-major以及column-major的形式。此文中涉及的都将以column-major的形式表示。这仅仅是注记方式的不同，在内存层面最后四个数据总是： (t_x,t_y,t_z,1)</p>
+<h3 id="旋转"><a href="#旋转" class="headerlink" title="旋转"></a>旋转</h3><p>旋转变换定义为将一个vector以给定轴和给定角度进行旋转。</p>
+<p>与平移变换类似，这是一个刚性变换，也就是说它保持了点与点之间的距离且不改变旋向性（即相对的左右位在变换前后一致）。</p>
+<p>这两个性质使得这种矩阵在计算机图形学对于定位及定向方面十分有用。</p>
+<p>在二维空间中，标记向量 (\bold v&#x3D;(v_x,v_y)) 以极坐标形式 (\bold v&#x3D;(r \cos \theta,r\sin\theta)) ，则对该向量旋转某个角度 (\phi) 之后 (\bold u&#x3D;(r\cos(\theta+\phi),r\sin(\theta+\phi))) 。即：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-03.jpg" alt="图"></p>
+<p>注意到有如上变形，因此旋转我们可以看作是使用一个旋转矩阵乘以被旋转的实体而成。</p>
+<p>通常使用的旋转矩阵分别为绕x、y、z轴旋转的矩阵 (\bold R_x(\phi)、\bold R_y(\phi)、\bold R_z(\phi)) 。以如下矩阵形式：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-17.jpg" alt="图"></p>
+<ul>
+<li>对于左上角起的3x3子矩阵，他们的迹 (tr(\bold R)&#x3D; 1+2\cos \theta)</li>
+<li>旋转矩阵行列式为1</li>
+<li>旋转矩阵是正交阵。</li>
+<li>此旋转轴上的所有点坐标都不会改变。</li>
+</ul>
+<p>同样也可以利用矩阵结合来达到绕任意轴旋转的效果，以上性质不变。</p>
+<p>旋转矩阵的逆为 (\bold R_i^{-1}(\phi)&#x3D;\bold R_i(-\phi)) ，即绕同一轴反方向旋转同一角度。</p>
+<h3 id="绕点的旋转"><a href="#绕点的旋转" class="headerlink" title="绕点的旋转"></a>绕点的旋转</h3><p>绕点的旋转有三个步骤：先将实体平移变换使得围绕的点处于原点，然后施行旋转操作，最后将旋转完成的实体平移变换回原始状态。</p>
+<p>用矩阵描述为 (\bold X &#x3D; \bold T(\bold p)\bold R_i(\phi) \bold T(-\bold p)) ，其中 (\bold X) 为最终的复合变换矩阵。图示如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-05.jpg" alt="图"></p>
+<h3 id="缩放"><a href="#缩放" class="headerlink" title="缩放"></a>缩放</h3><p>缩放矩阵 (\bold S(\bold s) &#x3D; \bold S(s_x,s_y,s_z)) ，将一个实体以因子 (s_x,s_y,s_z) 沿着x-，y-，z-方向缩放指定大小。</p>
+<p>缩放矩阵以如下形式表示：</p>
+<p>$$<br>\bold S(\bold s)&#x3D;\begin{pmatrix}s_x&amp;0&amp;0&amp;0\0&amp;s_y&amp;0&amp;0\0&amp;0&amp;s_z&amp;0\0&amp;0&amp;0&amp;1 \end{pmatrix}<br>$$</p>
+<p>若 (s_x&#x3D;s_y&#x3D;s_z) ，则称该缩放矩阵为uniform的，否则其为nonuniform的。</p>
+<p>缩放矩阵的逆为： (\bold S^-1(\bold s)&#x3D;\bold S(1&#x2F;s_x,1&#x2F;s_y,1&#x2F;s_z)) ，即按照相同比例相反缩放同一实体。</p>
+<p>uniform矩阵亦可以采用其他表示形式，如：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-06.jpg" alt="图"></p>
+<p>可以将缩放因子的倒数填充在第四维中。但若使用第二种，则必须保证齐次化。若（3，3）处元素为1，则便不需要齐次除法。</p>
+<p>缩放矩阵任意小于0的值将会使得该矩阵变成一个反射矩阵或镜像矩阵。旋转矩阵与镜像矩阵结合之后的依然是一个镜像矩阵。该种矩阵的行列式小于0。镜像矩阵可能会导致不必要的麻烦，例如法线反转，三角形顺逆时针顶点序错乱等。</p>
+<h3 id="任意轴缩放"><a href="#任意轴缩放" class="headerlink" title="任意轴缩放"></a>任意轴缩放</h3><p>绕任意轴的缩放需要进行基底变换，例如假设需要沿着正交的右侧朝向向量进行缩放：首先要构建一个基底变换矩阵：</p>
+<p>$$<br>\bold F&#x3D;\begin{pmatrix}\bold f^x&amp;\bold f^y&amp;\bold f^z &amp;\bold 0\0&amp;0&amp;0&amp;1\end{pmatrix}<br>$$</p>
+<p>此时，我们即可实施变换： (\bold X&#x3D;\bold F\bold S(\bold s)\bold F^\bold T) 。</p>
+<p>基本思路即为：改变基底，实施变换，还原基底。</p>
+<h3 id="斜切"><a href="#斜切" class="headerlink" title="斜切"></a>斜切</h3><p>斜切可被用于游戏图像扭曲等实现以营造迷幻效果。</p>
+<p>有六种基本斜切矩阵：</p>
+<p>$$<br>\bold H_{xy}(s),\bold H_{xz}(s),\bold H_{yx}(s),\bold H_{yz}(s),\bold H_{zx}(s),\bold H_{zy}(s)<br>$$</p>
+<p>第一个下标表示哪一个坐标将会被该矩阵变换，第二个下表表示根据哪一个坐标进行变换。例如 (\bold H_{xz}(s)) 如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-07.jpg" alt="图"></p>
+<p>其施行的变换为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-08.jpg" alt="图"></p>
+<p>意为在z轴步进一个单位将会在x方向上偏移s个单位。</p>
+<p>斜切矩阵的逆矩阵为： (\bold H_{ij}^{-1}(\bold s)&#x3D;\bold H_{ij}(-\bold s)) 。即施行相反方向相同大小，以同一斜切轴及同一被变换轴的斜切。</p>
+<p>亦可以使用一种特殊的标记：</p>
+<p>$$<br>\bold H’_{xy}(s,t)&#x3D;\begin{pmatrix}1&amp;0&amp;s&amp;0\0&amp;1&amp;t&amp;0\0&amp;0&amp;1&amp;0\0&amp;0&amp;0&amp;1\end{pmatrix}<br>$$</p>
+<p>此时的第一第二下标即表示以未显示的第三轴为根据对第一第二轴分别实施第一第二参数大小的斜切变换。</p>
+<p>注意到斜切矩阵的行列式总是1，故斜切变换并不改变体积（面积）。</p>
+<h3 id="复合变换"><a href="#复合变换" class="headerlink" title="复合变换"></a>复合变换</h3><p>由于矩阵乘法不可交换性而变换之间又相对独立，故矩阵的乘法顺序也十分重要，因此此处的复合变换也与变换的顺序有关。</p>
+<p>例如下图：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-09.jpg" alt="图"></p>
+<p>为了提升效率，因此把所有变换复合在一起计算最终变换矩阵是一种明智的做法。</p>
+<p>例如在投影流程中需要进行大量的变换，而这些变换往往都是相同的，相比于每个vertex都进行多次这种变换，使用一个矩阵 (\bold C&#x3D;\bold T\bold R\bold S) 来操作显然节省了很多资源。</p>
+<p>而上述矩阵计算顺序为： (\bold T\bold R\bold S\bold p &#x3D;(\bold T(\bold R(\bold S\bold p)))) ，此处的 (\bold p) 为待变换点。另外， (\bold T\bold R\bold S) 也是场景图像系统常用的变换顺序。</p>
+<h3 id="刚性变换"><a href="#刚性变换" class="headerlink" title="刚性变换"></a>刚性变换</h3><p>我们把<strong>只包含平移与旋转的变换称作刚性变换</strong>。刚性变换的特性就是其保持了原本物体的长度、相对角度及手系旋向性（handedness）。</p>
+<p>任意的刚性变换矩阵 (\bold X) 可以被写成是由平移矩阵及旋转矩阵的复合。因此矩阵表现如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-10.jpg" alt="图"></p>
+<p>该矩阵的逆计算如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-11.png" alt="图"></p>
+<p>即我们可以设想将A物体旋转某个角度后移至某处的相反操作则是先将其移回来，然后再将其按相反角度旋转回去。</p>
+<p>另一种计算矩阵的逆的方式此处不再赘述了，直接贴上原文：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-12.jpg" alt="图"></p>
+<h3 id="摄像机朝向问题"><a href="#摄像机朝向问题" class="headerlink" title="摄像机朝向问题"></a>摄像机朝向问题</h3><p><img src="/img/graphics/real-time-rendering-03-transforms/image-13.jpg" alt="图"></p>
+<p>如图，对于某个看向物体 (\bold l) 的摄像机 (\bold c) ，要确定朝向我们需要进行如下操作：</p>
+<p>我们需要计算一组三个维度的基底： ({\bold r,\bold u,\bold v})</p>
+<p>首先计算view vector， (\bold v &#x3D; (\bold c-\bold l)&#x2F; ||(\bold c-\bold l)||) ，即物体指向摄像机的标准方向向量。（<strong>与图示不同</strong>）</p>
+<p>于是右侧向量即可以得出为 (\bold r &#x3D; -(\bold v\times\bold u’)&#x2F;||\bold v\times\bold u’||) 。但由于 (\bold u’) 并不保证精确指向上方，故还需根据 (\bold u &#x3D; \bold v\times\bold r) 来计算。</p>
+<p>在摄像机变换矩阵之中，我们构造的相机变换矩阵 (\bold M) 即为：首先将场景中事物进行平移变换使得相机中心处于原点处，然后对空间进行正交基的变换，即让 (\bold r) 与(1,0,0)对齐， (\bold u) 与(0,1,0)对齐， (\bold v) 与(0,0,1)对齐。</p>
+<p>因此， (\bold M) 矩阵表示为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-14.jpg" alt="图"></p>
+<h3 id="法线变换"><a href="#法线变换" class="headerlink" title="法线变换"></a>法线变换</h3><p>矩阵变换对于变换实体、切线等都不会出现问题，但涉及到表面法线的变换，这些矩阵变换就会有所失效。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-15.jpg" alt="图"></p>
+<p>因此，与乘以矩阵本身相比，合适的方法是利用该矩阵伴随矩阵的转置矩阵进行处理。</p>
+<p>在变换之后的法线往往不是归一化的，因此还需要额外进行一次normalize操作。</p>
+<p>传统上，计算法线变换是在计算该逆矩阵的转置矩阵。然而当行列式为0时，显然不存在逆矩阵，并且，计算整个4x4矩阵的伴随矩阵也是十分耗费计算量的，并且甚至不是必须的，毕竟法线只是一个向量，而平移并不影响向量，那么对于这种变换即都是仿射的，并不影响齐次坐标中的w参数。那么我们仅仅只需要计算左上角3x3矩阵的伴随矩阵就足够了。</p>
+<p>尽管如此，我们甚至经常并不需要完整计算该伴随矩阵，可知，平移不影响法线向量，而若是uniform的缩放则只影响其长度，故在uniform缩放下法线最终只与旋转有关。那么该旋转变换的逆的转置矩阵即可以被用作处理法线，而旋转矩阵的转置矩阵即为其逆矩阵，即相当于原矩阵，那么在此些情况下，处理后的法线可以直接通过重新归一化得到。</p>
+<h3 id="逆矩阵计算"><a href="#逆矩阵计算" class="headerlink" title="逆矩阵计算"></a>逆矩阵计算</h3><p>根据已知信息计算逆矩阵可以分为以下三种情况：</p>
+<ul>
+<li>若此矩阵为单一变换，或一系列给出了参数的简单变换的复合，那么我们可以简单地将参数取反，然后倒置变换顺序得到逆矩阵。</li>
+<li>若为正交阵，则有其逆与其转置相等。即 (\bold M^{-1}&#x3D;\bold M^\bold T)</li>
+<li>若无任何已知信息，那么使用伴随矩阵、克莱姆法则、LU分解或高斯消元法来解逆。通常我们更偏向于伴随矩阵法与克莱姆法则方法，因为其二分支条件较少，引起的flow control问题较少。</li>
+</ul>
+<p>同时，在考虑性能优化时，若要实施变换的仅仅是向量，那么取左上角3x3矩阵就足够了。</p>
+<h3 id="特殊矩阵变换及操作"><a href="#特殊矩阵变换及操作" class="headerlink" title="特殊矩阵变换及操作"></a>特殊矩阵变换及操作</h3><p>特殊矩阵变换将以如下形式组织：</p>
+<ul>
+<li>欧拉变换</li>
+<li>欧拉变换中参数获取</li>
+<li>矩阵分解</li>
+<li>任意轴旋转</li>
+</ul>
+<h3 id="欧拉变换"><a href="#欧拉变换" class="headerlink" title="欧拉变换"></a>欧拉变换</h3><p>欧拉变换的优点在于十分直观。</p>
+<p>首先，建立一个朝向视角，通常情况下为以z轴负半轴为view，y轴正半轴为head。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-16.jpg" alt="图"></p>
+<p>正式地表示变换如下：</p>
+<p>若以 (\bold E) 代表欧拉变换，则有</p>
+<p>$$<br>\bold E(h,p,r)&#x3D;\bold R_z(r)\bold R_x(p)\bold R_y(h)<br>$$</p>
+<p>由于 (\bold E) 是由一系列旋转矩阵复合而成的，故有</p>
+<p>$$<br>\bold E^{-1}&#x3D;\bold E^T&#x3D;(\bold R_x\bold R_y\bold R_z)^T&#x3D;\bold R_y^T\bold R_x^T\bold R_z^T<br>$$</p>
+<p>直接使用其转置即可获取到其逆。</p>
+<p>h,p,r则代表在沿着y轴、x轴及z轴旋转时所表示的角度。同时，在飞行模拟中，head也被称作yaw。</p>
+<p>在某些API约定中，y-up和z-up也有区别，导致的是一些语义转化上的区别。在人文社会工业以及自然勘测中，有多种坐标约定，-z-up、y-up都有其存在的必要。此处我们使用y-up约定。</p>
+<p>并且需要指出的是，相机的up并不一定是世界坐标中的up。</p>
+<p>此处我们需要指出，使用欧拉变换存在严重的问题。即使用两组欧拉角结合的变换难以处理，例如两组旋转角度插值难以获取。并且，两组不同的欧拉角甚至可以描述同一个方向。同时，最严重的是<strong>欧拉角的使用会带来万向锁（gimbal lock）的问题</strong>。</p>
+<h3 id="欧拉变换中参数获取"><a href="#欧拉变换中参数获取" class="headerlink" title="欧拉变换中参数获取"></a>欧拉变换中参数获取</h3><p>在某些情况下，我们可以从欧拉变换正交矩阵中程序化获取参数h、p以及r，由于是正交阵且3x3已经提供了所有需要考虑的旋转的信息，我们采用3x3矩阵来描述。</p>
+<p>$$<br> \bold E(h,p,r)&#x3D;\begin{pmatrix}e_{00}&amp;e_{01}&amp;e_{02}\e_{10}&amp;e_{11}&amp;e_{12}\e_{20}&amp;e_{21}&amp;e_{22}\end{pmatrix}&#x3D;\bold R_z(r)\bold R_x(p)\bold R_y(h)<br>$$</p>
+<p>回顾旋转矩阵，取左上3x3。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-17.jpg" alt="图"></p>
+<p>那么我们将各自旋转矩阵代入，可以获得参数为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-18.jpg" alt="图"></p>
+<p>因此，我们可以知道pitch参数可由 (\sin p&#x3D;e_{21}) 得到。同时，使用如下式子可以获取到head与roll参数：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-19.jpg" alt="图"></p>
+<p>那么从矩阵 (\bold E) 中，我们可以求出有：</p>
+<p>$$<br> h &#x3D; \text{atan2}(-e_{20},e_{22}),\p&#x3D;\arcsin(e_{21}),\r&#x3D;\text{atan2}(-e_{01},e_{11}).<br>$$</p>
+<p>但倘若有 (\cos p &#x3D; 0) ，则会出现万向锁情况，即roll与head将为绕同一个轴旋转的有符号大小，此时只需推导其中一个角度。</p>
+<p>若设h&#x3D;0，则 (\bold E) 退化为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-20.jpg" alt="图"></p>
+<p>可以看到，p属性并不影响第一列的值，那么 (r&#x3D;\text{atan2}(e_{10},e_{00})) 。</p>
+<p>由于arcsin的定义，有 (-\pi&#x2F;2\le p\le \pi&#x2F;2) 。若给出的p值在此值以外，则意味着原始h、p、r无法获得，同时存在多组h、p、r可以得到同样一个欧拉变换。这种不确定性可以通过性能上的一些损耗避免。</p>
+<p>当使用这种欧拉变换的时候，万向锁情况将会出现。万向锁在旋转过程中出现时会导致某个自由度丢失。</p>
+<p>例如，考虑以x、y、z的顺序安排某个旋转，若绕y轴旋转90度，那么局部坐标下的z轴将会与x轴重合，于是原本对z轴的旋转将会是多余的。</p>
+<p>同样，欧拉角有多种顺序且多种选取方式，例如z&#x2F;x&#x2F;y、z&#x2F;x&#x2F;z等。</p>
+<h3 id="矩阵分解"><a href="#矩阵分解" class="headerlink" title="矩阵分解"></a>矩阵分解</h3><p>以上情况我们总是假设我们知道原点以及矩阵变换的历史顺序。</p>
+<p>从一个复合矩阵中获取多个变换则被称作矩阵分解。</p>
+<p>事实上，有很多种情况要求我们从最终的变换矩阵中分离出单元变换或子变换：</p>
+<ul>
+<li>仅获取缩放参数</li>
+<li>获取特殊系统需要的变换矩阵（例如某些系统不允许任意的4x4矩阵）</li>
+<li>判定是否该模型变换为刚性变换</li>
+<li>在仅能获得变换矩阵的情况下进行动画关键帧插值</li>
+<li>将旋转矩阵中的斜切去除</li>
+<li>…</li>
+</ul>
+<p>我们已经可以利用刚性变换获取平移旋转矩阵，利用正交阵来获取欧拉角度，利用行列式来判定是否为反射矩阵，网络上已有诸多分解方法。（这里原文就到此为止了，不是我偷懒。）</p>
+<h3 id="任意轴旋转"><a href="#任意轴旋转" class="headerlink" title="任意轴旋转"></a>任意轴旋转</h3><p>绕任意轴旋转的步骤为，先利用一个旋转矩阵 (\bold M) 将该轴 (\bold r) 变换为x轴，然后实施变换，完成之后再施加 (\bold M^{-1}) 进行逆变换。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-21.jpg" alt="图"></p>
+<p>那么我们首先需要寻找该轴存在空间的一组正交基， (\bold r,\bold s,\bold t) ，使得 (\bold t&#x3D;\bold r\times\bold s) 。</p>
+<p>一种方法为：先找到参数中绝对值最小的一个分量，将其置0，然后交换剩余两个分量并且将剩余两个分量的第一个取反。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-22.jpg" alt="图"></p>
+<p>此三个基底共同构建一个旋转矩阵</p>
+<p>$$<br> \bold M&#x3D;\begin{pmatrix}\bold r^T\\bold s^T\\bold t^T\end{pmatrix}<br>$$</p>
+<p>使得 (\bold r) 置为x轴， (\bold s) 为y轴，同时 (\bold t) 为z轴。</p>
+<p>因此最终的旋转矩阵可表示为:</p>
+<p>$$<br>\bold X &#x3D; \bold M^T\bold R_x(\alpha)\bold M<br>$$</p>
+<p>此处由于 (\bold M) 为正交阵，故采用 (\bold M^T) 代替 (\bold M^{-1}) 。</p>
+<p>另一种任意轴旋转的矩阵可以直接获取为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-23.jpg" alt="图"></p>
+<h3 id="四元数"><a href="#四元数" class="headerlink" title="四元数"></a>四元数</h3><p>四元数是复数的一种扩展，在计算机图形学领域被用于表示旋转以及朝向。在许多方面，使用四元数都比欧拉角以及旋转矩阵更加优越。</p>
+<p>任意一个三维朝向可以被描述为绕着一个特殊轴旋转的某个角度。而给定这种轴及角度，四元数的获取比欧拉角来得更加便捷直接。</p>
+<p>同时，四元数支持欧拉角方法无法做到的常数插值。</p>
+<p>四元数拥有四个部分，前三个部分与旋转轴有关，而旋转角度对整个四个部分都有影响。</p>
+<h3 id="四元数的数学背景"><a href="#四元数的数学背景" class="headerlink" title="四元数的数学背景"></a>四元数的数学背景</h3><p>四元数的定义如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-24.jpg" alt="图"></p>
+<p>其中， (q_w) 被称为实部， (\bold q_v) 被称为虚部，i,j,k被称为虚单元。</p>
+<p>虚部 (\bold q_v) 可以执行所有一般的向量操作，加以实部之后，两个四元数的乘积为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-25.jpg" alt="图"></p>
+<p>注：此处虚单元的位置不可交换。</p>
+<p>同样，四元数的其他一些运算：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-26.jpg" alt="图"></p>
+<p>而四元数的逆：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-27.jpg" alt="图"></p>
+<p>标量乘法具有可交换性： (s\hat{\bold q}&#x3D;\hat{\bold q}s&#x3D;(s\bold q_v,sq_w))</p>
+<p>同时，四元数计算也有以下法则：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-28.jpg" alt="图"></p>
+<p>对于一个单位四元数 (\hat{\bold q}&#x3D;(\bold q_v,q_w)) 有 (n(\hat{\bold q})&#x3D;1) 。</p>
+<p>以如下形式表示： (\hat {\bold q}&#x3D;(\sin\phi\bold u_q,\cos\phi)&#x3D;\sin \phi \bold u_q+\cos\phi ) 其中对于 (\bold u_q) 有 (||\bold u_q||&#x3D;1) 。</p>
+<p>我们也可以用如下方式表示</p>
+<p>$$<br>\hat {\bold q}&#x3D;\sin \phi\bold u_q+\cos \phi &#x3D; e^{\phi\bold u_q}.<br>$$</p>
+<p>因此，可得</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-29.jpg" alt="图"></p>
+<h3 id="四元数变换"><a href="#四元数变换" class="headerlink" title="四元数变换"></a>四元数变换</h3><p>四元数对于旋转的表示其实十分直观简洁。具体工作方法如下：</p>
+<p>首先，将点或向量的四个坐标 (px\ py\ pz\ pw) 输入给四元数 (\hat {\bold p}) ，并且假设此四元数为单位四元数。</p>
+<p>根据定义， (\hat{\bold q}&#x3D;(\sin\phi\bold u_q,\cos \phi)) ，则有 (\hat{\bold q}\hat{\bold p}\hat{\bold q}^{-1}) 表示为将四元数 (\hat{\bold p}) 以 (\bold u_q) 为轴旋转 (2\phi) 度。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-30.jpg" alt="图"></p>
+<p>而注意到由于其为单位四元数，故根据 (\hat{\bold q}^{-1}&#x3D;\frac 1{n(\hat {\bold q})^2}\hat{\bold q}^. ) 有 (\hat {\bold q}^{-1}&#x3D;\hat {\bold q}^T) 。</p>
+<p>同时，非零标量乘以旋转四元数并不改变其旋转，-1也是如此。</p>
+<p>四元数旋转矩阵的结合律如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-31.png" alt="图"></p>
+<h3 id="矩阵变换"><a href="#矩阵变换" class="headerlink" title="矩阵变换"></a>矩阵变换</h3><p>由于通常情况下总是需要将变换进行复合，而其余变换总是以矩阵形式出现，所以四元数也需要转变成矩阵形式来进行处理。</p>
+<p>一个四元数可以被转化成如下矩阵：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-32.jpg" alt="图"></p>
+<p>其中， (s&#x3D;2&#x2F;(n(\hat{\bold q}))^2) ，对于单位四元数而言，矩阵为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-33.jpg" alt="图"></p>
+<p>对于如何将矩阵转化为四元数形式，则需要进行复杂的参数分离。</p>
+<p>由上述矩阵可以得知：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-34.png" alt="图"></p>
+<p>倘若知道 (q_w) ，那么其余三个量都可以知道，四元数也就得知了。</p>
+<p>观察得，该矩阵的迹有：</p>
+<p>$$<br>tr(\bold M^q)&#x3D;4-2s(q_x^2+q_y^2+q_z^2)&#x3D;4(1-\frac{q_x^2+q_y^2+q_z^2}{q_x^2+q_y^2+q_z^2+q_w^2})&#x3D;\frac{4q_w^2}{q_x^2+q_y^2+q_z^2+q_w^2}&#x3D;\frac{4q_w^2}{||\hat{\bold q}||^2}<br>$$</p>
+<p>因此，可得：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-35.jpg" alt="图"></p>
+<p>对于微小数字除法的避免此处也不再赘述。</p>
+<h3 id="球面线性插值"><a href="#球面线性插值" class="headerlink" title="球面线性插值"></a>球面线性插值</h3><p>插值技术，即给定某个增量参数，给定初始值及目标值，得出一个以该增量参数为程度的初始值向目标值过渡的某个中间值。</p>
+<p>球面线性插值的代数表现形式如下：</p>
+<p>$$<br>\hat{\bold s}(\hat{\bold q},\hat{\bold r},t)&#x3D;(\hat{\bold r}\hat{\bold q}^{-1})^t\hat{\bold q}.<br>$$</p>
+<p>在实际的软件中，有更加恰当的表现形式：</p>
+<p>$$<br> \hat{\bold s}(\hat{\bold q},\hat{\bold r},t)&#x3D;\text{slerp}(\hat{\bold q},\hat{\bold r},t)&#x3D;\frac{\sin(\phi(1-t))}{\sin \phi}\hat{\bold q}+\frac{\sin\phi t}{\sin \phi}\hat{\bold r}.<br>$$</p>
+<p>其中，计算 (\phi) 可以根据下式： (\cos\phi&#x3D;q_xr_x+q_yr_y+q_zr_z+q_wr_w) 。</p>
+<p>插值如下图所示：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-36.jpg" alt="图"></p>
+<p>插值轨迹可以看作是两个四元数点在该Unit Sphere上连接的一条最近弧线。</p>
+<p>像这种常数旋转，不带加速度变化的曲线也被称为<em><strong>geodesic curve</strong></em>，即测地曲线。</p>
+<p><em><strong>great circle</strong></em>则表示过球心平面与球体相交所成的圆，而其一部分则被称为<em><strong>great arc</strong></em>。</p>
+<p>slerp函数对于两个四元数中插值的描述和体现十分有效。事实上，直接计算slerp是有一定速度代价的。关于优化计算此处不多赘述。</p>
+<p>当有多组四元数存在时，且需要从第一个四元数一直插值到最后一个四元数时，虽然可以分段执行插值，但是效果并不理想，如上文中的图注所示。那么此时需要使用spline样条曲线来进行插值。</p>
+<p>首先引入四元数 (\hat {\bold a}<em>i) <em>与</em> (\hat{\bold a}</em>{i+1}) ，使其在 (\hat{\bold q}<em>i) <em>与</em> (\hat{\bold q}</em>{i+1}) 之间。新引入的四元数可以如下定义：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-37.png" alt="图"></p>
+<p>意为利用下表所代表的起始点处的切向来使曲线达成 (C_2) 连续。</p>
+<p>此处，使用(\hat {\bold a}<em>i)与(\hat{\bold a}</em>{i+1})<em>来进行平滑的球面三次插值，方程如下</em></p>
+<p>$$<br> \text{squad}(\hat{\bold q}<em>i,\hat{\bold q}</em>{i+1},\hat{\bold a}<em>i,\hat{\bold a}</em>{i+1},t)&#x3D;\text{slerp}(\text{slerp}(\hat{\bold q}<em>i,\hat{\bold q}</em>{i+1},t),\text{slerp}(\hat{\bold a}<em>i,\hat{\bold a}</em>{i+1},t),2t(1-t)).<br>$$</p>
+<h3 id="向量旋转"><a href="#向量旋转" class="headerlink" title="向量旋转"></a>向量旋转</h3><p>四元数对于向量旋转的计算方法如下：</p>
+<p>假设向量 (\bold s) 要旋转至 (\bold t) ，首先将两者归一化，计算其单位旋转轴 (\bold u) ，即 (\bold u &#x3D; (\bold s\times\bold t)&#x2F;||\bold s\times\bold t||) 。</p>
+<p>由于可知 (e&#x3D;\bold s\cdot\bold t &#x3D; \cos(2 \phi)) ，且 (||\bold s\times\bold t||&#x3D;\sin(2\phi)) ，此处 (2\phi) 为两向量间夹角，可计算四元数 (\hat{\bold q}&#x3D;(\sin\phi\bold u,\cos \phi)) 。代入简化得 (\hat{\bold q}&#x3D;(\frac{\sin\phi}{\sin2\phi}(\bold s\times\bold t),\cos \phi)) ，化简得:</p>
+<p>$$<br>\hat{\bold q}&#x3D;(\bold q_v,q_w)&#x3D;(\frac1{\sqrt{2(1+e)}}(\bold s\times\bold t),\frac{\sqrt{2(1+e)}}{2}).<br>$$</p>
+<p>可直接获得该四元数。而当两向量近乎同向或反向的时候，取任意垂直轴即可。</p>
+<p>其矩阵形式为：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-38.jpg" alt="图"></p>
+<p>其中，</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-39.jpg" alt="图"></p>
+<p>此处，若两向量近乎平行，那么返回单位矩阵即可，若近乎反向，则可以考虑绕任意轴旋转。</p>
+<h3 id="顶点混合"><a href="#顶点混合" class="headerlink" title="顶点混合"></a>顶点混合</h3><p>在一些动画情况下，很多变形操作会带来不真实感，例如手肘弯曲时，由于骨头的刚性变换，关节处的动画便难以做到自然。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-40.jpg" alt="图"></p>
+<p>此时，我们引入<em><strong>vertex blending</strong></em>技术来解决这种问题。</p>
+<p>此例中，前臂与上臂跟随各自的骨骼独立运动，但在关节处两者被以可变性“<em>skin</em>”连接。那么此处的顶点将会以某种权重根据不同的矩阵来进行三角形层面的变换。</p>
+<p>事实上，任意一个顶点都应当是可变形的，即可受多个矩阵影响。此个mesh即被称为<em>skin</em>，或<em>skinned mesh</em>。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-41.jpg" alt="图"></p>
+<p>不仅如此，骨骼甚至并不一定需要是刚性的。</p>
+<p>顶点根据矩阵权重进行变换的公式如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-42.jpg" alt="图"></p>
+<p>此处， (w_i) 为权重，(\bold B(i))为第i个bone在世界坐标下t时间的变化， (\bold M_i) 为从bone坐标系转化到世界坐标系的矩阵， (\bold p) 则为被转换点。</p>
+<p>事实上，(\bold B(i))与 (\bold M_i^{-1}) 在每一帧动画中都复合在一起被使用，每个骨骼各自对此顶点施加变换，最终按照权重融合这些变换的结果。故权重为非负数，且其合总是为1。</p>
+<p>因此，转变后的顶点 (\bold u) 则总是在 (\bold B_i(t)\bold M_i^{-1}\bold p) 的点集凸包上。同时，对于法线的变换，亦可以使用上式方程变换，对于一些变换，则需要用到(\bold B_i(t)\bold M_i^{-1}) 的转置的逆了。</p>
+<p>顶点混合在GPU上的使用已经比较成熟。这些顶点将被存储在一个静态缓存输送给GPU重复使用。每一帧中，只有骨骼变换矩阵改变，顶点着色器将会计算出对先前存储的顶点的作用。在这种方法下，CPU与GPU间需要传输的数据就被最小化了，GPU就有机会更加高效地渲染mesh。若能直接获取并使用骨骼的旋转矩阵则是最便捷的，否则则需要对模型进行划分并且重复某些骨骼的操作。或者，可以使用贴图来存储变换数据以防止寄存器方面的限制。每种变换只需要两张贴图用于存储四元数旋转数据即可表示，此后uav（unordered access view）允许对这种贴图结果的复用。</p>
+<p>有时，在[0,1]之外的权重也是可取的，尤其是在使用类似morph targets等算法的时候。</p>
+<p>但在使用基础的vertex blending时，也会有一系列缺点产生，例如某些不期望的折叠、缠绕、弯曲以及内相交，如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-43.jpg" alt="图"></p>
+<p>一个较为合理的改进措施为使用“双四元数”，这种技术在渲染皮肤时保持其原始变换的刚性属性。但双四元数可能会导致皮肤看起来外凸，此时又引入了center-of-rotation蒙皮方法。</p>
+<h3 id="Morphing-变形"><a href="#Morphing-变形" class="headerlink" title="Morphing 变形"></a>Morphing 变形</h3><p>从一个三维模型变换到另一个三维模型时使用Morphing是十分有效的，期间变化将处于两种模型的融合变形状态，采用一定的插值技术获得顶点位置。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-44.jpg" alt="图"></p>
+<p>Morphing主要解决两个问题：</p>
+<ul>
+<li>顶点关联 vertex correspondence</li>
+<li>插值 interpolation</li>
+</ul>
+<p>给定两个模型，拥有不同的拓扑结构、顶点数以及面联通性，一般情况下，我们首先要建立顶点之间的关联属性，这将会是比较困难的一个部分，此处也不再赘述。</p>
+<p>在建立完成顶点关联之后，使用逐顶点的插值来控制变形。</p>
+<p>例如：</p>
+<p>在某个时刻 (t\in[t_0,t_1]) 上的变形，首先计算 (s &#x3D; \frac{t-t_0}{t_1-t_0}) ，然后使用线性插值 (\bold m &#x3D; (1-s)\bold p_0+s\bold p_1) 获得此时的位置 (\bold m) 。</p>
+<p>事实上，有多种用户可自主定义的变形手段可供选择，例如<em>morph targes</em>或者<em>blend shapes</em>：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-45.jpg" alt="图"></p>
+<p>例如，我们从无表情脸 (\mathcal N) 为基准，并且我们拥有多种表情姿态，此处以smiling为例，计算差距向量组： (\mathcal D_i&#x3D;\mathcal P_i-\mathcal N) 。</p>
+<p>那么我们最后的脸型表情可以通过如下公式获取：</p>
+<p>$$<br> \mathcal M &#x3D; \mathcal N+\sum_{i&#x3D;1}^{k}w_i\mathcal D_i<br>$$</p>
+<p>其中， (w_i) 为对应 (\mathcal D_i) 的插值权重，可以不局限于[0,1]之间。</p>
+<p>Mroph targets在动画领域由于其出色的表现力和适用性有着十分广阔的运用。而其他技术诸如pose-space deformaion，预计算顶点texture等此处也不再赘述。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-46.jpg" alt="图"></p>
+<h3 id="Geometry-Cache-Playback"><a href="#Geometry-Cache-Playback" class="headerlink" title="Geometry Cache Playback"></a>Geometry Cache Playback</h3><p>在某些镜头中，也许希望使用某些极高精度的动画而上述方法都无法满足。</p>
+<p>一个基础的做法是将这些顶点数据先每一帧存储下来然后再实时应用上去。</p>
+<p>首先使用数量化的方法，将顶点的位置以及uv以十六位整数的格式有损地存储下来，使用空域或者频域预测方法以及不同的编码模式进行存储。例如某个顶点将会延续时域上的运动趋势，那么只需要稀疏地记录时域上趋势的差量即可，以此来减缩存储空间。</p>
+<h3 id="投影"><a href="#投影" class="headerlink" title="投影"></a>投影</h3><p>在渲染之前，首先要进行物体的投影，将这些物体投影到平面或者某个标准体内之后进行裁剪和渲染操作。</p>
+<p>对于w因子，透视投影将会对其有所影响，而正交投影并不会，那么在透视投影下就需要齐次化来保证得到正确的视图。</p>
+<p>此处，以右手系为例，摄像机设置为朝向z轴负方向，正上方指向y轴正方向，正右方为x轴正方向。（DirectX使用左手系，即摄像机前方为z轴正前方）</p>
+<p>投影分为以下两个章节：</p>
+<ul>
+<li>正交投影</li>
+<li>透视投影</li>
+</ul>
+<h3 id="正交投影"><a href="#正交投影" class="headerlink" title="正交投影"></a>正交投影</h3><p>正交投影的特性之一就是投影前后物体的平行性不被改变。即在投影后保持其原本大小。</p>
+<p>简单的投影到xy平面的正交投影矩阵如下：</p>
+<p>$$<br>\bold P_o&#x3D;\begin{pmatrix}1&amp;0&amp;0&amp;0\0&amp;1&amp;0&amp;0\0&amp;0&amp;0&amp;0\0&amp;0&amp;0&amp;1\end{pmatrix}<br>$$</p>
+<p>如图所示：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-47.jpg" alt="图"></p>
+<p>该矩阵不可逆，其行列式为0。故其变化是单向的，由三维降至二维，无法还原。</p>
+<p>但可以看到，不管在z轴的何处，都会被投影至平面上，因此我们需要一个定义域来确定投影施加的范围，我们把这种范围采用标记$n$与$f$来标记，即near clipping plane与far clipping plane。</p>
+<p>更加精确地，以一个包含六元组参数的矩阵来表示投影范围(l,r,b,t,n,f)，即左右底顶近远六个参数。此矩阵将该六个平面包围成的*axis-aligned bounding box(AABB)*转化至中心与原点重合，且三个朝向与x-y-z-三轴对齐的状态。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-48.jpg" alt="图"></p>
+<p>需要注意的是，由于是朝着-z方向看的，因此有 (n\gt f) 。</p>
+<p>在OpenGL中，最终呈现的体范围为(-1,-1,-1)到(1,1,1)，而在DirectX中，则是(-1,-1,0)到(1,1,1)，这个体被称为<em><strong>canonical view volume</strong></em>，即<em><strong>规范化视景体</strong></em>，其间的坐标被称为<em><strong>normalized device coordinates(NDC)</strong></em>，即<em><strong>标准化设备坐标</strong></em>。</p>
+<p>被转化至标准化视景体的原因是为了方便下一步的裁剪操作。</p>
+<p>最终，以该体为标准裁剪或抛弃处理所有几何形体，然后将其映射到屏幕上。矩阵的表达形式如下：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-49.jpg" alt="图"></p>
+<h3 id="透视投影"><a href="#透视投影" class="headerlink" title="透视投影"></a>透视投影</h3><p>在透视投影中，平行性被改变了，平行线将会在其极限出相交与一点，透视投影更加符合我们人类观察世界的模样，同时也会产生一种近大远小的效果。</p>
+<p>首先，假设投影平面(z&#x3D;-d,d\gt0) ，假设相机处于原点处，而我们期望将一个点 (\bold p) 投影至该平面，获得一个新坐标 ((q_x,q_y,-d)) ，如下图所示：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-50.jpg" alt="图"></p>
+<p>可以看到借助相似三角形，有</p>
+<p>$$<br> \frac{q_x}{p_x}&#x3D;\frac{-d}{p_z}\iff q_x&#x3D;-d\frac{p_x}{p_z}<br>$$</p>
+<p>同理，可得$q_y$的值，因此在这种情况下，投影矩阵可被写作：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-51.jpg" alt="图"></p>
+<p>其正确性验证：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-52.jpg" alt="图"></p>
+<p>同时，对比于不可逆地将其转化为平面上的投影，也有透视变换将其view frustum转化为一个canonical view volume。</p>
+<p>此处我们假设有远近平面标识：近平面z&#x3D;n，远平面z&#x3D;f，且 (0\gt n\gt f) ，如图：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-53.jpg" alt="图"></p>
+<p>与正交投影相同，六元组(l,r,b,t,n,f)也被用于指定camera的六个参数，但除此之外，仍然需要两个因素来描述缺失的远平面参数。即**horizontal field of view（水平视场角）<strong>及</strong>vertical field of view（垂直视场角）**两个视场角，视场角越大，摄像机看到的东西就越多。</p>
+<p>另外，也存在非对称视场，其中 (l\ne -r) 或 (b\ne -t) ，这种视场在立体观影中被使用。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-54.jpg" alt="图"></p>
+<p>在变换完成之后的点通常其w因子非0且不等于1，此时我们还需进行齐次除法，即：</p>
+<p>$$<br> \bold p &#x3D; (q_x&#x2F;q_w,q_y&#x2F;q_w,q_z&#x2F;q_w,1).<br>$$</p>
+<p>变换之后的远近平面通常在 (z&#x3D;\pm1) 处，DirectX为z&#x3D;0与z&#x3D;1。</p>
+<p>总结而言，透视变换运用之后进行裁剪，然后是齐次化坐标转变为normalized device coordinates（NDC）。</p>
+<p>对于OpenGL而言，需要将其第三列取反，即消去其-z朝向带来的影响。</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-55.jpg" alt="图"></p>
+<p>而DirectX则为（API约定，还需进行转置）：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-56.jpg" alt="图"></p>
+<p>同时，深度变化在透视变换中也不是线性的，如图：</p>
+<p><img src="/img/graphics/real-time-rendering-03-transforms/image-57.jpg" alt="图"></p>
+<hr>
+<p>作者：randyczhang</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a><a class="post-meta__tags" href="/tags/Real-Time-Rendering/">Real-Time Rendering</a></div><div class="post-share"><div class="social-share" data-image="/img/graphics/real-time-rendering-03-transforms/cover.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img class="cover" src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">《Real-Time Rendering》读书笔记（四）Shading Basics</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模型确定材质表现的首要步骤即是确定着色模型，着色模型即描述物体在一系列因素下表现出的颜色等。 着色模型通常有着一系列控制表面表现的属性例如表面颜色、顶点法向等，在选定着色模型之后紧接着就要指定这些属性。 通常情况下，一些重要的参数例如法向、光线方向等都以单位向量表示：  两个向量的夹角的余弦值大小即为两向量的对齐程度。 方程 $$\bold r &#x3D; 2(\bold n \cdot \bold l)\bold n - \bold l$$ 计算了理想反射方向，其中 r 为理想反射方向、 n 为法线法向、 l 为入射方向。 光源在现实中，光源往往十分复杂。自然界有多种不同大小、颜色、形状...</div></div></div></a><a class="pagination-related" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img class="cover" src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">《Real-Time Rendering》读书笔记（二） GPU</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种操作，GPU应运而生。 在速度上，GPU的计算速度是胜于CPU的。纵观GPU发展，其可编程性和可配置性都在逐步地提升，朝着Programmability和Flexibility的方向迈进，为图形编程人员提供了大量的可能。 GPU的速度优势主要来源于对大量高平行化任务的集中计算。例如有固定硬件支持z-buffer的实现，支持快速贴图存取及其他buffer的存取以及快速计算triangle traversal等功能。 Shader Core则是一些处理相对独立的微小处理器，例如坐标变换处理，颜色计算处理等。 但同时，延迟也是在设计处理器时不可缺少的考虑因素，处理数据的inout时将会造成处理...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img class="cover" src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-21</div><div class="info-item-2">《Real-Time Rendering》读书笔记（二） GPU</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种操作，GPU应运而生。 在速度上，GPU的计算速度是胜于CPU的。纵观GPU发展，其可编程性和可配置性都在逐步地提升，朝着Programmability和Flexibility的方向迈进，为图形编程人员提供了大量的可能。 GPU的速度优势主要来源于对大量高平行化任务的集中计算。例如有固定硬件支持z-buffer的实现，支持快速贴图存取及其他buffer的存取以及快速计算triangle traversal等功能。 Shader Core则是一些处理相对独立的微小处理器，例如坐标变换处理，颜色计算处理等。 但同时，延迟也是在设计处理器时不可缺少的考虑因素，处理数据的inout时将会造成处理...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-00-catalog/" title="《Real-Time Rendering》读书笔记（目录）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（目录）</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 渲染管线 GPU Transforms Shading基础 Texturing Shadows 光照和颜色 基于物理的着色 Local Illumination Global Illumination Image-Space Effects Beyond Polygons Volumetric and Translucency Rendering 非真实感渲染 Polygonal Techniques Curves and Curved Surfaces Pipeline Optimization 加速算法 Efficient Shading 虚拟现实与增强现实 求交检测 图形硬件 未来展望   </div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img class="cover" src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（一） 渲染管线</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 整体架构 Application Geometry Processing Rasterization Pixel Processing Summary  整体架构渲染管线可以分为以下四个部分：   渲染速度可以用 frames per second(FPS)来定义。 采用流水线形式的渲染流程将由耗时最大的一个环节决定整体图像的渲染速度。因此，我们需要着重解决该瓶颈问题。  Application Stage应用程序阶段，由于基本在CPU上执行，故用户对此阶段有着完全控制。因此，若在此阶段实施一些优化，对后续的执行效率也会有比较大的帮助。 不过，某些采用Compute Shader的工作也被称为Application Stage，与在CPU上执行不同，该shader在GPU上执行，并将GPU视作高并行能力的处理器。 例如，碰撞检测将会在此阶段进行，输入输出响应、加速算法等渲染管线无法直接很好地处理的过程都会在此阶段实现。 Geometry Processing几何处理阶段主要分为以下四个substage：  Vertex Shading顶点着色需要解决两个...</div></div></div></a><a class="pagination-related" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img class="cover" src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-10-19</div><div class="info-item-2">《Real-Time Rendering》读书笔记（四）Shading Basics</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模型确定材质表现的首要步骤即是确定着色模型，着色模型即描述物体在一系列因素下表现出的颜色等。 着色模型通常有着一系列控制表面表现的属性例如表面颜色、顶点法向等，在选定着色模型之后紧接着就要指定这些属性。 通常情况下，一些重要的参数例如法向、光线方向等都以单位向量表示：  两个向量的夹角的余弦值大小即为两向量的对齐程度。 方程 $$\bold r &#x3D; 2(\bold n \cdot \bold l)\bold n - \bold l$$ 计算了理想反射方向，其中 r 为理想反射方向、 n 为法线法向、 l 为入射方向。 光源在现实中，光源往往十分复杂。自然界有多种不同大小、颜色、形状...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>#card-visitor-map{display:none}</style>
+<div id="visitor-map-box" style="text-align:center;max-width:100%;overflow:hidden"></div>
+<script>
+(function () {
+  function syncVisitorMap () {
+    var card = document.getElementById('card-visitor-map')
+    var box = document.getElementById('visitor-map-box')
+    if (!card || !box) return
+    var home = !!document.getElementById('recent-posts')
+    card.style.display = home ? 'block' : 'none'
+    if (!home || box.dataset.mapLoaded) return
+    box.dataset.mapLoaded = '1'
+    var s = document.createElement('script')
+    s.type = 'text/javascript'
+    s.id = 'mmvst_globe'
+    s.src = 'https://mapmyvisitors.com/globe.js?d=lQIKiewKrqplSOJrDPKvAkx4IXPe0l9zHMbPb5vB4Fw'
+    box.appendChild(s)
+  }
+  syncVisitorMap()
+  document.addEventListener('pjax:complete', syncVisitorMap)
+})()
+</script>
+</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview"><span class="toc-number">1.</span> <span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80%E5%8F%98%E6%8D%A2"><span class="toc-number">2.</span> <span class="toc-text">基础变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B9%B3%E7%A7%BB"><span class="toc-number">3.</span> <span class="toc-text">平移</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%8B%E8%BD%AC"><span class="toc-number">4.</span> <span class="toc-text">旋转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%95%E7%82%B9%E7%9A%84%E6%97%8B%E8%BD%AC"><span class="toc-number">5.</span> <span class="toc-text">绕点的旋转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%A9%E6%94%BE"><span class="toc-number">6.</span> <span class="toc-text">缩放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%BB%E6%84%8F%E8%BD%B4%E7%BC%A9%E6%94%BE"><span class="toc-number">7.</span> <span class="toc-text">任意轴缩放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%9C%E5%88%87"><span class="toc-number">8.</span> <span class="toc-text">斜切</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E5%90%88%E5%8F%98%E6%8D%A2"><span class="toc-number">9.</span> <span class="toc-text">复合变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9A%E6%80%A7%E5%8F%98%E6%8D%A2"><span class="toc-number">10.</span> <span class="toc-text">刚性变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%91%84%E5%83%8F%E6%9C%BA%E6%9C%9D%E5%90%91%E9%97%AE%E9%A2%98"><span class="toc-number">11.</span> <span class="toc-text">摄像机朝向问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%95%E7%BA%BF%E5%8F%98%E6%8D%A2"><span class="toc-number">12.</span> <span class="toc-text">法线变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%86%E7%9F%A9%E9%98%B5%E8%AE%A1%E7%AE%97"><span class="toc-number">13.</span> <span class="toc-text">逆矩阵计算</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E6%AE%8A%E7%9F%A9%E9%98%B5%E5%8F%98%E6%8D%A2%E5%8F%8A%E6%93%8D%E4%BD%9C"><span class="toc-number">14.</span> <span class="toc-text">特殊矩阵变换及操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AC%A7%E6%8B%89%E5%8F%98%E6%8D%A2"><span class="toc-number">15.</span> <span class="toc-text">欧拉变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AC%A7%E6%8B%89%E5%8F%98%E6%8D%A2%E4%B8%AD%E5%8F%82%E6%95%B0%E8%8E%B7%E5%8F%96"><span class="toc-number">16.</span> <span class="toc-text">欧拉变换中参数获取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3"><span class="toc-number">17.</span> <span class="toc-text">矩阵分解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%BB%E6%84%8F%E8%BD%B4%E6%97%8B%E8%BD%AC"><span class="toc-number">18.</span> <span class="toc-text">任意轴旋转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E5%85%83%E6%95%B0"><span class="toc-number">19.</span> <span class="toc-text">四元数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E5%85%83%E6%95%B0%E7%9A%84%E6%95%B0%E5%AD%A6%E8%83%8C%E6%99%AF"><span class="toc-number">20.</span> <span class="toc-text">四元数的数学背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E5%85%83%E6%95%B0%E5%8F%98%E6%8D%A2"><span class="toc-number">21.</span> <span class="toc-text">四元数变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9F%A9%E9%98%B5%E5%8F%98%E6%8D%A2"><span class="toc-number">22.</span> <span class="toc-text">矩阵变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%90%83%E9%9D%A2%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC"><span class="toc-number">23.</span> <span class="toc-text">球面线性插值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%91%E9%87%8F%E6%97%8B%E8%BD%AC"><span class="toc-number">24.</span> <span class="toc-text">向量旋转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B6%E7%82%B9%E6%B7%B7%E5%90%88"><span class="toc-number">25.</span> <span class="toc-text">顶点混合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Morphing-%E5%8F%98%E5%BD%A2"><span class="toc-number">26.</span> <span class="toc-text">Morphing 变形</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Geometry-Cache-Playback"><span class="toc-number">27.</span> <span class="toc-text">Geometry Cache Playback</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%95%E5%BD%B1"><span class="toc-number">28.</span> <span class="toc-text">投影</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E4%BA%A4%E6%8A%95%E5%BD%B1"><span class="toc-number">29.</span> <span class="toc-text">正交投影</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%8F%E8%A7%86%E6%8A%95%E5%BD%B1"><span class="toc-number">30.</span> <span class="toc-text">透视投影</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/12/hello-world/" title="Hello World">Hello World</a><time datetime="2026-05-12T10:59:06.287Z" title="Created 2026-05-12 18:59:06">2026-05-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（四）Shading Basics"/></a><div class="content"><a class="title" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics">《Real-Time Rendering》读书笔记（四）Shading Basics</a><time datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（三） Transforms"/></a><div class="content"><a class="title" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms">《Real-Time Rendering》读书笔记（三） Transforms</a><time datetime="2021-09-26T09:43:01.000Z" title="Created 2021-09-26 17:43:01">2021-09-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（二） GPU"/></a><div class="content"><a class="title" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU">《Real-Time Rendering》读书笔记（二） GPU</a><time datetime="2021-09-21T12:35:20.000Z" title="Created 2021-09-21 20:35:20">2021-09-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（一） 渲染管线"/></a><div class="content"><a class="title" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线">《Real-Time Rendering》读书笔记（一） 渲染管线</a><time datetime="2021-09-14T12:26:28.000Z" title="Created 2021-09-14 20:26:28">2021-09-14</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/graphics/real-time-rendering-03-transforms/cover.jpg);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  const init = (el = document, path = location.pathname) => {
+    twikoo.init({
+      el: el.querySelector('#twikoo-wrap'),
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      },
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || path
+    })
+
+    
+
+    isShuoshuo && (window.shuoshuoComment.destroyTwikoo = () => {
+      if (el.children.length) {
+        el.innerHTML = ''
+        el.classList.add('no-comment')
+      }
+    })
+  }
+
+  const loadTwikoo = (el, path) => {
+    if (typeof twikoo === 'object') setTimeout(() => init(el, path), 0)
+    else btf.getScript('https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js').then(() => init(el, path))
+  }
+
+  if (isShuoshuo) {
+    'Twikoo' === 'Twikoo'
+      ? window.shuoshuoComment = { loadComment: loadTwikoo }
+      : window.loadOtherComment = loadTwikoo
+    return
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo()
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><script src="/js/fantasy-pixel.js"></script><script src="/js/live2d-kanban.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="Search for Posts" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div></body></html>

@@ -3880,15 +3880,19 @@ hr {
 
 #article-container .profile-tag-paths {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  align-items: stretch;
   gap: clamp(0.9rem, 2vw, 1.1rem);
 }
 
 #article-container .profile-tag-paths article {
   display: grid;
-  align-content: start;
+  grid-template-rows: auto auto minmax(5.1em, 1fr) auto;
+  align-content: stretch;
   gap: 0.55rem;
   min-height: 210px;
+  min-width: 0;
+  box-sizing: border-box;
   padding: clamp(0.9rem, 2vw, 1.2rem);
 }
 
@@ -3907,7 +3911,9 @@ hr {
 
 #article-container .profile-tag-paths span {
   width: max-content;
+  max-width: calc(100% - 2.4rem);
   padding: 0.16rem 0.45rem;
+  overflow: hidden;
   border: 1px solid rgba(158, 231, 255, 0.52);
   color: #9ee7ff;
   font-family: var(--pixel-font-en) !important;
@@ -3915,11 +3921,14 @@ hr {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72);
 }
 
 #article-container .profile-tag-paths p {
   margin: 0 !important;
+  min-width: 0;
   color: #fff0b6 !important;
   line-height: 1.7;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.62) !important;
@@ -3928,7 +3937,9 @@ hr {
 #article-container .profile-tag-paths a,
 #article-container .profile-tag-paths a:visited {
   align-self: end;
+  justify-self: start;
   width: max-content;
+  max-width: 100%;
   margin-top: 0.3rem;
   padding: 0.35rem 0.65rem;
   border: 2px solid #211007 !important;
@@ -4201,5 +4212,508 @@ hr {
     float: none;
     display: block;
     margin-top: 0.18rem;
+  }
+}
+
+/* Message board */
+#page:has(.message-board-page) {
+  --message-wood-dark: #2a160a;
+  --message-wood-mid: #74401c;
+  --message-wood-light: #9a612c;
+  --message-paper: #f2d08c;
+  --message-paper-light: #ffe4a8;
+  --message-paper-edge: #8a5524;
+  --message-paper-center: #fff7df;
+  --message-paper-mid: #ecd09a;
+  --message-paper-shadow: #b57c3c;
+  --message-ink: #201007;
+  --message-nail-size: 24px;
+  --message-nail-pad: 0px;
+  --message-nail-outset: -10px;
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1rem, 2.4vw, 1.7rem) !important;
+  border: 4px solid #9b6a31 !important;
+  border-radius: 3px !important;
+  background-color: #5b2f13 !important;
+  background-image:
+    linear-gradient(90deg, rgba(255, 229, 143, 0.12), rgba(33, 16, 7, 0.14)),
+    url("/img/pixel-medieval/message-board/wood-board.png") !important;
+  background-position: center top, left top !important;
+  background-repeat: repeat, repeat !important;
+  background-size: auto, 256px 192px !important;
+  box-shadow:
+    0 0 0 2px #160b05,
+    10px 10px 0 rgba(0, 0, 0, 0.36),
+    inset 0 0 0 3px rgba(255, 221, 126, 0.2),
+    inset 0 0 34px rgba(21, 8, 3, 0.5) !important;
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) *,
+#page:has(.message-board-page) *::before,
+#page:has(.message-board-page) *::after {
+  box-sizing: border-box;
+}
+
+#page:has(.message-board-page)::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: 0;
+  pointer-events: none;
+  border: 2px solid rgba(255, 220, 132, 0.18);
+  background:
+    url("/img/pixel-medieval/message-board/iron-nail.png") 7px 7px / 26px 26px no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - 33px) 7px / 26px 26px no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") 7px calc(100% - 33px) / 26px 26px no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - 33px) calc(100% - 33px) / 26px 26px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 78px, rgba(22, 9, 3, 0.36) 78px 82px);
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) > * {
+  position: relative;
+  z-index: 1;
+}
+
+#page:has(.message-board-page) #article-container {
+  padding: 0 !important;
+  color: var(--message-ink) !important;
+  background: transparent !important;
+}
+
+#article-container .message-board-page {
+  display: grid;
+  gap: clamp(0.9rem, 2vw, 1.2rem);
+  width: 100%;
+  min-width: 0;
+}
+
+#article-container .message-board-hero {
+  position: relative;
+  width: min(100%, 760px);
+  margin: 0 auto clamp(0.4rem, 1vw, 0.8rem) !important;
+  padding: clamp(0.9rem, 2.4vw, 1.45rem) clamp(1rem, 3vw, 1.75rem);
+  border: 3px solid var(--message-paper-edge);
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at center, var(--message-paper-center) 0%, #fff0c6 34%, var(--message-paper-mid) 68%, var(--message-paper-shadow) 100%) !important;
+  box-shadow:
+    0 0 0 2px #211007,
+    6px 6px 0 rgba(0, 0, 0, 0.32),
+    inset 0 0 0 2px rgba(255, 248, 203, 0.34),
+    inset 0 0 22px rgba(95, 48, 14, 0.16);
+  color: var(--message-ink);
+  image-rendering: pixelated;
+  text-align: center;
+  transform: rotate(-0.35deg);
+}
+
+#article-container .message-board-hero::before {
+  content: "";
+  position: absolute;
+  inset: var(--message-nail-outset);
+  z-index: 2;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  background:
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat;
+  image-rendering: pixelated;
+}
+
+#article-container .message-board-kicker {
+  margin: 0 0 0.35rem !important;
+  color: #6a3712 !important;
+  font-family: var(--pixel-font-en) !important;
+  font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 0 rgba(255, 240, 187, 0.9) !important;
+}
+
+#article-container .message-board-hero h1 {
+  margin: 0 !important;
+  border: 0 !important;
+  color: #251006 !important;
+  font-family: var(--pixel-font) !important;
+  font-size: clamp(1.9rem, 5vw, 3.4rem) !important;
+  line-height: 1.12;
+  letter-spacing: 0.04em;
+  text-shadow:
+    1px 1px 0 rgba(255, 241, 190, 0.92),
+    2px 2px 0 rgba(84, 42, 12, 0.2) !important;
+}
+
+#article-container .message-board-hero h1::before {
+  display: none !important;
+  content: none !important;
+}
+
+#article-container .message-board-hero p:not(.message-board-kicker) {
+  max-width: 34em;
+  margin: 0.5rem auto 0 !important;
+  color: #4f270d !important;
+  font-size: clamp(0.96rem, 2vw, 1.08rem);
+  line-height: 1.7;
+  text-shadow: 1px 1px 0 rgba(255, 240, 187, 0.74) !important;
+}
+
+#page:has(.message-board-page) .custom-hr {
+  display: none;
+}
+
+#page:has(.message-board-page) #post-comment {
+  margin-top: clamp(0.7rem, 2vw, 1.35rem);
+  color: var(--message-ink) !important;
+}
+
+#page:has(.message-board-page) #post-comment .comment-head {
+  margin-bottom: clamp(0.8rem, 2vw, 1.1rem);
+}
+
+#page:has(.message-board-page) #post-comment .comment-headline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+  padding: 0.42rem 0.74rem;
+  border: 2px solid #e3b65f;
+  background: rgba(43, 23, 10, 0.88);
+  box-shadow:
+    0 0 0 2px #160b05,
+    4px 4px 0 rgba(0, 0, 0, 0.32),
+    inset 0 0 0 2px rgba(255, 232, 170, 0.11);
+  color: #fff4c6 !important;
+  font-family: var(--pixel-font-en) !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72) !important;
+}
+
+#page:has(.message-board-page) #post-comment .comment-headline i {
+  color: var(--pixel-gold-bright) !important;
+}
+
+#page:has(.message-board-page) #post-comment .comment-wrap {
+  min-width: 0;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+#page:has(.message-board-page) #twikoo-wrap,
+#page:has(.message-board-page) #twikoo,
+#page:has(.message-board-page) .twikoo {
+  width: 100%;
+  min-width: 0;
+  color: var(--message-ink) !important;
+  font-family: var(--pixel-font) !important;
+}
+
+#page:has(.message-board-page) #twikoo a,
+#page:has(.message-board-page) #twikoo .tk-action-link,
+#page:has(.message-board-page) #twikoo .tk-nick {
+  color: #075a80 !important;
+  font-weight: 700;
+  text-decoration: none !important;
+  text-shadow: 1px 1px 0 rgba(255, 238, 180, 0.82) !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-submit {
+  position: relative;
+  min-width: 0;
+  margin: 0 0 clamp(1.1rem, 3vw, 1.8rem) !important;
+  padding: clamp(0.8rem, 2.4vw, 1.2rem);
+  border: 3px solid var(--message-paper-edge);
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at center, var(--message-paper-center) 0%, #fff0c6 34%, var(--message-paper-mid) 68%, var(--message-paper-shadow) 100%) !important;
+  box-shadow:
+    0 0 0 2px #211007,
+    7px 7px 0 rgba(0, 0, 0, 0.33),
+    inset 0 0 0 2px rgba(255, 246, 198, 0.3),
+    inset 0 0 22px rgba(95, 48, 14, 0.16);
+  image-rendering: pixelated;
+  transform: rotate(0.25deg);
+}
+
+#page:has(.message-board-page) #twikoo .tk-submit::before {
+  content: "";
+  position: absolute;
+  inset: var(--message-nail-outset);
+  z-index: 2;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  background:
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat;
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) #twikoo .tk-input,
+#page:has(.message-board-page) #twikoo textarea,
+#page:has(.message-board-page) #twikoo input,
+#page:has(.message-board-page) #twikoo .el-input__inner,
+#page:has(.message-board-page) #twikoo .el-textarea__inner {
+  max-width: 100%;
+  border: 2px solid rgba(119, 70, 27, 0.72) !important;
+  border-radius: 2px !important;
+  background: rgba(255, 238, 183, 0.72) !important;
+  color: var(--message-ink) !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 250, 209, 0.26),
+    inset 0 0 12px rgba(103, 58, 19, 0.08) !important;
+  font-family: var(--pixel-font) !important;
+  text-shadow: none !important;
+}
+
+#page:has(.message-board-page) #twikoo textarea,
+#page:has(.message-board-page) #twikoo .el-textarea__inner {
+  min-height: clamp(128px, 22vw, 180px) !important;
+  line-height: 1.65;
+  resize: vertical;
+}
+
+#page:has(.message-board-page) #twikoo input::placeholder,
+#page:has(.message-board-page) #twikoo textarea::placeholder,
+#page:has(.message-board-page) #twikoo .el-input__inner::placeholder,
+#page:has(.message-board-page) #twikoo .el-textarea__inner::placeholder {
+  color: #755024 !important;
+  opacity: 0.9;
+}
+
+#page:has(.message-board-page) #twikoo .tk-row,
+#page:has(.message-board-page) #twikoo .tk-meta-input,
+#page:has(.message-board-page) #twikoo .tk-submit-action {
+  min-width: 0;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+#page:has(.message-board-page) #twikoo .tk-meta-input > *,
+#page:has(.message-board-page) #twikoo .tk-submit-action > * {
+  min-width: min(100%, 10rem);
+}
+
+#page:has(.message-board-page) #twikoo .el-button,
+#page:has(.message-board-page) #twikoo button,
+#page:has(.message-board-page) #twikoo .tk-send {
+  min-height: 38px;
+  border: 2px solid #f1d28a !important;
+  border-radius: 2px !important;
+  background: linear-gradient(180deg, #f6d98f, #a56a2d) !important;
+  color: #1a1008 !important;
+  box-shadow:
+    0 0 0 2px #20150c,
+    4px 4px 0 rgba(0, 0, 0, 0.38) !important;
+  font-family: var(--pixel-font-en) !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comments,
+#page:has(.message-board-page) #twikoo .tk-comments-container {
+  display: grid;
+  gap: clamp(0.9rem, 2.3vw, 1.25rem);
+  min-width: 0;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comment {
+  --message-note-tilt: 0deg;
+  position: relative;
+  min-width: 0;
+  margin: 0 !important;
+  padding: clamp(0.72rem, 2.2vw, 1rem) clamp(0.72rem, 2.4vw, 1.15rem) !important;
+  overflow-wrap: anywhere;
+  border: 3px solid var(--message-paper-edge);
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at center, var(--message-paper-center) 0%, #fff0c6 34%, var(--message-paper-mid) 68%, var(--message-paper-shadow) 100%) !important;
+  box-shadow:
+    0 0 0 2px #211007,
+    6px 7px 0 rgba(0, 0, 0, 0.32),
+    inset 0 0 0 2px rgba(255, 247, 202, 0.32),
+    inset 0 0 22px rgba(101, 51, 14, 0.14);
+  color: var(--message-ink) !important;
+  image-rendering: pixelated;
+  transform: rotate(var(--message-note-tilt));
+}
+
+#page:has(.message-board-page) #twikoo .tk-comments-container > .tk-comment:nth-child(3n + 1) {
+  --message-note-tilt: -0.45deg;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comments-container > .tk-comment:nth-child(3n + 2) {
+  --message-note-tilt: 0.35deg;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comments-container > .tk-comment:nth-child(3n) {
+  --message-note-tilt: -0.18deg;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comment::before {
+  content: "";
+  position: absolute;
+  inset: var(--message-nail-outset);
+  z-index: 2;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  background:
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) var(--message-nail-pad) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") var(--message-nail-pad) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat,
+    url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - var(--message-nail-size) - var(--message-nail-pad)) calc(100% - var(--message-nail-size) - var(--message-nail-pad)) / var(--message-nail-size) var(--message-nail-size) no-repeat;
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) #twikoo .tk-comment:hover {
+  filter: brightness(1.035) saturate(1.03);
+}
+
+#page:has(.message-board-page) #twikoo .tk-main,
+#page:has(.message-board-page) #twikoo .tk-content,
+#page:has(.message-board-page) #twikoo .tk-extras,
+#page:has(.message-board-page) #twikoo .tk-replies {
+  min-width: 0;
+  color: var(--message-ink) !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-content {
+  line-height: 1.72;
+  text-shadow: 1px 1px 0 rgba(255, 240, 187, 0.64) !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-content p {
+  margin: 0.3rem 0 !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-avatar {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid #8a5524 !important;
+  border-radius: 2px !important;
+  background: #2a160a !important;
+  box-shadow:
+    0 0 0 2px #211007,
+    3px 3px 0 rgba(0, 0, 0, 0.28);
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) #twikoo .tk-avatar img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+#page:has(.message-board-page) #twikoo .tk-nick,
+#page:has(.message-board-page) #twikoo .tk-time,
+#page:has(.message-board-page) #twikoo .tk-tag,
+#page:has(.message-board-page) #twikoo .tk-action,
+#page:has(.message-board-page) #twikoo .tk-extra,
+#page:has(.message-board-page) #twikoo .tk-comments-title {
+  font-family: var(--pixel-font-en) !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-time,
+#page:has(.message-board-page) #twikoo .tk-extra {
+  color: #68401a !important;
+  font-weight: 700;
+  text-shadow: 1px 1px 0 rgba(255, 240, 187, 0.72) !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-replies {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.8rem !important;
+  padding-left: clamp(0.45rem, 2vw, 1rem) !important;
+  border-left: 3px solid rgba(138, 85, 36, 0.55);
+}
+
+#page:has(.message-board-page) #twikoo .tk-replies .tk-comment {
+  --message-note-tilt: 0deg;
+  border-color: #7d4a1f;
+  background:
+    radial-gradient(ellipse at center, #fff0c7 0%, #e9c589 42%, #c88d4b 100%) !important;
+  box-shadow:
+    0 0 0 2px #211007,
+    4px 5px 0 rgba(0, 0, 0, 0.28),
+    inset 0 0 0 2px rgba(255, 247, 202, 0.24);
+}
+
+#page:has(.message-board-page) #twikoo .tk-footer,
+#page:has(.message-board-page) #twikoo .tk-comments-no {
+  color: #fff1b8 !important;
+  font-family: var(--pixel-font-en) !important;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72) !important;
+}
+
+#page:has(.message-board-page) #twikoo pre,
+#page:has(.message-board-page) #twikoo code {
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+#page:has(.message-board-page) #twikoo img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 900px) {
+  #page:has(.message-board-page) {
+    padding: clamp(0.8rem, 3vw, 1.1rem) !important;
+  }
+
+  #article-container .message-board-hero {
+    transform: none;
+  }
+
+  #page:has(.message-board-page) #twikoo .tk-submit,
+  #page:has(.message-board-page) #twikoo .tk-comment {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  #page:has(.message-board-page)::before {
+    inset: 7px;
+    background:
+      url("/img/pixel-medieval/message-board/iron-nail.png") 4px 4px / 24px 24px no-repeat,
+      url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - 28px) 4px / 24px 24px no-repeat,
+      url("/img/pixel-medieval/message-board/iron-nail.png") 4px calc(100% - 28px) / 24px 24px no-repeat,
+      url("/img/pixel-medieval/message-board/iron-nail.png") calc(100% - 28px) calc(100% - 28px) / 24px 24px no-repeat;
+  }
+
+  #page:has(.message-board-page) #post-comment .comment-headline {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #page:has(.message-board-page) #twikoo .tk-row,
+  #page:has(.message-board-page) #twikoo .tk-submit-action {
+    align-items: stretch;
+  }
+
+  #page:has(.message-board-page) #twikoo .tk-meta-input > *,
+  #page:has(.message-board-page) #twikoo .tk-submit-action > *,
+  #page:has(.message-board-page) #twikoo .el-button,
+  #page:has(.message-board-page) #twikoo button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #page:has(.message-board-page) #twikoo .tk-replies {
+    padding-left: 0.45rem !important;
   }
 }
