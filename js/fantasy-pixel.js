@@ -1,7 +1,9 @@
 (function () {
-  var FOOTER_LIGHTNING_DURATION = 1280;
+  var FOOTER_LIGHTNING_DURATION = 1900;
   var FOOTER_LIGHTNING_CRATER_DURATION = 2000;
   var messageBoardTwikooObserver = null;
+  var messageBoardTwikooCleanupTimer = null;
+  var messageBoardTwikooCleanupRuns = 0;
 
   function createSpark(x, y) {
     var spark = document.createElement('span');
@@ -399,6 +401,7 @@
     var maxMagicPitNodes = 8;
     var maxLightningCraterNodes = 10;
     var maxHitBurstNodes = 70;
+    var magicStrikeVersion = 8;
     var monsterSpawnRevealDelay = 280;
     var monsterSpawnJumpOutDuration = 430;
     var monsterSpawnEffectTail = 110;
@@ -849,16 +852,21 @@
 
     function createMagicStrike(x, y, autoRemove) {
       var pit = document.createElement('span');
+      var bolt;
 
       magicEffectRun += 1;
       pit.className = 'footer-magic-pit';
       pit.setAttribute('aria-hidden', 'true');
       pit.dataset.effectRun = String(magicEffectRun);
       pit.innerHTML = [
-        '<span class="footer-magic-bolt"></span>',
+        '<img class="footer-magic-bolt" alt="" draggable="false">',
         '<span class="footer-magic-flash"></span>',
         '<span class="footer-magic-ring"></span>'
       ].join('');
+      bolt = pit.querySelector('.footer-magic-bolt');
+      if (bolt) {
+        bolt.src = '/anim/lightning_strike.gif?v=' + magicStrikeVersion + '&run=' + magicEffectRun;
+      }
       pit.style.left = Math.round(x) + 'px';
       pit.style.top = Math.round(y) + 'px';
       effectsLayer.appendChild(pit);
@@ -1201,7 +1209,7 @@
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
       '/img/pixel-medieval/playground/lightning-crater.png?v=1',
-      '/anim/lightning_strike_sheet.png?v=7',
+      '/anim/lightning_strike.gif?v=8',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',
@@ -1496,15 +1504,46 @@
     removeNode(item || node);
   }
 
+  function isTwikooSendAction(node) {
+    var label;
+    var classNames;
+
+    if (!node) return false;
+
+    label = normalizedTwikooLabel([
+      node.getAttribute && node.getAttribute('title'),
+      node.getAttribute && node.getAttribute('aria-label'),
+      node.textContent
+    ].filter(Boolean).join(' '));
+    classNames = node.className ? String(node.className) : '';
+
+    return /(^|\s)(tk-send|el-button--primary)(\s|$)/i.test(classNames) ||
+      /发送|提交|回复|send|submit|reply/i.test(label);
+  }
+
+  function removeMessageBoardTwikooSubmitActions(twikoo) {
+    if (!twikoo || !twikoo.querySelectorAll) return;
+
+    Array.prototype.forEach.call(twikoo.querySelectorAll([
+      '.tk-submit .tk-submit-action > *',
+      '.tk-submit .tk-row.actions > *',
+      '.tk-submit .tk-actions > *',
+      '.tk-submit .tk-action > *'
+    ].join(',')), function (item) {
+      if (isTwikooSendAction(item)) return;
+      removeTwikooActionItem(item);
+    });
+  }
+
   function cleanMessageBoardTwikooForm() {
     var twikoo;
     var websitePattern = /网址|网站|website|link|url/i;
-    var actionPattern = /^(预览|preview|图片|图像|image|uploadimage|上传图片|markdown|markdown语法|m↓)$/i;
-    var actionClassPattern = /(^|\s)(__markdown|__image|__upload|tk-input-image|tk-image|tk-upload|tk-preview)(\s|$)/i;
+    var actionPattern = /预览|preview|图片|图像|上传|picture|photo|image|upload|markdown|markdown语法|m↓/i;
+    var actionClassPattern = /(^|\s)(__markdown|__image|__upload|tk-input-image|tk-image|tk-upload|tk-preview|tk-picture|tk-photo)(\s|$)/i;
 
     if (!document.querySelector('.message-board-page')) return;
 
-    twikoo = document.getElementById('twikoo');
+    twikoo = document.getElementById('twikoo') || document.getElementById('twikoo-wrap');
     if (!twikoo) return;
 
     Array.prototype.forEach.call(twikoo.querySelectorAll('.tk-meta-input > *'), function (field, index) {
@@ -1532,6 +1571,10 @@
       '.tk-submit-action .tk-input-image',
       '.tk-submit-action > *:has(input[type="file"])',
       '.tk-submit-action > *:has(.tk-input-image)',
+      '.tk-submit-action > *:has([title*="图片"])',
+      '.tk-submit-action > *:has([title*="上传"])',
+      '.tk-submit-action > *:has([aria-label*="图片"])',
+      '.tk-submit-action > *:has([aria-label*="上传"])',
       '.tk-submit-action > *:has([class*="image" i])',
       '.tk-submit-action > *:has([class*="upload" i])',
       '.tk-submit-action > *:has(use[href*="image" i])',
@@ -1551,6 +1594,10 @@
       '.tk-action .tk-input-image',
       '.tk-action > *:has(input[type="file"])',
       '.tk-action > *:has(.tk-input-image)',
+      '.tk-action > *:has([title*="图片"])',
+      '.tk-action > *:has([title*="上传"])',
+      '.tk-action > *:has([aria-label*="图片"])',
+      '.tk-action > *:has([aria-label*="上传"])',
       '.tk-action > *:has([class*="image" i])',
       '.tk-action > *:has([class*="upload" i])',
       '.tk-action > *:has(use[href*="image" i])',
@@ -1570,6 +1617,10 @@
       '.tk-row.actions .tk-input-image',
       '.tk-row.actions > *:has(input[type="file"])',
       '.tk-row.actions > *:has(.tk-input-image)',
+      '.tk-row.actions > *:has([title*="图片"])',
+      '.tk-row.actions > *:has([title*="上传"])',
+      '.tk-row.actions > *:has([aria-label*="图片"])',
+      '.tk-row.actions > *:has([aria-label*="上传"])',
       '.tk-row.actions > *:has([class*="image" i])',
       '.tk-row.actions > *:has([class*="upload" i])',
       '.tk-row.actions > *:has(use[href*="image" i])',
@@ -1600,11 +1651,29 @@
         item.textContent
       );
       var classNames = item && item.className ? String(item.className) : '';
+      var nestedAction = item.querySelector && item.querySelector([
+        'input[type="file"]',
+        '.tk-input-image',
+        '[title*="图片"]',
+        '[title*="上传"]',
+        '[aria-label*="图片"]',
+        '[aria-label*="上传"]',
+        '[class*="image" i]',
+        '[class*="upload" i]',
+        '[class*="picture" i]',
+        '[class*="photo" i]',
+        'use[href*="image" i]',
+        'use[href*="upload" i]',
+        'use[href*="picture" i]',
+        'use[href*="photo" i]'
+      ].join(','));
 
-      if (actionPattern.test(label) || actionClassPattern.test(classNames)) {
+      if (nestedAction || actionPattern.test(label) || actionClassPattern.test(classNames)) {
         removeTwikooActionItem(item);
       }
     });
+
+    removeMessageBoardTwikooSubmitActions(twikoo);
   }
 
   function initMessageBoardTwikooCleanup() {
@@ -1615,16 +1684,39 @@
       messageBoardTwikooObserver = null;
     }
 
+    if (messageBoardTwikooCleanupTimer) {
+      window.clearInterval(messageBoardTwikooCleanupTimer);
+      messageBoardTwikooCleanupTimer = null;
+    }
+
     if (!document.querySelector('.message-board-page')) return;
 
     cleanMessageBoardTwikooForm();
+    window.setTimeout(cleanMessageBoardTwikooForm, 0);
+    window.setTimeout(cleanMessageBoardTwikooForm, 250);
+    window.setTimeout(cleanMessageBoardTwikooForm, 800);
+
+    messageBoardTwikooCleanupRuns = 0;
+    messageBoardTwikooCleanupTimer = window.setInterval(function () {
+      if (!document.querySelector('.message-board-page') || messageBoardTwikooCleanupRuns > 80) {
+        window.clearInterval(messageBoardTwikooCleanupTimer);
+        messageBoardTwikooCleanupTimer = null;
+        return;
+      }
+
+      messageBoardTwikooCleanupRuns += 1;
+      cleanMessageBoardTwikooForm();
+    }, 120);
 
     if (!window.MutationObserver) return;
 
     target = document.getElementById('twikoo-wrap') || document.getElementById('post-comment');
     if (!target) return;
 
-    messageBoardTwikooObserver = new MutationObserver(cleanMessageBoardTwikooForm);
+    messageBoardTwikooObserver = new MutationObserver(function () {
+      cleanMessageBoardTwikooForm();
+      window.setTimeout(cleanMessageBoardTwikooForm, 0);
+    });
     messageBoardTwikooObserver.observe(target, {
       childList: true,
       subtree: true

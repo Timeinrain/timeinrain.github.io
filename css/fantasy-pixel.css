@@ -1894,7 +1894,7 @@ hr {
 }
 
 .footer-magic-pit.is-active {
-  animation: footerLightningFlash 1.18s steps(6, end) forwards;
+  animation: footerLightningFlash 1.75s steps(7, end) forwards;
 }
 
 .footer-magic-pit::before,
@@ -1916,17 +1916,22 @@ hr {
   width: 32px;
   height: 64px;
   z-index: 4;
-  background: transparent url("/anim/lightning_strike_sheet.png?v=7") 0 0 / 256px 64px no-repeat;
+  display: block;
+  max-width: none;
+  object-fit: contain;
+  background: transparent;
   filter:
     drop-shadow(0 0 3px rgba(218, 255, 255, 0.9))
     drop-shadow(0 0 8px rgba(75, 198, 255, 0.62));
   transform: translateX(-50%) scaleX(0.78);
   transform-origin: 50% 100%;
   animation: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .footer-magic-pit.is-active .footer-magic-bolt {
-  animation: footerLightningFrames 0.72s linear forwards;
+  animation: none;
 }
 
 .footer-magic-flash {
@@ -1956,7 +1961,7 @@ hr {
 }
 
 .footer-magic-pit.is-active .footer-magic-ring {
-  animation: footerLightningRing 1.18s steps(5, end) forwards;
+  animation: footerLightningRing 1.75s steps(7, end) forwards;
 }
 
 .footer-lightning-crater {
@@ -2465,8 +2470,13 @@ hr {
     transform: translate(-50%, -94%);
   }
 
-  58% {
+  72% {
     opacity: 1;
+    transform: translate(-50%, -94%);
+  }
+
+  88% {
+    opacity: 0.45;
     transform: translate(-50%, -94%);
   }
 
@@ -2487,8 +2497,13 @@ hr {
     transform: translateX(-50%);
   }
 
-  56% {
-    opacity: 0.72;
+  70% {
+    opacity: 0.78;
+    transform: translateX(-50%);
+  }
+
+  88% {
+    opacity: 0.36;
     transform: translateX(-50%);
   }
 
@@ -6526,18 +6541,50 @@ hr {
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(input[type="file"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(input[type="file"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > [title*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > [title*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > [aria-label*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > [aria-label*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([title*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([title*="上传"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([aria-label*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([aria-label*="上传"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([class*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([class*="upload" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has(use[href*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > [title*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-action > [title*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-action > [aria-label*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-action > [aria-label*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([title*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([title*="上传"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([aria-label*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([aria-label*="上传"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([class*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([class*="upload" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(use[href*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > [title*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > [title*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > [aria-label*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > [aria-label*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([title*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([title*="上传"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([aria-label*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([aria-label*="上传"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([class*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([class*="upload" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(use[href*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > [title*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > [title*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > [aria-label*="图片"],
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > [aria-label*="上传"],
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([title*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([title*="上传"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([aria-label*="图片"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([aria-label*="上传"]),
 #page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([class*="image" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([class*="upload" i]),
 #page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has(use[href*="image" i]),
@@ -6545,6 +6592,17 @@ hr {
 #page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send),
 #page:has(.message-board-page) #twikoo-wrap .tk-action > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send),
 #page:has(.message-board-page) #twikoo-wrap .tk-actions > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send) {
+  display: none !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-row.actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-row.actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-action > :not(.tk-send):not(.el-button):not(.el-button--primary) {
   display: none !important;
 }
 
