@@ -1407,7 +1407,6 @@
   var themeTogglePullTimer = null;
   var themeTogglePullFrame = 0;
   var themeTransitionFrame = 0;
-  var themeAssetsPreloaded = false;
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1424,55 +1423,6 @@
     ].join('');
 
     return transition;
-  }
-
-  function preloadThemeAssets() {
-    var assets = [
-      '/img/pixel-medieval/hero-castle-day.png',
-      '/img/pixel-medieval/hero-castle.png',
-      '/img/pixel-medieval/grassland-layout.png',
-      '/img/pixel-medieval/forest-layout.png',
-      '/img/pixel-medieval/playground/lightning-crater.png?v=1',
-      '/anim/slime-green_move_sheet.png?v=33',
-      '/anim/slime-green_idle_sheet.png?v=33',
-      '/anim/slime-green_death_sheet.png?v=33',
-      '/anim/slime-yellow_move_sheet.png?v=33',
-      '/anim/slime-yellow_idle_sheet.png?v=33',
-      '/anim/slime-yellow_death_sheet.png?v=33',
-      '/anim/monster_spawn_slime.gif?v=8',
-      '/anim/monster_spawn_slime-green.gif?v=8',
-      '/anim/monster_spawn_slime-yellow.gif?v=8',
-      '/anim/monster_spawn_bunny.gif?v=8',
-      '/anim/monster_spawn_ghost.gif?v=8',
-      '/anim/monster_spawn_flame.gif?v=8',
-      '/anim/ghost_move_sheet.png?v=32',
-      '/anim/ghost_idle_sheet.png?v=32',
-      '/anim/ghost_death_sheet.png?v=32',
-      '/anim/flame_move_sheet.png?v=32',
-      '/anim/flame_idle_sheet.png?v=32',
-      '/anim/flame_death_sheet.png?v=32'
-    ];
-
-    if (themeAssetsPreloaded) return;
-
-    themeAssetsPreloaded = true;
-    preloadFooterLightningStrike();
-    if (typeof window.Image !== 'function') return;
-
-    assets.forEach(function (src) {
-      var image = new window.Image();
-      var isPriorityAsset = src.indexOf('lightning_strike') !== -1 ||
-        src.indexOf('lightning-crater') !== -1;
-
-      image.decoding = 'async';
-      if ('fetchPriority' in image) {
-        image.fetchPriority = isPriorityAsset ? 'high' : 'auto';
-      }
-      if ('loading' in image) {
-        image.loading = isPriorityAsset ? 'eager' : 'auto';
-      }
-      image.src = src;
-    });
   }
 
   function playThemeTransition(mode) {
@@ -1938,7 +1888,6 @@
   }
 
   function initFantasyPixel() {
-    preloadThemeAssets();
     initThemeTransitionObserver();
     initHangingThemeToggle();
     initRightsideControls();

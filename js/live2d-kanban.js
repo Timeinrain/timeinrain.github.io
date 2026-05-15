@@ -10,6 +10,8 @@
   var CAT_MEOW_MIN_DELAY = 7800;
   var CAT_MEOW_MAX_DELAY = 12800;
   var CAT_MEOW_DURATION = 1600;
+  var DESKTOP_IDLE_LOAD_DELAY = 1800;
+  var MOBILE_QUERY = '(max-width: 720px)';
   var BODY_ANGLE_X_ID = 'PARAM_ANGLE_X';
   var BODY_ANGLE_Y_ID = 'PARAM_ANGLE_Y';
   var BODY_ANGLE_Z_ID = 'PARAM_ANGLE_Z';
@@ -83,6 +85,7 @@
     bodyCurrentZ: 0,
     eyeTrackingBound: false,
     resizeTimer: null,
+    modelLoadScheduled: false,
     dragging: false,
     dragMoved: false,
     suppressClick: false,
@@ -118,6 +121,23 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function isSmallScreen() {
+    return window.matchMedia ?
+      window.matchMedia(MOBILE_QUERY).matches :
+      window.innerWidth <= 720;
+  }
+
+  function runWhenIdle(callback) {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(callback, {
+        timeout: DESKTOP_IDLE_LOAD_DELAY + 2400
+      });
+      return;
+    }
+
+    window.setTimeout(callback, DESKTOP_IDLE_LOAD_DELAY);
   }
 
   function safelyStore(value) {
@@ -240,7 +260,7 @@
     var root = document.createElement('aside');
 
     root.id = ROOT_ID;
-    root.className = 'live2d-kanban is-loading';
+    root.className = 'live2d-kanban is-deferred';
     root.setAttribute('aria-label', 'Hijiki Live2D \u770b\u677f');
     root.innerHTML = [
       '<div class="live2d-kanban__bubble" aria-live="polite"></div>',
@@ -787,6 +807,7 @@
 
       if (action === 'restore') {
         setMinimized(false);
+        initModel();
         speak('Hijiki \u56de\u6765\u4e86\uff0c\u7ee7\u7eed\u966a\u4f60\u3002');
       }
     });
@@ -822,6 +843,19 @@
     });
   }
 
+  function scheduleModelLoad() {
+    if (state.model || state.loading || state.modelLoadScheduled) return;
+
+    state.modelLoadScheduled = true;
+    runWhenIdle(function () {
+      state.modelLoadScheduled = false;
+      if (state.model || state.loading) return;
+      if (getRoot().classList.contains('is-minimized')) return;
+
+      initModel();
+    });
+  }
+
   function initModel() {
     var root = getRoot();
     var canvas = root.querySelector('.live2d-kanban__canvas');
@@ -830,6 +864,7 @@
     if (!canvas || state.loading || state.model) return Promise.resolve();
 
     state.loading = true;
+    root.classList.remove('is-deferred');
     root.classList.add('is-loading');
 
     return loadDependencies()
@@ -870,13 +905,15 @@
 
   function initKanban() {
     var root;
+    var shouldStartMinimized;
 
     if (!document.body) return;
 
     root = getRoot();
     applySavedPosition(root);
 
-    if (safelyReadStore() === '1') {
+    shouldStartMinimized = safelyReadStore() === '1' || isSmallScreen();
+    if (shouldStartMinimized) {
       root.classList.add('is-minimized');
       setCatHome(root);
       scheduleCatHop();
@@ -891,7 +928,9 @@
     }
 
     state.ready = true;
-    initModel();
+    if (!shouldStartMinimized) {
+      scheduleModelLoad();
+    }
   }
 
   initKanban();

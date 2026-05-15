@@ -1,9 +1,9 @@
-<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《Real-Time Rendering》读书笔记（四）Shading Basics | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="原文：知乎专栏  目录 Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模型">
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《Real-Time Rendering》读书笔记（四）Shading Basics | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="原文：知乎专栏  目录  Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模">
 <meta property="og:type" content="article">
 <meta property="og:title" content="《Real-Time Rendering》读书笔记（四）Shading Basics">
 <meta property="og:url" content="https://timeinrain.github.io/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/index.html">
 <meta property="og:site_name" content="Timeinrain&#39;s Blog">
-<meta property="og:description" content="原文：知乎专栏  目录 Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模型">
+<meta property="og:description" content="原文：知乎专栏  目录  Overview 着色模型 光源 着色模型的实现 Aliasing and Antialiasing Transparency，Alpha and Compositing Display Encoding  Overview在渲染三维场景和物件时，它们的表现状态也十分重要。Shader允许编程人员对三维物件和场景的“表现”加以编写和配置以达到符合预期的渲染风格。 着色模">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://timeinrain.github.io/img/graphics/real-time-rendering-04-shading-basics/cover.png">
 <meta property="article:published_time" content="2021-10-19T09:20:05.000Z">
@@ -160,10 +160,11 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><link rel="preload" as="image" href="/anim/lightning_strike.gif?v=9" fetchpriority="high"><link rel="preload" as="image" href="/img/pixel-medieval/playground/lightning-crater.png?v=1" fetchpriority="high"><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css?v=20260515-slime-colors"><link rel="stylesheet" href="/css/ambient-nature.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/graphics/real-time-rendering-04-shading-basics/cover.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo"><span class="site-name">Timeinrain's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">《Real-Time Rendering》读书笔记（四）Shading Basics</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-hat-wizard"></i><span> Profile</span></a></div><div class="menus_item"><a class="site-page" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">《Real-Time Rendering》读书笔记（四）Shading Basics</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2021-10-19T09:20:05.000Z" title="Updated 2021-10-19 17:20:05">2021-10-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">9.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>31mins</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+}</script><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css?v=20260516-categories-book-v6-pixel-title"><link rel="stylesheet" href="/css/ambient-nature.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.webp);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/graphics/real-time-rendering-04-shading-basics/cover.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo" loading="lazy"><span class="site-name">Timeinrain's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">《Real-Time Rendering》读书笔记（四）Shading Basics</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">《Real-Time Rendering》读书笔记（四）Shading Basics</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2021-10-19T09:20:05.000Z" title="Updated 2021-10-19 17:20:05">2021-10-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">10k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>31mins</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
 <p>原文：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/423211714">知乎专栏</a></p>
 </blockquote>
-<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<p><strong>目录</strong></p>
+<ul>
 <li>Overview</li>
 <li>着色模型</li>
 <li>光源</li>
@@ -176,10 +177,12 @@
 <h3 id="着色模型"><a href="#着色模型" class="headerlink" title="着色模型"></a>着色模型</h3><p>确定材质表现的首要步骤即是确定着色模型，着色模型即描述物体在一系列因素下表现出的颜色等。</p>
 <p>着色模型通常有着一系列控制表面表现的属性例如表面颜色、顶点法向等，在选定着色模型之后紧接着就要指定这些属性。</p>
 <p>通常情况下，一些重要的参数例如法向、光线方向等都以单位向量表示：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-01.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-01.jpg" alt="图" loading="lazy"></p>
 <p>两个向量的夹角的余弦值大小即为两向量的对齐程度。</p>
 <p>方程</p>
-<p>$$<br>\bold r &#x3D; 2(\bold n \cdot \bold l)\bold n - \bold l<br>$$</p>
+<p>$$
+\mathbf{r} &#x3D; 2(\mathbf{n} \cdot \mathbf{l})\mathbf{n} - \mathbf{l}
+$$</p>
 <p>计算了理想反射方向，其中 r 为理想反射方向、 n 为法线法向、 l 为入射方向。</p>
 <h3 id="光源"><a href="#光源" class="headerlink" title="光源"></a>光源</h3><p>在现实中，光源往往十分复杂。自然界有多种不同大小、颜色、形状及强度的光源存在，而它们之间的叠加甚至更加千变万化。此处仅讨论简单的情况，在之后的真实感着色中则将进一步扩展，将以上提及的参数都加以考虑。相比之下，风格化着色模型则根据需求以及视觉化效果以多种方法使用光源参数属性。</p>
 <p>在处理光照复杂度的步骤中，每个模型在是否接受光照以及其程度多少都会有不同的表现形式，即需考虑：</p>
@@ -189,52 +192,64 @@
 <li>…</li>
 </ul>
 <p>在处理光源时，也有两种选择，简单的是否接受光源或是以某种参数控制受光强弱。我们可以以如下方程表示：</p>
-<p>$$<br>\bold c_{shaded}&#x3D;f_{unlit}(\bold n,\bold v)+k_{light}f_{lit}(\bold l,\bold n,\bold v).<br>$$</p>
-<p>其中，系数 (k_{light}) 控制光强弱，可以简单地以光源RGB控制。</p>
+<p>$$
+\mathbf{c}_{shaded}&#x3D;f_{unlit}(\mathbf{n},\mathbf{v})+k_{light}f_{lit}(\mathbf{l},\mathbf{n},\mathbf{v}).
+$$</p>
+<p>其中，系数 \(k_{light}\) 控制光强弱，可以简单地以光源RGB控制。</p>
 <p>对于多种光而言，简单将其求和即可</p>
-<p>$$<br>\bold c_{shaded}&#x3D;f_{unlit}(\bold n,\bold v)+\sum_{i&#x3D;1}^n c_{light_{i}}f_{lit}(\bold l_i,\bold n,\bold v).<br>$$</p>
+<p>$$
+\mathbf{c}_{shaded}&#x3D;f_{unlit}(\mathbf{n},\mathbf{v})+\sum_{i&#x3D;1}^n c_{light_{i}}f_{lit}(\mathbf{l}_i,\mathbf{n},\mathbf{v}).
+$$</p>
 <p>unlit部分可以用于控制着色风格，或者模拟例如天光、全局光照等效果。</p>
 <p>其中，当入射方向与法线夹角超过90度，亦或者理解为光线从背面入射，即不考虑此光线作用。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-02.jpg" alt="图"></p>
-<p>如上图所示，光线在表面的作用可以被看作是许多射线的集合，其密度与光强直接联系在一起，而其真正光强与光线入射方向和表面法线夹角有关（ (cos\theta) ）。（此处定义 l 的方向为光线入射的反方向）</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-02.jpg" alt="图" loading="lazy"></p>
+<p>如上图所示，光线在表面的作用可以被看作是许多射线的集合，其密度与光强直接联系在一起，而其真正光强与光线入射方向和表面法线夹角有关（ \(\cos\theta\) ）。（此处定义 l 的方向为光线入射的反方向）</p>
 <p>在计算时我们还需注意，若希望基于物理的着色，那么从背面来的光线，即其光线与法线点乘为负的结果需要被舍弃。因此，我们需要进行clamp操作：</p>
-<p>若标记 (x^+) 为限制正值，则有 (\bold c_{shaded}&#x3D;f_{unlit}(\bold n,\bold v)+\sum^n_{i&#x3D;1}(\bold l_i\cdot\bold n)^+\bold c_{light_i}f_{lit}(\bold l_i,\bold n,\bold v).)</p>
+<p>若标记 \(x^+\) 为限制正值，则有 \(\mathbf{c}_{shaded}&#x3D;f_{unlit}(\mathbf{n},\mathbf{v})+\sum^n_{i&#x3D;1}(\mathbf{l}_i\cdot\mathbf{n})^+\mathbf{c}_{light_i}f_{lit}(\mathbf{l}_i,\mathbf{n},\mathbf{v}).\)</p>
 <p>我们可以看到，此处的光源与着色模型的作用主要通过以下两个参数决定：<strong>入射光方向向量及光源颜色</strong>。</p>
 <p>但现实生活中光源的种类也有很多，它们各有特性。</p>
-<h3 id="Directional-Lights"><a href="#Directional-Lights" class="headerlink" title="Directional Lights"></a><strong>Directional Lights</strong></h3><p>方向光是光源中最为简单的一种模型，其 (\bold l) 以及 (\bold c_{light}) 都是常量，且一般认为其没有具体的位置，而只有朝向。</p>
+<h3 id="Directional-Lights"><a href="#Directional-Lights" class="headerlink" title="Directional Lights"></a><strong>Directional Lights</strong></h3><p>方向光是光源中最为简单的一种模型，其 \(\mathbf{l}\) 以及 \(\mathbf{c}_{light}\) 都是常量，且一般认为其没有具体的位置，而只有朝向。</p>
 <h3 id="Punctual-Lights"><a href="#Punctual-Lights" class="headerlink" title="Punctual Lights"></a><strong>Punctual Lights</strong></h3><p>Punctual Light指的是拥有位置的一系列灯光种类。这类灯光没有维度、形状或者大小的限制。</p>
 <p>因此我们认为point light以及spotlight属于两种不同的Punctual Light。</p>
-<p>此处， (\bold l &#x3D; \frac{\bold P_{light}-\bold P_0}{||\bold P_{light}-\bold P_0||}) ，即光线方向向量与受光点到光源位置参数有关。</p>
+<p>此处， \(\mathbf{l} &#x3D; \frac{\mathbf{P}_{light}-\mathbf{P}_0}{||\mathbf{P}_{light}-\mathbf{P}_0||}\) ，即光线方向向量与受光点到光源位置参数有关。</p>
 <p>有时，我们需要一个点到光源的距离来控制亮度衰减，此时我们即需要中间变量</p>
-<p>$$<br>r &#x3D; \sqrt{\bold d\cdot\bold d},\bold d &#x3D; \bold P_{light}-\bold P_0.<br>$$</p>
+<p>$$
+r &#x3D; \sqrt{\mathbf{d}\cdot\mathbf{d}},\mathbf{d} &#x3D; \mathbf{P}_{light}-\mathbf{P}_0.
+$$</p>
 <h3 id="Point-Omni-Lights"><a href="#Point-Omni-Lights" class="headerlink" title="Point&#x2F;Omni Lights"></a><strong>Point&#x2F;Omni Lights</strong></h3><p>点光源均匀地向四面八方发射光线。</p>
 <p>其中，光线强弱随目标点到光源的距离衰减：</p>
-<p>$$<br>\bold c_{light}(r)&#x3D;\bold C_{light_0}(\frac{r_0}{r})^2<br>$$</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-03.jpg" alt="图"></p>
+<p>$$
+\mathbf{c}_{light}(r)&#x3D;\mathbf{C}_{light_0}(\frac{r_0}{r})^2
+$$</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-03.jpg" alt="图" loading="lazy"></p>
 <p>但在实际情况下，这个物理正确的公式却有着很大的局限性。</p>
 <p>首先是距离r的限制，<strong>当r趋近于0时，会出现除数为0的情况，导致亮度爆炸性增大</strong>，因此我们常用一个微小常量来控制：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-04.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-04.jpg" alt="图" loading="lazy"></p>
 <p>或是采用一个最小距离进行数据钳制：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-05.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-05.jpg" alt="图" loading="lazy"></p>
 <p>此最小距离的物理意义为光源发射物的半径，因此若有在此半径内的物体将表现为“进入”光源，这是不可能的，因此利用max函数排除。</p>
 <p><strong>同时，若一个物体在离点光源很远的位置，那么带来的就是性能方面的问题了。</strong></p>
 <p>从效率方面出发，我们希望光源在有限距离内衰减到0，而非延申至无穷远处。但若对此有限距离控制不当，将会导致明显的切断效果产生。此时，我们希望通过一个阈值函数来达到一个相对柔和的光线衰减效果：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-06.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-06.jpg" alt="图" loading="lazy"></p>
 <p>其中，+2的意思为若有负值，将负值取0之后再进行平方。</p>
 <p>这些方法的对比如下：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-07.jpg" alt="图"></p>
-<p>我们把这些与处理距离有关的函数用 (f_{dist}(r)) 表示，此类函数被称为distance fall-off functions，即距离衰减函数，因此：</p>
-<p>$$<br>\bold c_{light}(r) &#x3D; \bold c_{light_0}f_{dist}(r)<br>$$</p>
-<h3 id="Spotlights"><a href="#Spotlights" class="headerlink" title="Spotlights"></a><strong>Spotlights</strong></h3><p>与点光源不同，现实世界中光源往往有方向，光强度衰减就与方向也有关，即directional fall-off function方向衰减函数 ( f_{dir}(r)) 。</p>
-<p>$$<br>\bold c_{light}&#x3D;\bold c_{light_0}f_{dist}(r)f_{dir}(\bold l)<br>$$</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-07.jpg" alt="图" loading="lazy"></p>
+<p>我们把这些与处理距离有关的函数用 \(f_{dist}(r)\) 表示，此类函数被称为distance fall-off functions，即距离衰减函数，因此：</p>
+<p>$$
+\mathbf{c}_{light}(r) &#x3D; \mathbf{c}_{light_0}f_{dist}(r)
+$$</p>
+<h3 id="Spotlights"><a href="#Spotlights" class="headerlink" title="Spotlights"></a><strong>Spotlights</strong></h3><p>与点光源不同，现实世界中光源往往有方向，光强度衰减就与方向也有关，即directional fall-off function方向衰减函数 $ f_{dir}(r)$ 。</p>
+<p>$$
+\mathbf{c}_{light}&#x3D;\mathbf{c}_{light_0}f_{dist}(r)f_{dir}(\mathbf{l})
+$$</p>
 <p>Spotlight描述的是将光以圆锥形式投射的一种光源类型，其衰减具有沿方向轴周围旋转对称的特性。</p>
-<p>通常，Spotlight有一个本影角 (\theta_u) ，满足(\forall \theta_s\ge\theta_u,f_{dir}(\bold l)&#x3D;0) .</p>
-<p>同时，类似地，它也有一个半影角 (\theta_p) ，控制处于该角内的光强度统一为满强度。</p>
-<p>以 (\theta_s) 标识某个角度离Spotlight的方向向量张角，三者关系如下：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-08.jpg" alt="图"></p>
-<p>此外， (f_{dir}(\bold l)) 也决定了不同的Punctual Light的各种特性，视具体需求而定，可以制作出不同的Punctual Light。</p>
+<p>通常，Spotlight有一个本影角 \(\theta_u\) ，满足\(\forall \theta_s\ge\theta_u,f_{dir}(\mathbf{l})&#x3D;0\) .</p>
+<p>同时，类似地，它也有一个半影角 \(\theta_p\) ，控制处于该角内的光强度统一为满强度。</p>
+<p>以 \(\theta_s\) 标识某个角度离Spotlight的方向向量张角，三者关系如下：</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-08.jpg" alt="图" loading="lazy"></p>
+<p>此外， \(f_{dir}(\mathbf{l})\) 也决定了不同的Punctual Light的各种特性，视具体需求而定，可以制作出不同的Punctual Light。</p>
 <h3 id="Other-Light-Types"><a href="#Other-Light-Types" class="headerlink" title="Other Light Types"></a><strong>Other Light Types</strong></h3><p>不同的光源类型主要由其各自光线方向的计算方式得以区分。</p>
-<p>只要shader获取到 (\bold l) 与 (\bold c_{light}) 来计算着色，任何一种光源都是可行的。</p>
+<p>只要shader获取到 \(\mathbf{l}\) 与 \(\mathbf{c}_{light}\) 来计算着色，任何一种光源都是可行的。</p>
 <p>现实生活中，光源拥有大小、形状，以多个不同的方向照亮表面。在渲染中我们称之为area lights即区域光。</p>
 <p>区域光的渲染分为两部分：</p>
 <ul>
@@ -266,18 +281,18 @@
 <p>per pixel</p>
 <p>事实上许多着色计算都是逐像素操作的，一些其他阶段的操作主要是几何层面的操作，例如变换及变形等。</p>
 <p>以下是per-pixel以及per-vertex着色在顶点密度不同时的表现差异：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-09.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-09.jpg" alt="图" loading="lazy"></p>
 <p>可以看到per-vertex在顶点较为稀疏的情况下误差较大，这是因为在着色方程中，高光项在表面并不是线性变化的，这对于vertex shader而言难以描述，因其在传入pixel shader前采用的为线性插值。</p>
 <p>理论上讲，在vertex shader中计算其它项，仅在pixel shader计算高光项能带来计算上的缩减。但事实上分离计算过程到两个shader阶段中带来的损耗更大。</p>
 <p>在诸多shader中，vertex shader主要负责非“上色”功能的一些操作，例如几何变换变形等，处理结束的数据在变换到适当的坐标系统下之后根据相关数据的线性插值被写出为varying shader inputs。这些属性主要包括了例如表面位置、表面法线以及可选的切向量或法线映射等。</p>
 <p>此外，尽管vertex shader产生的都是单位长度的normal，但是插值仍然会导致它们的长度发生变化，因此在pixel shader中需要renormalize。同时，若两顶点的法向量差异十分巨大，也会导致其插值的法向量出现问题。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-10.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-10.jpg" alt="图" loading="lazy"></p>
 <p>因此，在vertex shader以及pixel shader过程中需要在插值前后都进行normalize保证准确。</p>
 <p>与表面法线不同，view direction以及light direction等向量不通过插值获取。它们在pixel shader中通过先前插值的表面法线等计算得到。与归一化不同，这些向量由向量减法获取，并且，<strong>在计算它们的插值前不可以对其进行归一化操作，否则会导致错误。</strong></p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-11.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-11.jpg" alt="图" loading="lazy"></p>
 <p>vertex shader将表面几何属性以及相机位置等uniform输入的坐标统一变换到某个合适空间下将在之后的复用中减少pixel shader进行着色时的坐标变换操作。而究竟是哪一个合适空间将根据渲染场景的特性决定。</p>
 <p>当然，并非所有shader总是按照如上流程或原则，一些风格化渲染或许会采用falt shading。理论上其应在geometry shader实现，但近来多用vertex shader来实现flat shading。flat shading简单地将图元的属性仅关联其第一个顶点的属性，并禁用插值得到。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-12.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-12.jpg" alt="图" loading="lazy"></p>
 <h3 id="材质系统"><a href="#材质系统" class="headerlink" title="材质系统"></a><strong>材质系统</strong></h3><p>渲染框架并非仅仅实现一个简单的shader，而需要对多种材质、着色模型以及shader进行一个整体把控。</p>
 <p>shader是相对较为底层的，并非可直接直观交互的API层面资源。</p>
 <p>而<strong>Material</strong>提供了更加直观的交互，可以直接展示表面的表现等。尽管材质主要由shader决定，但其并非一对一的关系，在不同的场景下，同一个Material也许使用不同shader，同理，一个shader也能被不同Material使用。</p>
@@ -312,7 +327,7 @@
 </ul>
 <p>除了整体复合之外，仍然还有很多其他因素需要在设计材质系统时考虑，例如跨平台支持、性能考虑等。</p>
 <h3 id="Aliasing-and-Antialiasing"><a href="#Aliasing-and-Antialiasing" class="headerlink" title="Aliasing and Antialiasing"></a>Aliasing and Antialiasing</h3><p>走样用图片描述如下：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-13.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-13.jpg" alt="图" loading="lazy"></p>
 <p>以下讨论在real-time限制下的反走样技术</p>
 <h3 id="采样与滤波"><a href="#采样与滤波" class="headerlink" title="采样与滤波"></a><strong>采样与滤波</strong></h3><p>将场景渲染到屏幕上离不开对三维场景的采样，采样即针对对于当前像素而言，从采样的空间中获取一个对应的颜色数据的过程。例如在纹理映射中，需要根据不同的条件对贴图进行重新采样以达到一个理想的贴图效果。</p>
 <p>整个大过程主要分为：</p>
@@ -322,49 +337,53 @@
 <li>滤波</li>
 </ul>
 <p>例如连续信号的采样和重建：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-14.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-14.jpg" alt="图" loading="lazy"></p>
 <p>采样的目的是将<strong>连续</strong>的信息<strong>digitalize</strong>（离散化&#x2F;数字化），以达到缩减信息的效果。之后需要利用<strong>滤波</strong>技术，将这些离散的信息进行<strong>重建</strong>。</p>
 <p>然而不管在什么情况下的采样，走样都有可能发生。</p>
 <p>在计算机图形学中的走样一般指的是光栅化的线条或是三角形边缘的<strong>锯齿</strong>或一些不期望的闪烁的高光以及阴影边缘错误等。</p>
 <p>走样一般出现于对某信号以过低的频率进行采样：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-15.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-15.jpg" alt="图" loading="lazy"></p>
 <p>根据采样理论，为了达到准确的重建，需要以大于等于两倍原始信号变化频率的上界的频率进行采样。</p>
 <p>在用点采样时，由于三维空间场景并没有严格的“上界”限制，即三维空间场景在无限细微处依然可能存在更小细节。场景中三角形或是阴影边界等非连续变化的现象都会导致产生一个有限频率的信号。因此，总是用<strong>点采样</strong>方法无法防止走样。</p>
 <h3 id="重建"><a href="#重建" class="headerlink" title="重建"></a><strong>重建</strong></h3><p>在获取到有界的采样信号后考虑如何将其重建。首先需要一个滤波器，通常其表示为：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-16.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-16.jpg" alt="图" loading="lazy"></p>
 <p>它们的重建效果分别为：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-17.jpg" alt="图"></p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-18.jpg" alt="图"></p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-19.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-17.jpg" alt="图" loading="lazy"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-18.jpg" alt="图" loading="lazy"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-19.jpg" alt="图" loading="lazy"></p>
 <p>其中，第三种滤波被称为理想低通滤波，其表达式为：</p>
-<p>$$<br>\text{sinc}(x)&#x3D;\frac{\sin(\pi x)}{\pi x}.<br>$$</p>
+<p>$$
+\text{sinc}(x)&#x3D;\frac{\sin(\pi x)}{\pi x}.
+$$</p>
 <p>在频域空间中，理想的低通滤波为盒装滤波器，该滤波器与频域信息乘积来过滤无效信息。转化到空域中，该盒装滤波器对应的便是sinc函数，而乘积操作也对应地变化为卷积操作。</p>
-<p>事实上，该函数排除了所有频率大于采样频率1&#x2F;2的正弦波，通常情况下根据不同的频率 (f_s) ，我们应当使用 (\text{sinc}(f_sx)) 来滤波。事实上，由于该滤波器某些部分会小于0，且其宽度无穷，因此实际中极少使用。</p>
+<p>事实上，该函数排除了所有频率大于采样频率1&#x2F;2的正弦波，通常情况下根据不同的频率 \(f_s\) ，我们应当使用 \(\text{sinc}(f_sx)\) 来滤波。事实上，由于该滤波器某些部分会小于0，且其宽度无穷，因此实际中极少使用。</p>
 <p>因此在box、tent滤波器与sinc滤波器两种滤波器采样之间的一些滤波器更加实用。</p>
 <p>但同时也避免使用某些包含负值部分的滤波器函数。</p>
 <p>在滤波之后，我们重建起了连续信号，接下来则是利用重新采样的方法来修改这些信号。</p>
 <h3 id="重新采样"><a href="#重新采样" class="headerlink" title="重新采样"></a><strong>重新采样</strong></h3><p>重采样用于对于信号的二次处理，例如我们可以通过改变采样间隔来达到放大或者缩小某个图片的效果。</p>
 <p>放大简单地用新指定的间隔增大采样的频率即可。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-20.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-20.jpg" alt="图" loading="lazy"></p>
 <p>但缩小则需要从被采样的信号中，用以sinc(x&#x2F;a)作为滤波器进行滤波得到的信号进行重建，然后再以期望的频率采样，其中a为缩放倍数：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-21.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-21.jpg" alt="图" loading="lazy"></p>
 <h3 id="屏幕空间反走样"><a href="#屏幕空间反走样" class="headerlink" title="屏幕空间反走样"></a><strong>屏幕空间反走样</strong></h3><p>若采样及滤波不佳则会导致一些不理想的走样现象，那么则需要使用一系列反走样技术来修正。</p>
 <p>对于采样率过低导致的锯齿，我们可以使用每个屏幕cell多个采样点，然后将其进行混合操作来改善这种走样现象：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-22.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-22.jpg" alt="图" loading="lazy"></p>
 <p>通常用以下方程描述该方法：</p>
-<p>$$<br>\bold p(x,y)&#x3D;\sum_{i&#x3D;1}^nw_i\bold c(i,x,y)<br>$$</p>
-<p>其中，n为每个像素内采样的点个数，\bold c(i,x,y)为采样的结果，w_i为其权重。</p>
+<p>$$
+\mathbf{p}(x,y)&#x3D;\sum_{i&#x3D;1}^nw_i\mathbf{c}(i,x,y)
+$$</p>
+<p>其中，\(n\) 为每个像素内采样的点个数，\(\mathbf{c}(i,x,y)\) 为采样的结果，\(w_i\) 为其权重。</p>
 <p>这种<em><em>每个像素使用多个采样点的算法叫做超采样方法即</em>supersampling antialiasing*(SSAA)或*full-screen antialiasing</em>(FSAA)**。</p>
 <p>即以一个高分辨率渲染场景，然后使用临近采样来创建渲染结果的方法。这种方法耗费较大，因为其每个子采样点都必须填充上色，且z-buffer也会被采样，而其主要优点则在于简单。一些不同形式的SSAA：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-23.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-23.jpg" alt="图" loading="lazy"></p>
 <p>另一种思路是采用accumulation buffer。不改变分辨率，通过生成四张朝着x、y轴偏移正负半个像素的image进行叠加进行多采样点采样，但在实时渲染中这种算法较为复杂。</p>
 <p>在某些例如物体边缘、镜面高光以及阴影边缘等有颜色突变的情况下，我们需要额外的采样点。</p>
 <p>而其他手段例如使用软阴影，细物增大半径，高光进行一定的平滑等一样可以达到反走样效果。</p>
 <p>**<em>Multisampling antialiasing</em>(MSAA)**则仅在每个pixel进行一次表面着色计算，相比SSAA有所减少。每个像素有四个独立的带有各自颜色与深度信息的采样点。</p>
 <p>若某个fragment覆盖了四个采样点，那么此信息就以像素中心位置进行采样，例如若某像素覆盖了图中四个红色点，那么最终该fragment对此像素的贡献将以该像素中心位置对其采样的结果为标准，即绿色点。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-24.png" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-24.png" alt="图" loading="lazy"></p>
 <p>而若没有覆盖完全，例如：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-25.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-25.jpg" alt="图" loading="lazy"></p>
 <p>则会首先将其进行一定的位置变换（例如旋转）来达到能最佳表现该像素覆盖的状态，这些部分基本都是以GPU硬件实现的。然后根据色值进行blend。</p>
 <p>其余的诸如EQAA（Enhanced Quality AA）以及CSAA（Coverage Sampling AA）此处不再赘述。</p>
 <p>在采样完成之后将要进行的即是<em><strong>resolve</strong></em>操作，将这些color进行带权平均混合。</p>
@@ -377,10 +396,10 @@
 <p>为了解决类似问题，我们将会引入motion vector进行标识物体的速度大小，并将其存储在velocity buffer中，用此来进行不同的时域抗锯齿权重处理。</p>
 <h3 id="采样模板"><a href="#采样模板" class="headerlink" title="采样模板"></a><strong>采样模板</strong></h3><p>良好的采样模板对于采样的有效性十分重要。</p>
 <p>根据统计结果，竖直、水平的分布最为常见，其次是45度角的斜线。旋转晶格采样**<em>Rotated grid supersampling</em>（RGSS）**方法使用一个旋转的方形图样来保证像素内水平垂直的采样效果更好。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-26.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-26.jpg" alt="图" loading="lazy"></p>
 <p>这种模板的特点为在每一行、列都有一个采样点，这种特点保证了其对于垂直以及水平边缘的捕获能力较强。</p>
 <p>但仅仅保证行列都有一个采样点并不够，例如存在如下极端情况：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-27.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-27.jpg" alt="图" loading="lazy"></p>
 <p>因此，我们希望两个采样点彼此尽可能远离，又希望其复合标准正态分布。</p>
 <p>但也存在一些情况，例如一些极小的物体随意地分布在整个场景中，这导致无论怎样调整采样率无法十分完美地描述这些物体。而若这些微小物体自身组成图样，那么以特定变化常量采样则会导致例如摩尔纹一类的不理想纹样的产生。</p>
 <p>解决此问题的一种方法是给采样点分布加上“噪声”，即让其随机化，尽管此将会导致一些瑕疵但相比于摩尔纹来说人眼会好接受得多。还有一种方法是每个pixel采用不同的采样模板，此处不再赘述。</p>
@@ -388,7 +407,7 @@
 <p>这种反走样方法形态采用后处理的方法，即在渲染之后的阶段再进行处理，尔后衍生的一些列形态学AA方法主要着眼于三角形的边缘进行计算和优化。</p>
 <p>例如directionally localized AA（DLAA）仅利用color buffer的内容，基于观测数据横向模糊近乎垂直的边缘、纵向模糊近乎水平的边缘来达到AA的效果。</p>
 <p>其他一些边缘检测算法在寻找到可能含有边的像素之后对其进行blend操作：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-28.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-28.jpg" alt="图" loading="lazy"></p>
 <p>但基于图像的形态学算法在遇到以下情况时可能较为棘手：</p>
 <ul>
 <li>边缘颜色差异过小</li>
@@ -407,78 +426,94 @@
 <p>另一种随机化透明度算法讲棋盘格的思想迁移到了subpixel层面，但同时也带来了一定要求，这些采样点必须足够多来保证透明度不会发生像素间突变。</p>
 <p>多数的透明算法是讲透明物体的颜色与其遮挡的物体的颜色进行混合，被称为<em><strong>alpha blending</strong></em>。</p>
 <p>在渲染物体的时候，RGB和z-buffer的数据被关联到每个像素，此处我们增加一个alpha属性，该属性决定了<strong>这个物体的不透明度或者对当前像素的覆盖程度</strong>。alpha值为1则代表不透明，为0则全透明。</p>
-<p>例如，若一个肥皂泡边缘也许只占据一个像素3&#x2F;4的大小，假设肥皂泡透明度为0.1，则其Alpha值为 (0.75\times0.1&#x3D;0.075) 。</p>
+<p>例如，若一个肥皂泡边缘也许只占据一个像素3&#x2F;4的大小，假设肥皂泡透明度为0.1，则其Alpha值为 \(0.75\times0.1&#x3D;0.075\) 。</p>
 <p>但若我们使用例如MSAA之类的AA算法，那么采样点将会自动考虑覆盖程度，若采样点中三个被覆盖，那么这三个采样点将会各自使用0.1作为alpha值进行计算。</p>
-<h3 id="混合顺序"><a href="#混合顺序" class="headerlink" title="混合顺序"></a><strong>混合顺序</strong></h3><p>在进行alpha混合的时候，将用 (\bold {over}) 算子，采用以下式子计算：</p>
-<p>$$<br>\bold c_o&#x3D;\alpha_s\bold c_s+(1-\alpha_s)\bold c_d<br>$$</p>
-<p>其中下表s标识的是source，d则是destination， (\bold c_o) 则代表是最终的颜色。</p>
+<h3 id="混合顺序"><a href="#混合顺序" class="headerlink" title="混合顺序"></a><strong>混合顺序</strong></h3><p>在进行alpha混合的时候，将用 \(\mathbf{over}\) 算子，采用以下式子计算：</p>
+<p>$$
+\mathbf{c}_o&#x3D;\alpha_s\mathbf{c}_s+(1-\alpha_s)\mathbf{c}_d
+$$</p>
+<p>其中下表s标识的是source，d则是destination， \(\mathbf{c}_o\) 则代表是最终的颜色。</p>
 <p>但该算子并不能完全模拟所有透明的效果。例如，红色的透明物体覆盖在蓝色物体上通常情况下是让该颜色变暗，但若采用上式，则得到的结果并不符合。而具体操作将会在之后介绍。</p>
 <p>另一种方法被称为<em><strong>additive blending</strong></em>:</p>
-<p>$$<br>\bold c_o&#x3D;\alpha_s\bold c_s+\bold c_d.<br>$$</p>
+<p>$$
+\mathbf{c}_o&#x3D;\alpha_s\mathbf{c}_s+\mathbf{c}_d.
+$$</p>
 <p>这种加性混合算法对于闪光类特效而言十分适合，这类特效通常仅仅是让某个像素更亮，而非将其以权重平均。而这种方法并不适合模拟透明。</p>
-<p>为了正确渲染透明物体，我们需要先关闭blending，将不透明物体渲染完成之后，再以 (\bold {over}) 进行渲染透明物体。</p>
+<p>为了正确渲染透明物体，我们需要先关闭blending，将不透明物体渲染完成之后，再以 \(\mathbf{over}\) 进行渲染透明物体。</p>
 <p>但也有限制条件，即z-buffer仅局限于每个像素存储一个物体深度信息。当多个透明物体同时覆盖一个像素的时候就要求物体需要从后往前渲染，否则会出现错误。其中一种方法是对物体进行视线方向按远近粗略排序，但这种方法仍然存在诸多瑕疵。同时，也存在单个mesh的自遮挡半透问题。</p>
 <p>但由于简便性、快速以及不需要额外空间，此粗略排序依然常用。在实现透明度渲染过程中，一般来说将要关闭深度写入。深度测试照常但表面不再改变这些深度值，对应像素的最近的非透明表面依然保留为该像素深度值，这样做能保证所有的透明物体都会以一些形式渲染出来，而非在摄像机旋转时突然地消失或出现。</p>
 <p>而其他一些算法例如分两次渲染透明物体，一次背面，一次正面等也可以达到效果。</p>
-<p>(\bold {over}) 方程也可以更改以适配从前至后的渲染顺序，达到同样的效果，此混合被称作 (\bold{under}) 算子：</p>
-<p>$$<br>\bold c_o&#x3D;\alpha_d\bold c_d+(1-\alpha_d)\alpha_s\bold c_s,\ \bold a_o&#x3D;\alpha_s(1-\alpha_d)+\alpha_d&#x3D;\alpha_s-\alpha_s\alpha_d+\alpha_d.<br>$$</p>
-<p>(\bold {under}) 要求目标像素进行alpha值的维护，而 (\bold {over}) 并不需要。同时，该公式考虑alpha值也代表着对像素的<strong>覆盖程度</strong>。</p>
+<p>\(\mathbf{over}\) 方程也可以更改以适配从前至后的渲染顺序，达到同样的效果，此混合被称作 \(\mathbf{under}\) 算子：</p>
+<p>$$
+\mathbf{c}_o&#x3D;\alpha_d\mathbf{c}_d+(1-\alpha_d)\alpha_s\mathbf{c}_s,\\ \mathbf{a}_o&#x3D;\alpha_s(1-\alpha_d)+\alpha_d&#x3D;\alpha_s-\alpha_s\alpha_d+\alpha_d.
+$$</p>
+<p>\(\mathbf{under}\) 要求目标像素进行alpha值的维护，而 \(\mathbf{over}\) 并不需要。同时，该公式考虑alpha值也代表着对像素的<strong>覆盖程度</strong>。</p>
 <p>因此，对于覆盖的计算如下：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-29.jpg" alt="图"></p>
-<h3 id="Order-Independent-Transparency"><a href="#Order-Independent-Transparency" class="headerlink" title="Order-Independent Transparency"></a><strong>Order-Independent Transparency</strong></h3><p>首先介绍的 (\bold {under}) 方法是将透明物体绘制到不同的color buffer中，然后利用 (\bold{over}) 算子将这些color buffer与不透明视图场景进行混合的一种方法。</p>
-<p>介绍另一种多利用 (\bold{under}) 算子的不透明方法<em>order-independent transparency</em>（OIT）也称depth peeling。</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-29.jpg" alt="图" loading="lazy"></p>
+<h3 id="Order-Independent-Transparency"><a href="#Order-Independent-Transparency" class="headerlink" title="Order-Independent Transparency"></a><strong>Order-Independent Transparency</strong></h3><p>首先介绍的 \(\mathbf{under}\) 方法是将透明物体绘制到不同的color buffer中，然后利用 \(\mathbf{over}\) 算子将这些color buffer与不透明视图场景进行混合的一种方法。</p>
+<p>介绍另一种多利用 \(\mathbf{under}\) 算子的不透明方法<em>order-independent transparency</em>（OIT）也称depth peeling。</p>
 <p>顾名思义，该种方法不需要对物体进行排序，渲染的思路为利用两个z-buffer以及多个pass来渲染透明。</p>
-<p>第一个pass中将所有表面（包括透明表面）的深度值存储到第一个z-buffer中，第二个pass中渲染所有的透明物体。若某个物体的深度值与第一个z-buffer中的深度值匹配了，则表示该物体为最近的一个透明物体，于是记录该物体RGBA至一个独立的color-buffer中。那么接下来将第二近的信息，也就是z值大于z-buffer中记录值但相比之下比其余z值更小的表面信息，进行 (\bold{under}) 叠加。在一定数量的pass之后再将这些分离出来的透明图像渲染在不透明图像上。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-30.jpg" alt="图"></p>
+<p>第一个pass中将所有表面（包括透明表面）的深度值存储到第一个z-buffer中，第二个pass中渲染所有的透明物体。若某个物体的深度值与第一个z-buffer中的深度值匹配了，则表示该物体为最近的一个透明物体，于是记录该物体RGBA至一个独立的color-buffer中。那么接下来将第二近的信息，也就是z值大于z-buffer中记录值但相比之下比其余z值更小的表面信息，进行 \(\mathbf{under}\) 叠加。在一定数量的pass之后再将这些分离出来的透明图像渲染在不透明图像上。</p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-30.jpg" alt="图" loading="lazy"></p>
 <p>在此基础上有多种变化算法，Thibieroz的算法为从后至前渲染，但其缺点就在于需要决定究竟需要多少pass才足够渲染全部透明层物体。</p>
-<p>使用 (\bold{under}) 算子的优点在于，人眼第一眼看到的透明物体首先被渲染出来，而随着混合的叠加，当alpha值趋近于1时，之后的叠加将会被舍弃，因此可以降低计算开销。而这种方法仅适用于从前往后渲染的顺序，因为若采用从后往前渲染，那么场景中摄像机首先看到的透明表面信息可能因为该像素alpha值已经接近1而导致透明物体渲染提前终止从而被舍弃。</p>
+<p>使用 \(\mathbf{under}\) 算子的优点在于，人眼第一眼看到的透明物体首先被渲染出来，而随着混合的叠加，当alpha值趋近于1时，之后的叠加将会被舍弃，因此可以降低计算开销。而这种方法仅适用于从前往后渲染的顺序，因为若采用从后往前渲染，那么场景中摄像机首先看到的透明表面信息可能因为该像素alpha值已经接近1而导致透明物体渲染提前终止从而被舍弃。</p>
 <p>但OIT算法在时间上也耗费较大。它的一种优化原型双向深度剥离算法则是在第一个pass中同步渲染最前与最后，然后是次前与次后层来达到降低pass数目的效果。据此，根据桶排原理的多层共pass渲染也应运而生。但它们的缺点就是需要足够的内存空间来存储层级排序关系。</p>
 <p>另一个方法是使用一个新的缓存A-buffer，每个图元在渲染时将会产生一个coverage mask覆盖这个图元所涉及到的所有fragment。而每个像素拥有各自存储相关fragment的表，根据z-buffer类似原理存储透明表面的片断。在建表完成之后逐采样点遍历合并即可，此处采用UAVs与原子操作复合的A-buffer链式遍历不再赘述。</p>
 <p>A-buffer的优点在于每个像素仅需要申请所需片断的存储空间，但这同时也是缺点，因为并不知道有多少片断会被包含在内。一些包含头发、烟雾等的场景将会导致大量的A-buffer容量需求。</p>
 <p>GPU通常会提前申请好一些空间，但是A-buffer使用过程中若产生了内存溢出则会导致明显的错误。此时引入一种利用pixel synchronization的新方法：多层级alpha混合。这种pixel synchronization开销比原子操作小，其原理为重新指定存储以及混合方式来防止内存溢出。</p>
 <p>另一种方法是在k-buffer的基础上建立的，利用权重平均将从近至远的透明层进行重要性划分，然后根据重要性决定其是否需要排序或是丢弃。这种方法几乎适用于所有GPU。</p>
 <p>但由于其为Order-independent的，故在近乎不透明的物体排序上表现较差，如下图最右：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-31.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-31.jpg" alt="图" loading="lazy"></p>
 <p>在带权求和透明度算法中利用公式：</p>
-<p>$$<br>\bold c_o&#x3D;\sum_{i&#x3D;1}^{n}(\alpha_i\bold c_i)+\bold c_d(1-\sum_{i&#x3D;1}^n\alpha_i)<br>$$</p>
-<p>其中，n为透明表面数目， (\bold c_i) 与 (\alpha_i) 为透明表面的颜色与透明度值， (\bold c_d) 为不透明部分颜色。</p>
+<p>$$
+\mathbf{c}_o&#x3D;\sum_{i&#x3D;1}^{n}(\alpha_i\mathbf{c}_i)+\mathbf{c}_d(1-\sum_{i&#x3D;1}^n\alpha_i)
+$$</p>
+<p>其中，n为透明表面数目， \(\mathbf{c}_i\) 与 \(\alpha_i\) 为透明表面的颜色与透明度值， \(\mathbf{c}_d\) 为不透明部分颜色。</p>
 <p>在渲染半透明物体时，左右两部分的累加分别存储，在透明pass结束时，每个像素单独计算该方程。</p>
 <p>由于alpha之和很可能大于1，因此我们需要进行取值限制，故有：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-32.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-32.jpg" alt="图" loading="lazy"></p>
 <p>其中，u为不透明场景在经过n个透明表面混合后的估计的可见性。</p>
 <p>但由于average alpha方法会导致所有颜色被均等地混合，会造成无法辨别其排列顺序的歧义。因此我们又可以根据其离摄像机的距离来决定其混合Alpha时的权重。</p>
 <p>**这些OIT算法详细介绍将会在之后的一个专门的文章中给出。**此处不再赘述了。</p>
 <h3 id="Premultiplied-Alphas-and-Compositing"><a href="#Premultiplied-Alphas-and-Compositing" class="headerlink" title="Premultiplied Alphas and Compositing"></a><strong>Premultiplied Alphas and Compositing</strong></h3><p>合成即是将渲染出来的图像与另外一些独立的物体进行混合。</p>
 <p>在这种情况下，alpha值将与RGB一同存储，单由alpha值生成的图像也被称作matte，表现为黑白图片展示一个物体的剪影形状。</p>
 <p>其中一种使用合成RGBA的方法被称为premultiplied alphas，其原理为在RGB在真正使用前先乘以alpha值：</p>
-<p>$$<br>\bold c_o &#x3D; \bold c_s’+(1-\alpha_s)\bold c_d<br>$$</p>
-<p>premultiplied方法允许在透明物体合成时使用 (\bold {over}) 算子，以及加性混合。使用该方法通常情况下RGB值是小于Alpha值的。在渲染合成图像的时候，通常使用这种方法来降低数据变换开销。另一种unmultiplied alphas方法则在存储RGBA时，不预先将前三者与Alpha相乘，保留了原始的RGB值。</p>
+<p>$$
+\mathbf{c}_o &#x3D; \mathbf{c}_s&#39;+(1-\alpha_s)\mathbf{c}_d
+$$</p>
+<p>premultiplied方法允许在透明物体合成时使用 \(\mathbf{over}\) 算子，以及加性混合。使用该方法通常情况下RGB值是小于Alpha值的。在渲染合成图像的时候，通常使用这种方法来降低数据变换开销。另一种unmultiplied alphas方法则在存储RGBA时，不预先将前三者与Alpha相乘，保留了原始的RGB值。</p>
 <h3 id="Display-Encoding"><a href="#Display-Encoding" class="headerlink" title="Display Encoding"></a>Display Encoding</h3><p>当计算光照贴图等操作时我们使用的值往往是线性变化的，即多使用乘法与加法。</p>
 <p>但由于人眼的特殊构造，对于暗部细节的关注度更多，显示器存储缓存往往使用非线性编码以使颜色编码的亮度分级适应人眼的颜色亮度感知。</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-33.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-33.jpg" alt="图" loading="lazy"></p>
 <p>gamma校正为将0-1之间取到的颜色值进行1&#x2F;2.2次乘方变换。</p>
 <p>display transfer function则描述了数字图像真实颜色值与其在显示屏上发射出来的单位立体角辐照度（Radiance）的关系。</p>
 <p>在编码为线性颜色值时，我们要做的就是消除这一系列颜色转变函数的影响。例如将某值乘以2，我们希望其最终radiance也是乘以2的。因此我们需要引入display transfer function的逆来消除非线性影响，即为gamma correction。</p>
 <p>在解码贴图色值的时候，则需要应用display transfer function来取得着色时需要使用的线性的值：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-34.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-34.jpg" alt="图" loading="lazy"></p>
 <p>标准的颜色校正函数根据sRGB指定，即为一个色彩空间的颜色标准。</p>
 <p>许多操作都需要先decode至线性空间，然后再进行相应变换，之后再encode回非线性空间颜色。</p>
 <p>关于sRGB的变换逆变换：</p>
-<p>$$<br>y&#x3D;f^{-1}_{sRGB}(x)&#x3D;\begin{cases}1.055x^{1&#x2F;2.4}-0.055,&amp; where&amp;x&gt;0.0031308,\12.92x,&amp; where&amp;x\le0.0031308,\end{cases}<br>$$</p>
+<p>$$
+y&#x3D;f^{-1}_{sRGB}(x)&#x3D;\begin{cases}1.055x^{1&#x2F;2.4}-0.055,&amp; where&amp;x&gt;0.0031308,\\12.92x,&amp; where&amp;x\le0.0031308,\end{cases}
+$$</p>
 <p>其中，x表示线性RGB空间的具体值。</p>
 <p>而以上两者的变换是以下gamma变换的近似：</p>
-<p>$$<br>y &#x3D; f^{-1}_{display}(x)&#x3D;x^{1&#x2F;\gamma}<br>$$</p>
-<p>其中，以 (\gamma) &#x3D;2.2来代替，即为gamma correction。</p>
+<p>$$
+y &#x3D; f^{-1}_{display}(x)&#x3D;x^{1&#x2F;\gamma}
+$$</p>
+<p>其中，以 \(\gamma\) &#x3D;2.2来代替，即为gamma correction。</p>
 <p>sRGB转换到线性空间颜色的变换为：</p>
-<p>$$<br>x&#x3D;f_{sRGB}(y)&#x3D;\begin{cases}\left(\frac{y+0.055}{1.055}\right)^{2.4},&amp;where &amp;y&gt;0.04045\\frac{y}{12.92},&amp; where&amp; y\le0.04045,\end{cases}<br>$$</p>
+<p>$$
+x&#x3D;f_{sRGB}(y)&#x3D;\begin{cases}\left(\frac{y+0.055}{1.055}\right)^{2.4},&amp;where &amp;y&gt;0.04045\\\frac{y}{12.92},&amp; where&amp; y\le0.04045,\end{cases}
+$$</p>
 <p>若不使用gamma校正，较低的线性颜色值将会显得偏暗，而某些颜色的色调也可能会产生变化。另外，不使用gamma校正也可能导致反走样效果出现偏差。</p>
 <p>三角形边缘错误：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-35.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-35.jpg" alt="图" loading="lazy"></p>
 <p>采样纹样错误：</p>
-<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-36.jpg" alt="图"></p>
+<p><img src="/img/graphics/real-time-rendering-04-shading-basics/image-36.jpg" alt="图" loading="lazy"></p>
 <hr>
 <p>Author : Randyczhang</p>
-</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a><a class="post-meta__tags" href="/tags/Real-Time-Rendering/">Real-Time Rendering</a></div><div class="post-share"><div class="social-share" data-image="/img/graphics/real-time-rendering-04-shading-basics/cover.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/12/hello-world/" title="Hello World"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">Hello World</div></div><div class="info-2"><div class="info-item-1">Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick StartCreate a new post1$ hexo new &quot;My New Post&quot;  More info: Writing Run server1$ hexo server  More info: Server Generate static files1$ hexo generate  More info: Generating Deploy to remote sites1$ hexo deploy  More info: Deployment </div></div></div></a><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - (\bold v &#x3D; (v_x\ v_y\ v_z\ 1)^T) Vector- (\bold v &#x3D; (v_x\ v_y\ v_z\ 0)^T) 所有的平移、旋转、缩放...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img class="cover" src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-21</div><div class="info-item-2">《Real-Time Rendering》读书笔记（二） GPU</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种操作，GPU应运而生。 在速度上，GPU的计算速度是胜于CPU的。纵观GPU发展，其可编程性和可配置性都在逐步地提升，朝着Programmability和Flexibility的方向迈进，为图形编程人员提供了大量的可能。 GPU的速度优势主要来源于对大量高平行化任务的集中计算。例如有固定硬件支持z-buffer的实现，支持快速贴图存取及其他buffer的存取以及快速计算triangle traversal等功能。 Shader Core则是一些处理相对独立的微小处理器，例如坐标变换处理，颜色计算处理等。 但同时，延迟也是在设计处理器时不可缺少的考虑因素，处理数据的inout时将会造成处理...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-00-catalog/" title="《Real-Time Rendering》读书笔记（目录）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（目录）</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 渲染管线 GPU Transforms Shading基础 Texturing Shadows 光照和颜色 基于物理的着色 Local Illumination Global Illumination Image-Space Effects Beyond Polygons Volumetric and Translucency Rendering 非真实感渲染 Polygonal Techniques Curves and Curved Surfaces Pipeline Optimization 加速算法 Efficient Shading 虚拟现实与增强现实 求交检测 图形硬件 未来展望   </div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img class="cover" src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（一） 渲染管线</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录 整体架构 Application Geometry Processing Rasterization Pixel Processing Summary  整体架构渲染管线可以分为以下四个部分：   渲染速度可以用 frames per second(FPS)来定义。 采用流水线形式的渲染流程将由耗时最大的一个环节决定整体图像的渲染速度。因此，我们需要着重解决该瓶颈问题。  Application Stage应用程序阶段，由于基本在CPU上执行，故用户对此阶段有着完全控制。因此，若在此阶段实施一些优化，对后续的执行效率也会有比较大的帮助。 不过，某些采用Compute Shader的工作也被称为Application Stage，与在CPU上执行不同，该shader在GPU上执行，并将GPU视作高并行能力的处理器。 例如，碰撞检测将会在此阶段进行，输入输出响应、加速算法等渲染管线无法直接很好地处理的过程都会在此阶段实现。 Geometry Processing几何处理阶段主要分为以下四个substage：  Vertex Shading顶点着色需要解决两个...</div></div></div></a><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-26</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - (\bold v &#x3D; (v_x\ v_y\ v_z\ 1)^T) Vector- (\bold v &#x3D; (v_x\ v_y\ v_z\ 0)^T) 所有的平移、旋转、缩放...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>#card-visitor-map{display:none}</style>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a><a class="post-meta__tags" href="/tags/Real-Time-Rendering/">Real-Time Rendering</a></div><div class="post-share"><div class="social-share" data-image="/img/graphics/real-time-rendering-04-shading-basics/cover.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/12/hello-world/" title="Hello World"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">Hello World</div></div><div class="info-2"><div class="info-item-1">Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick StartCreate a new post1$ hexo new &quot;My New Post&quot;  More info: Writing Run server1$ hexo server  More info: Server Generate static files1$ hexo generate  More info: Generating Deploy to remote sites1$ hexo deploy  More info: Deployment </div></div></div></a><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post" loading="lazy"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - \(\mathbf{v} &#x3D; (v_x\ v_y\ v_z\ 1)^T\) Vector- \(\mathbf{v} &#x3D; (v_x\ v_y\ v_z\ 0)^T\) 所...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img class="cover" src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-21</div><div class="info-item-2">《Real-Time Rendering》读书笔记（二） GPU</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 数据并行架构 GPU管线 Programmable Shader Stage 可编程Shading及API的演变 Vertex Shader Tessellation Stage Geometry Shader Pixel Shader Merging Stage Compute Shader  Overview在早期，由于图像生成过程包含十分频繁的各种操作，GPU应运而生。 在速度上，GPU的计算速度是胜于CPU的。纵观GPU发展，其可编程性和可配置性都在逐步地提升，朝着Programmability和Flexibility的方向迈进，为图形编程人员提供了大量的可能。 GPU的速度优势主要来源于对大量高平行化任务的集中计算。例如有固定硬件支持z-buffer的实现，支持快速贴图存取及其他buffer的存取以及快速计算triangle traversal等功能。 Shader Core则是一些处理相对独立的微小处理器，例如坐标变换处理，颜色计算处理等。 但同时，延迟也是在设计处理器时不可缺少的考虑因素，处理数据的inout时将会造成处...</div></div></div></a><a class="pagination-related" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img class="cover" src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-26</div><div class="info-item-2">《Real-Time Rendering》读书笔记（三） Transforms</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  Overview 基础变换 特殊矩阵变换及操作 四元数 顶点融合 Morphing（变形） Geometry Cache Playback 投影  OverviewTransform的定义为，利用诸如点、向量甚至颜色等实体将其以某种形式转换。 Transform在计算机图形学领域十分重要，包含position、reshape以及animate物体、灯光以及相机等。还涉及到坐标系统、投影、旋转等运算。 Transform中比较重要的三种：平移、缩放和旋转。其中，缩放和旋转都可以用3x3的矩阵描述，因为其为线性操作。但是平移需要第四个维度。 因此由线性变换以及平移操作组成的变换，可以用一个4x4的仿射变换矩阵来描述。 为了表示四维的向量形式，我们采用了齐次标记，根据第四个维度是0或者1来区别点与向量。 其中，向量的第四个维度是0，而点的第四个维度为1。 Point - \(\mathbf{v} &#x3D; (v_x\ v_y\ v_z\ 1)^T\) Vector- \(\mathbf{v} &#x3D; (v_x\ v_y\ v_z\ 0)^T\) 所...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img class="cover" src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（一） 渲染管线</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  整体架构 Application Geometry Processing Rasterization Pixel Processing Summary  整体架构渲染管线可以分为以下四个部分：   渲染速度可以用 frames per second(FPS)来定义。 采用流水线形式的渲染流程将由耗时最大的一个环节决定整体图像的渲染速度。因此，我们需要着重解决该瓶颈问题。  Application Stage应用程序阶段，由于基本在CPU上执行，故用户对此阶段有着完全控制。因此，若在此阶段实施一些优化，对后续的执行效率也会有比较大的帮助。 不过，某些采用Compute Shader的工作也被称为Application Stage，与在CPU上执行不同，该shader在GPU上执行，并将GPU视作高并行能力的处理器。 例如，碰撞检测将会在此阶段进行，输入输出响应、加速算法等渲染管线无法直接很好地处理的过程都会在此阶段实现。 Geometry Processing几何处理阶段主要分为以下四个substage：  Vertex Shading顶点着色需要解决两...</div></div></div></a><a class="pagination-related" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-00-catalog/" title="《Real-Time Rendering》读书笔记（目录）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-14</div><div class="info-item-2">《Real-Time Rendering》读书笔记（目录）</div></div><div class="info-2"><div class="info-item-1"> 原文：知乎专栏  目录  渲染管线 GPU Transforms Shading基础 Texturing Shadows 光照和颜色 基于物理的着色 Local Illumination Global Illumination Image-Space Effects Beyond Polygons Volumetric and Translucency Rendering 非真实感渲染 Polygonal Techniques Curves and Curved Surfaces Pipeline Optimization 加速算法 Efficient Shading 虚拟现实与增强现实 求交检测 图形硬件 未来展望   </div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>#card-visitor-map{display:none}</style>
 <div id="visitor-map-box" style="text-align:center;max-width:100%;overflow:hidden"></div>
 <script>
 (function () {
@@ -500,7 +535,7 @@
   document.addEventListener('pjax:complete', syncVisitorMap)
 })()
 </script>
-</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">目录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview"><span class="toc-number">1.1.</span> <span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9D%80%E8%89%B2%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.</span> <span class="toc-text">着色模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%89%E6%BA%90"><span class="toc-number">1.3.</span> <span class="toc-text">光源</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Directional-Lights"><span class="toc-number">1.4.</span> <span class="toc-text">Directional Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Punctual-Lights"><span class="toc-number">1.5.</span> <span class="toc-text">Punctual Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Point-Omni-Lights"><span class="toc-number">1.6.</span> <span class="toc-text">Point&#x2F;Omni Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spotlights"><span class="toc-number">1.7.</span> <span class="toc-text">Spotlights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Other-Light-Types"><span class="toc-number">1.8.</span> <span class="toc-text">Other Light Types</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9D%80%E8%89%B2%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.9.</span> <span class="toc-text">着色模型的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Frequency-of-Evaluation"><span class="toc-number">1.10.</span> <span class="toc-text">Frequency of Evaluation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%90%E8%B4%A8%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.11.</span> <span class="toc-text">材质系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Aliasing-and-Antialiasing"><span class="toc-number">1.12.</span> <span class="toc-text">Aliasing and Antialiasing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%87%E6%A0%B7%E4%B8%8E%E6%BB%A4%E6%B3%A2"><span class="toc-number">1.13.</span> <span class="toc-text">采样与滤波</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E5%BB%BA"><span class="toc-number">1.14.</span> <span class="toc-text">重建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E6%96%B0%E9%87%87%E6%A0%B7"><span class="toc-number">1.15.</span> <span class="toc-text">重新采样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%8F%E5%B9%95%E7%A9%BA%E9%97%B4%E5%8F%8D%E8%B5%B0%E6%A0%B7"><span class="toc-number">1.16.</span> <span class="toc-text">屏幕空间反走样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%87%E6%A0%B7%E6%A8%A1%E6%9D%BF"><span class="toc-number">1.17.</span> <span class="toc-text">采样模板</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%A2%E6%80%81%E5%AD%A6%E6%96%B9%E6%B3%95"><span class="toc-number">1.18.</span> <span class="toc-text">形态学方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transparency%EF%BC%8CAlpha-and-Compositing"><span class="toc-number">1.19.</span> <span class="toc-text">Transparency，Alpha and Compositing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E9%A1%BA%E5%BA%8F"><span class="toc-number">1.20.</span> <span class="toc-text">混合顺序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Order-Independent-Transparency"><span class="toc-number">1.21.</span> <span class="toc-text">Order-Independent Transparency</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Premultiplied-Alphas-and-Compositing"><span class="toc-number">1.22.</span> <span class="toc-text">Premultiplied Alphas and Compositing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Display-Encoding"><span class="toc-number">1.23.</span> <span class="toc-text">Display Encoding</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/12/hello-world/" title="Hello World">Hello World</a><time datetime="2026-05-12T10:59:06.287Z" title="Created 2026-05-12 18:59:06">2026-05-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（四）Shading Basics"/></a><div class="content"><a class="title" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics">《Real-Time Rendering》读书笔记（四）Shading Basics</a><time datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（三） Transforms"/></a><div class="content"><a class="title" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms">《Real-Time Rendering》读书笔记（三） Transforms</a><time datetime="2021-09-26T09:43:01.000Z" title="Created 2021-09-26 17:43:01">2021-09-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（二） GPU"/></a><div class="content"><a class="title" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU">《Real-Time Rendering》读书笔记（二） GPU</a><time datetime="2021-09-21T12:35:20.000Z" title="Created 2021-09-21 20:35:20">2021-09-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（一） 渲染管线"/></a><div class="content"><a class="title" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线">《Real-Time Rendering》读书笔记（一） 渲染管线</a><time datetime="2021-09-14T12:26:28.000Z" title="Created 2021-09-14 20:26:28">2021-09-14</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/graphics/real-time-rendering-04-shading-basics/cover.png);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Overview"><span class="toc-number">1.</span> <span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9D%80%E8%89%B2%E6%A8%A1%E5%9E%8B"><span class="toc-number">2.</span> <span class="toc-text">着色模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%89%E6%BA%90"><span class="toc-number">3.</span> <span class="toc-text">光源</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Directional-Lights"><span class="toc-number">4.</span> <span class="toc-text">Directional Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Punctual-Lights"><span class="toc-number">5.</span> <span class="toc-text">Punctual Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Point-Omni-Lights"><span class="toc-number">6.</span> <span class="toc-text">Point&#x2F;Omni Lights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spotlights"><span class="toc-number">7.</span> <span class="toc-text">Spotlights</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Other-Light-Types"><span class="toc-number">8.</span> <span class="toc-text">Other Light Types</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9D%80%E8%89%B2%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">9.</span> <span class="toc-text">着色模型的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Frequency-of-Evaluation"><span class="toc-number">10.</span> <span class="toc-text">Frequency of Evaluation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%90%E8%B4%A8%E7%B3%BB%E7%BB%9F"><span class="toc-number">11.</span> <span class="toc-text">材质系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Aliasing-and-Antialiasing"><span class="toc-number">12.</span> <span class="toc-text">Aliasing and Antialiasing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%87%E6%A0%B7%E4%B8%8E%E6%BB%A4%E6%B3%A2"><span class="toc-number">13.</span> <span class="toc-text">采样与滤波</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E5%BB%BA"><span class="toc-number">14.</span> <span class="toc-text">重建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E6%96%B0%E9%87%87%E6%A0%B7"><span class="toc-number">15.</span> <span class="toc-text">重新采样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%8F%E5%B9%95%E7%A9%BA%E9%97%B4%E5%8F%8D%E8%B5%B0%E6%A0%B7"><span class="toc-number">16.</span> <span class="toc-text">屏幕空间反走样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%87%E6%A0%B7%E6%A8%A1%E6%9D%BF"><span class="toc-number">17.</span> <span class="toc-text">采样模板</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%A2%E6%80%81%E5%AD%A6%E6%96%B9%E6%B3%95"><span class="toc-number">18.</span> <span class="toc-text">形态学方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transparency%EF%BC%8CAlpha-and-Compositing"><span class="toc-number">19.</span> <span class="toc-text">Transparency，Alpha and Compositing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E9%A1%BA%E5%BA%8F"><span class="toc-number">20.</span> <span class="toc-text">混合顺序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Order-Independent-Transparency"><span class="toc-number">21.</span> <span class="toc-text">Order-Independent Transparency</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Premultiplied-Alphas-and-Compositing"><span class="toc-number">22.</span> <span class="toc-text">Premultiplied Alphas and Compositing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Display-Encoding"><span class="toc-number">23.</span> <span class="toc-text">Display Encoding</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/12/hello-world/" title="Hello World">Hello World</a><time datetime="2026-05-12T10:59:06.287Z" title="Created 2026-05-12 18:59:06">2026-05-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics"><img src="/img/graphics/real-time-rendering-04-shading-basics/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（四）Shading Basics" loading="lazy" /></a><div class="content"><a class="title" href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/" title="《Real-Time Rendering》读书笔记（四）Shading Basics">《Real-Time Rendering》读书笔记（四）Shading Basics</a><time datetime="2021-10-19T09:20:05.000Z" title="Created 2021-10-19 17:20:05">2021-10-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms"><img src="/img/graphics/real-time-rendering-03-transforms/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（三） Transforms" loading="lazy" /></a><div class="content"><a class="title" href="/2021/09/26/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-03-transforms/" title="《Real-Time Rendering》读书笔记（三） Transforms">《Real-Time Rendering》读书笔记（三） Transforms</a><time datetime="2021-09-26T09:43:01.000Z" title="Created 2021-09-26 17:43:01">2021-09-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU"><img src="/img/graphics/real-time-rendering-02-gpu/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（二） GPU" loading="lazy" /></a><div class="content"><a class="title" href="/2021/09/21/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-02-gpu/" title="《Real-Time Rendering》读书笔记（二） GPU">《Real-Time Rendering》读书笔记（二） GPU</a><time datetime="2021-09-21T12:35:20.000Z" title="Created 2021-09-21 20:35:20">2021-09-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线"><img src="/img/graphics/real-time-rendering-01-rendering-pipeline/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《Real-Time Rendering》读书笔记（一） 渲染管线" loading="lazy" /></a><div class="content"><a class="title" href="/2021/09/14/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-01-rendering-pipeline/" title="《Real-Time Rendering》读书笔记（一） 渲染管线">《Real-Time Rendering》读书笔记（一） 渲染管线</a><time datetime="2021-09-14T12:26:28.000Z" title="Created 2021-09-14 20:26:28">2021-09-14</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/graphics/real-time-rendering-04-shading-basics/cover.png);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
   const loadMathjax = () => {
     if (!window.MathJax) {
       window.MathJax = {
@@ -948,13 +983,13 @@
     return
   }
 
-  if ('Twikoo' === 'Twikoo' || !false) {
-    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
     else loadTwikoo()
   } else {
     window.loadOtherComment = loadTwikoo
   }
-})()</script></div><script src="/js/fantasy-pixel.js?v=20260516-lightning-blob-cache"></script><script src="/js/ambient-nature.js"></script><script src="/js/live2d-kanban.js?v=20260515-body"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+})()</script></div><script src="/js/fantasy-pixel.js?v=20260516-lightning-blob-cache"></script><script src="/js/post-scroll-pane.js?v=20260516-post-scroll-pane-v2"></script><script src="/js/ambient-nature.js"></script><script src="/js/live2d-kanban.js?v=20260515-body"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
   const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
 
   window.pjax = new Pjax({
