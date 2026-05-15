@@ -395,6 +395,10 @@
     var maxMonsters = 5;
     var monsterSize = 32;
     var magicPitDuration = FOOTER_LIGHTNING_DURATION;
+    var magicEffectRun = 0;
+    var maxMagicPitNodes = 8;
+    var maxLightningCraterNodes = 10;
+    var maxHitBurstNodes = 70;
     var monsterSpawnRevealDelay = 280;
     var monsterSpawnJumpOutDuration = 430;
     var monsterSpawnEffectTail = 110;
@@ -611,6 +615,8 @@
           node.remove();
         }, 620, particle);
       }
+
+      trimEffectNodes(field, '.footer-hit-burst', maxHitBurstNodes);
     }
 
     function createMonsterSpawnEffect(monster) {
@@ -642,6 +648,41 @@
 
       monster.spawnEffect.remove();
       monster.spawnEffect = null;
+    }
+
+    function activateEffectNode(node) {
+      window.requestAnimationFrame(function () {
+        if (node.isConnected) node.classList.add('is-active');
+      });
+    }
+
+    function trimEffectNodes(container, selector, maxCount, removeNode) {
+      var nodes;
+      var removeCount;
+      var index;
+
+      if (!container || maxCount <= 0) return;
+
+      nodes = container.querySelectorAll(selector);
+      removeCount = nodes.length - maxCount;
+      if (removeCount <= 0) return;
+
+      for (index = 0; index < removeCount; index += 1) {
+        if (removeNode) {
+          removeNode(nodes[index]);
+        } else {
+          nodes[index].remove();
+        }
+      }
+    }
+
+    function removeMagicPitNode(node) {
+      if (!node) return;
+
+      node.remove();
+      pits = pits.filter(function (pit) {
+        return pit.node !== node;
+      });
     }
 
     function setMonsterDirection(monster, side) {
@@ -809,8 +850,10 @@
     function createMagicStrike(x, y, autoRemove) {
       var pit = document.createElement('span');
 
+      magicEffectRun += 1;
       pit.className = 'footer-magic-pit';
       pit.setAttribute('aria-hidden', 'true');
+      pit.dataset.effectRun = String(magicEffectRun);
       pit.innerHTML = [
         '<span class="footer-magic-bolt"></span>',
         '<span class="footer-magic-flash"></span>',
@@ -819,10 +862,11 @@
       pit.style.left = Math.round(x) + 'px';
       pit.style.top = Math.round(y) + 'px';
       effectsLayer.appendChild(pit);
+      activateEffectNode(pit);
 
       if (autoRemove) {
         window.setTimeout(function () {
-          pit.remove();
+          removeMagicPitNode(pit);
         }, magicPitDuration);
       }
 
@@ -838,6 +882,8 @@
       crater.style.left = Math.round(event.clientX - fieldRect.left) + 'px';
       crater.style.top = Math.round(event.clientY - fieldRect.top) + 'px';
       field.appendChild(crater);
+      activateEffectNode(crater);
+      trimEffectNodes(field, '.footer-lightning-crater', maxLightningCraterNodes);
 
       window.setTimeout(function () {
         crater.remove();
@@ -876,6 +922,7 @@
       pit = createMagicStrike(event.clientX - effectRect.left, event.clientY - effectRect.top, false);
       magicPit.node = pit;
       pits.push(magicPit);
+      trimEffectNodes(effectsLayer, '.footer-magic-pit', maxMagicPitNodes, removeMagicPitNode);
       createLightningCrater(event);
 
       wand.classList.add('is-casting');
@@ -886,10 +933,7 @@
       }, 420);
 
       window.setTimeout(function () {
-        pit.remove();
-        pits = pits.filter(function (item) {
-          return item !== magicPit;
-        });
+        removeMagicPitNode(pit);
       }, magicPitDuration);
 
       checkMagicHits();
@@ -1157,7 +1201,7 @@
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
       '/img/pixel-medieval/playground/lightning-crater.png?v=1',
-      '/anim/lightning_strike_sheet.png?v=6',
+      '/anim/lightning_strike_sheet.png?v=7',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',
@@ -1439,16 +1483,14 @@
   }
 
   function removeTwikooActionItem(node) {
-    var root = node && node.closest && node.closest('.tk-submit-action, .tk-row.actions, .tk-actions');
     var item = node;
 
-    if (!root) {
-      removeNode(node);
-      return;
-    }
-
-    while (item && item.parentElement && item.parentElement !== root) {
-      item = item.parentElement;
+    if (node && node.closest) {
+      if (node.matches && node.matches('.tk-input-image, input[type="file"]')) {
+        item = node.closest('label, .tk-action-icon, .tk-submit-action-icon, .tk-submit-action > *, .tk-action > *, .tk-actions > *, .tk-row.actions > *, a, button') || node;
+      } else {
+        item = node.closest('.tk-action-icon, .tk-submit-action-icon, a, button, label, .tk-input-image') || node;
+      }
     }
 
     removeNode(item || node);
@@ -1457,7 +1499,8 @@
   function cleanMessageBoardTwikooForm() {
     var twikoo;
     var websitePattern = /网址|网站|website|link|url/i;
-    var actionPattern = /^(预览|preview|图片|图像|image|uploadimage|上传图片)$/i;
+    var actionPattern = /^(预览|preview|图片|图像|image|uploadimage|上传图片|markdown|markdown语法|m↓)$/i;
+    var actionClassPattern = /(^|\s)(__markdown|__image|__upload|tk-input-image|tk-image|tk-upload|tk-preview)(\s|$)/i;
 
     if (!document.querySelector('.message-board-page')) return;
 
@@ -1485,16 +1528,69 @@
       '.tk-submit-action .__preview',
       '.tk-submit-action .__image',
       '.tk-submit-action .__upload',
+      '.tk-submit-action .__markdown',
+      '.tk-submit-action .tk-input-image',
+      '.tk-submit-action > *:has(input[type="file"])',
+      '.tk-submit-action > *:has(.tk-input-image)',
+      '.tk-submit-action > *:has([class*="image" i])',
+      '.tk-submit-action > *:has([class*="upload" i])',
+      '.tk-submit-action > *:has(use[href*="image" i])',
+      '.tk-submit-action > *:has(use[href*="upload" i])',
+      '.tk-submit-action .tk-submit-action-icon.__markdown',
+      '.tk-submit-action .tk-action-icon.__preview',
+      '.tk-submit-action .tk-action-icon.__image',
+      '.tk-submit-action .tk-action-icon.__upload',
+      '.tk-submit-action .tk-action-icon.__markdown',
+      '.tk-action .tk-preview',
+      '.tk-action .tk-image',
+      '.tk-action .tk-upload',
+      '.tk-action .__preview',
+      '.tk-action .__image',
+      '.tk-action .__upload',
+      '.tk-action .__markdown',
+      '.tk-action .tk-input-image',
+      '.tk-action > *:has(input[type="file"])',
+      '.tk-action > *:has(.tk-input-image)',
+      '.tk-action > *:has([class*="image" i])',
+      '.tk-action > *:has([class*="upload" i])',
+      '.tk-action > *:has(use[href*="image" i])',
+      '.tk-action > *:has(use[href*="upload" i])',
+      '.tk-action .tk-submit-action-icon.__markdown',
+      '.tk-action .tk-action-icon.__preview',
+      '.tk-action .tk-action-icon.__image',
+      '.tk-action .tk-action-icon.__upload',
+      '.tk-action .tk-action-icon.__markdown',
       '.tk-row.actions .tk-preview',
       '.tk-row.actions .tk-image',
       '.tk-row.actions .tk-upload',
       '.tk-row.actions .__preview',
       '.tk-row.actions .__image',
-      '.tk-row.actions .__upload'
+      '.tk-row.actions .__upload',
+      '.tk-row.actions .__markdown',
+      '.tk-row.actions .tk-input-image',
+      '.tk-row.actions > *:has(input[type="file"])',
+      '.tk-row.actions > *:has(.tk-input-image)',
+      '.tk-row.actions > *:has([class*="image" i])',
+      '.tk-row.actions > *:has([class*="upload" i])',
+      '.tk-row.actions > *:has(use[href*="image" i])',
+      '.tk-row.actions > *:has(use[href*="upload" i])',
+      '.tk-row.actions .tk-submit-action-icon.__markdown',
+      '.tk-row.actions .tk-action-icon.__preview',
+      '.tk-row.actions .tk-action-icon.__image',
+      '.tk-row.actions .tk-action-icon.__upload',
+      '.tk-row.actions .tk-action-icon.__markdown',
+      '.tk-input-image',
+      'input[type="file"]',
+      '.tk-submit-action-icon.__markdown',
+      '.tk-action-icon.__preview',
+      '.tk-action-icon.__image',
+      '.tk-action-icon.__upload',
+      '.tk-action-icon.__markdown'
     ].join(',')), removeTwikooActionItem);
 
     Array.prototype.forEach.call(twikoo.querySelectorAll([
       '.tk-submit-action > *',
+      '.tk-action > *',
       '.tk-row.actions > *',
       '.tk-actions > *'
     ].join(',')), function (item) {
@@ -1503,8 +1599,9 @@
         item.getAttribute('aria-label') ||
         item.textContent
       );
+      var classNames = item && item.className ? String(item.className) : '';
 
-      if (actionPattern.test(label)) {
+      if (actionPattern.test(label) || actionClassPattern.test(classNames)) {
         removeTwikooActionItem(item);
       }
     });

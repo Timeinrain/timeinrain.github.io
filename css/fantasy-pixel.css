@@ -1884,12 +1884,17 @@ hr {
   border: 0;
   max-width: none;
   background: transparent;
+  opacity: 0;
   transform: translate(-50%, -94%);
   transform-origin: 50% 100%;
-  animation: footerLightningFlash 1.18s steps(6, end) forwards;
+  animation: none;
   pointer-events: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.footer-magic-pit.is-active {
+  animation: footerLightningFlash 1.18s steps(6, end) forwards;
 }
 
 .footer-magic-pit::before,
@@ -1911,12 +1916,16 @@ hr {
   width: 32px;
   height: 64px;
   z-index: 4;
-  background: transparent url("/anim/lightning_strike_sheet.png?v=6") 0 0 / 256px 64px no-repeat;
+  background: transparent url("/anim/lightning_strike_sheet.png?v=7") 0 0 / 256px 64px no-repeat;
   filter:
     drop-shadow(0 0 3px rgba(218, 255, 255, 0.9))
     drop-shadow(0 0 8px rgba(75, 198, 255, 0.62));
   transform: translateX(-50%) scaleX(0.78);
   transform-origin: 50% 100%;
+  animation: none;
+}
+
+.footer-magic-pit.is-active .footer-magic-bolt {
   animation: footerLightningFrames 0.72s linear forwards;
 }
 
@@ -1943,6 +1952,10 @@ hr {
     0 0 8px rgba(122, 224, 255, 0.55),
     inset 0 0 6px rgba(255, 255, 255, 0.42);
   transform: translateX(-50%);
+  animation: none;
+}
+
+.footer-magic-pit.is-active .footer-magic-ring {
   animation: footerLightningRing 1.18s steps(5, end) forwards;
 }
 
@@ -1953,12 +1966,17 @@ hr {
   width: 64px;
   height: 32px;
   max-width: none;
+  opacity: 0;
   background: transparent url("/img/pixel-medieval/playground/lightning-crater.png?v=1") center / 64px 32px no-repeat;
   transform: translate(-50%, -50%);
-  animation: footerLightningCraterFade 2s steps(7, end) forwards;
+  animation: none;
   pointer-events: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.footer-lightning-crater.is-active {
+  animation: footerLightningCraterFade 2s steps(7, end) forwards;
 }
 
 .footer-magic-cursor {
@@ -6434,26 +6452,99 @@ hr {
 #page:has(.message-board-page) #twikoo .tk-submit-action .__preview,
 #page:has(.message-board-page) #twikoo .tk-submit-action .__image,
 #page:has(.message-board-page) #twikoo .tk-submit-action .__upload,
+#page:has(.message-board-page) #twikoo .tk-submit-action .__markdown,
+#page:has(.message-board-page) #twikoo .tk-submit-action .tk-input-image,
+#page:has(.message-board-page) #twikoo .tk-submit-action .tk-submit-action-icon.__markdown,
 #page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__preview),
 #page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__image),
 #page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__upload),
 #page:has(.message-board-page) #twikoo .tk-submit-action [title="预览"],
 #page:has(.message-board-page) #twikoo .tk-submit-action [title="图片"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [title="Markdown"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [title="Markdown 语法"],
 #page:has(.message-board-page) #twikoo .tk-submit-action [aria-label="预览"],
 #page:has(.message-board-page) #twikoo .tk-submit-action [aria-label="图片"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [aria-label="Markdown"],
+#page:has(.message-board-page) #twikoo .tk-input-image,
+#page:has(.message-board-page) #twikoo .tk-submit-action-icon.__markdown,
 #page:has(.message-board-page) #twikoo .tk-row.actions .tk-preview,
 #page:has(.message-board-page) #twikoo .tk-row.actions .tk-image,
 #page:has(.message-board-page) #twikoo .tk-row.actions .tk-upload,
 #page:has(.message-board-page) #twikoo .tk-row.actions .__preview,
 #page:has(.message-board-page) #twikoo .tk-row.actions .__image,
 #page:has(.message-board-page) #twikoo .tk-row.actions .__upload,
+#page:has(.message-board-page) #twikoo .tk-row.actions .__markdown,
+#page:has(.message-board-page) #twikoo .tk-row.actions .tk-input-image,
+#page:has(.message-board-page) #twikoo .tk-row.actions .tk-submit-action-icon.__markdown,
 #page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__preview),
 #page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__image),
 #page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__upload),
 #page:has(.message-board-page) #twikoo .tk-row.actions [title="预览"],
 #page:has(.message-board-page) #twikoo .tk-row.actions [title="图片"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [title="Markdown"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [title="Markdown 语法"],
 #page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="预览"],
-#page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="图片"] {
+#page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="图片"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="Markdown"] {
+  display: none !important;
+}
+
+#page:has(.message-board-page) #twikoo .tk-action .tk-image,
+#page:has(.message-board-page) #twikoo .tk-action .tk-preview,
+#page:has(.message-board-page) #twikoo .tk-action .tk-upload,
+#page:has(.message-board-page) #twikoo .tk-action .__image,
+#page:has(.message-board-page) #twikoo .tk-action .__preview,
+#page:has(.message-board-page) #twikoo .tk-action .__upload,
+#page:has(.message-board-page) #twikoo .tk-action .__markdown,
+#page:has(.message-board-page) #twikoo .tk-action .tk-input-image,
+#page:has(.message-board-page) #twikoo .tk-action label:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo .tk-action label:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo .tk-submit-action label:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo .tk-submit-action label:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo .tk-row.actions label:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo .tk-row.actions label:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo .tk-action .tk-action-icon.__image,
+#page:has(.message-board-page) #twikoo .tk-action .tk-action-icon.__preview,
+#page:has(.message-board-page) #twikoo .tk-action .tk-action-icon.__upload,
+#page:has(.message-board-page) #twikoo .tk-action .tk-action-icon.__markdown,
+#page:has(.message-board-page) #twikoo .tk-action-icon.__image,
+#page:has(.message-board-page) #twikoo .tk-action-icon.__preview,
+#page:has(.message-board-page) #twikoo .tk-action-icon.__upload,
+#page:has(.message-board-page) #twikoo .tk-action-icon.__markdown,
+#page:has(.message-board-page) #twikoo .tk-action-icon:has([class*="image" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has([class*="preview" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has([class*="upload" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has([class*="markdown" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has(use[href*="image" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has(use[href*="preview" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo .tk-action-icon:has(use[href*="markdown" i]) {
+  display: none !important;
+}
+
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([class*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has([class*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has(use[href*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([class*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has([class*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(use[href*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([class*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has([class*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(use[href*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([class*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has([class*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has(use[href*="image" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-row.actions > *:has(use[href*="upload" i]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit-action > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send),
+#page:has(.message-board-page) #twikoo-wrap .tk-action > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send),
+#page:has(.message-board-page) #twikoo-wrap .tk-actions > *:nth-child(n + 2):not(button):not(.el-button):not(.tk-send) {
   display: none !important;
 }
 
