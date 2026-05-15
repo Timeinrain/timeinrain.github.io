@@ -49,8 +49,7 @@ label[for],
 #pagination *,
 #nav .site-page,
 .search-dialog .search-close-button,
-.local-search-hit-item,
-.aplayer * {
+.local-search-hit-item {
   cursor: var(--cursor-pointer) !important;
 }
 

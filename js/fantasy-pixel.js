@@ -1,10 +1,17 @@
 (function () {
   var FOOTER_LIGHTNING_DURATION = 1900;
   var FOOTER_LIGHTNING_CRATER_DURATION = 2000;
+  var FOOTER_LIGHTNING_ASSET_VERSION = 9;
   var messageBoardTwikooObserver = null;
   var messageBoardTwikooCleanupTimer = null;
   var messageBoardTwikooCleanupRuns = 0;
   var transparentPixelGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+  function footerLightningStrikeSrc(runId) {
+    var src = '/anim/lightning_strike.gif?v=' + FOOTER_LIGHTNING_ASSET_VERSION;
+
+    return runId ? src + '#run-' + runId : src;
+  }
 
   function createSpark(x, y) {
     var spark = document.createElement('span');
@@ -413,7 +420,6 @@
     var maxMagicPitNodes = 8;
     var maxLightningCraterNodes = 10;
     var maxHitBurstNodes = 70;
-    var magicStrikeVersion = 8;
     var monsterSpawnRevealDelay = 280;
     var monsterSpawnJumpOutDuration = 430;
     var monsterSpawnEffectTail = 110;
@@ -960,7 +966,10 @@
       ].join('');
       bolt = pit.querySelector('.footer-magic-bolt');
       if (bolt) {
-        bolt.src = '/anim/lightning_strike.gif?v=' + magicStrikeVersion + '&run=' + magicEffectRun;
+        bolt.decoding = 'async';
+        bolt.fetchPriority = 'high';
+        bolt.loading = 'eager';
+        bolt.src = footerLightningStrikeSrc(magicEffectRun);
       }
       pit.style.left = Math.round(x) + 'px';
       pit.style.top = Math.round(y) + 'px';
@@ -1322,7 +1331,7 @@
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
       '/img/pixel-medieval/playground/lightning-crater.png?v=1',
-      '/anim/lightning_strike.gif?v=8',
+      footerLightningStrikeSrc(),
       '/anim/slime-green_move_sheet.png?v=33',
       '/anim/slime-green_idle_sheet.png?v=33',
       '/anim/slime-green_death_sheet.png?v=33',
@@ -1348,8 +1357,16 @@
     themeAssetsPreloaded = true;
     assets.forEach(function (src) {
       var image = new window.Image();
+      var isPriorityAsset = src.indexOf('lightning_strike') !== -1 ||
+        src.indexOf('lightning-crater') !== -1;
 
       image.decoding = 'async';
+      if ('fetchPriority' in image) {
+        image.fetchPriority = isPriorityAsset ? 'high' : 'auto';
+      }
+      if ('loading' in image) {
+        image.loading = isPriorityAsset ? 'eager' : 'auto';
+      }
       image.src = src;
     });
   }

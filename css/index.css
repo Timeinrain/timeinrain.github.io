@@ -5818,26 +5818,6 @@ mjx-assistive-mml {
   right: 0;
   bottom: 0;
 }
-.aplayer {
-  color: #4c4948;
-}
-.container .aplayer {
-  margin: 0 0 20px;
-}
-.container .aplayer ol,
-.container .aplayer ul {
-  margin: 0;
-  padding: 0;
-}
-.container .aplayer ol li,
-.container .aplayer ul li {
-  margin: 0;
-  padding: 0 15px;
-}
-.container .aplayer ol li:before,
-.container .aplayer ul li:before {
-  content: none;
-}
 .snackbar-container.snackbar-css {
   border-radius: 5px;
   opacity: 0.85 !important;
@@ -7341,9 +7321,6 @@ blockquote.pullquote.right {
 }
 [data-theme='dark'] .container .note code {
   background: rgba(25,19,13,0.72);
-}
-[data-theme='dark'] .container .aplayer {
-  filter: brightness(0.8);
 }
 [data-theme='dark'] .container kbd {
   border-color: #696969;
