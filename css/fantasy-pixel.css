@@ -1344,10 +1344,6 @@ hr {
   pointer-events: none;
 }
 
-.footer-playground-zone.is-lightning-shake {
-  animation: footerPlaygroundLightningShake 0.18s steps(2, end);
-}
-
 .footer-playground-ground {
   display: none;
 }
@@ -1746,7 +1742,8 @@ hr {
 }
 
 .footer-slime.is-spawning .footer-slime-core {
-  animation: footerMonsterSpawnIn 0.48s steps(4, end) both;
+  opacity: 1;
+  animation: none;
 }
 
 .footer-bunny.is-awaiting-spawn .footer-bunny-core,
@@ -1761,7 +1758,8 @@ hr {
 }
 
 .footer-bunny.is-spawning .footer-bunny-core {
-  animation: footerMonsterSpawnIn 0.48s steps(4, end) both;
+  opacity: 1;
+  animation: none;
 }
 
 .footer-ghost.is-awaiting-spawn .footer-ghost-core,
@@ -1776,7 +1774,8 @@ hr {
 }
 
 .footer-ghost.is-spawning .footer-ghost-core {
-  animation: footerMonsterSpawnIn 0.48s steps(4, end) both;
+  opacity: 1;
+  animation: none;
 }
 
 .footer-flame.is-awaiting-spawn .footer-flame-core,
@@ -1791,11 +1790,13 @@ hr {
 }
 
 .footer-flame.is-spawning .footer-flame-core {
-  animation: footerMonsterSpawnIn 0.48s steps(4, end) both;
+  opacity: 1;
+  animation: none;
 }
 
 .footer-monster.is-spawning .footer-monster-shadow {
-  animation: footerMonsterSpawnIn 0.48s steps(4, end) both;
+  opacity: 1;
+  animation: none;
 }
 
 .footer-slime.from-right .footer-slime-core,
@@ -1878,13 +1879,13 @@ hr {
   position: absolute;
   z-index: 60;
   display: block;
-  width: 108px;
-  height: 152px;
+  width: 32px;
+  height: 72px;
   border: 0;
   max-width: none;
   background: transparent;
-  transform: translate(-50%, -91%) scale(1);
-  transform-origin: 50% 90%;
+  transform: translate(-50%, -94%);
+  transform-origin: 50% 100%;
   animation: footerLightningFlash 1.18s steps(6, end) forwards;
   pointer-events: none;
   image-rendering: pixelated;
@@ -1893,38 +1894,8 @@ hr {
 
 .footer-magic-pit::before,
 .footer-magic-pit::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  pointer-events: none;
-}
-
-.footer-magic-pit::before {
-  top: 0;
-  z-index: 5;
-  width: 48px;
-  height: 122px;
-  background: linear-gradient(180deg, #ffffff 0 38%, #c8fbff 39% 62%, #5be6ff 63% 100%);
-  clip-path: polygon(47% 0, 76% 0, 60% 33%, 83% 33%, 43% 100%, 50% 56%, 26% 56%);
-  box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.88),
-    0 0 18px rgba(138, 240, 255, 1),
-    0 0 34px rgba(35, 132, 255, 0.82);
-  transform: translateX(-50%);
-  animation: footerLightningBolt 1.18s steps(7, end) forwards;
-}
-
-.footer-magic-pit::after {
-  top: 4px;
-  z-index: 0;
-  width: 112px;
-  height: 128px;
-  background:
-    radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.95) 0 8%, rgba(82, 218, 255, 0.66) 9% 18%, transparent 19%),
-    radial-gradient(ellipse at 50% 42%, rgba(177, 246, 255, 0.72) 0 18%, rgba(55, 164, 255, 0.34) 19% 38%, transparent 39%);
-  filter: saturate(1.35);
-  transform: translateX(-50%);
-  animation: footerLightningGlow 1.18s steps(6, end) forwards;
+  display: none;
+  content: none;
 }
 
 .footer-magic-bolt,
@@ -1935,52 +1906,59 @@ hr {
 }
 
 .footer-magic-bolt {
-  left: 38px;
-  top: 0;
+  left: 50%;
+  bottom: 7px;
   width: 32px;
-  height: 112px;
+  height: 64px;
   z-index: 4;
-  background: transparent url("/anim/lightning_strike.gif?v=4") center top / 38px 112px no-repeat;
+  background: transparent url("/anim/lightning_strike_sheet.png?v=6") 0 0 / 256px 64px no-repeat;
   filter:
-    drop-shadow(0 0 5px rgba(255, 255, 255, 1))
-    drop-shadow(0 0 14px rgba(75, 218, 255, 0.95))
-    drop-shadow(0 0 26px rgba(27, 108, 255, 0.68));
-  transform: scaleX(1.65);
+    drop-shadow(0 0 3px rgba(218, 255, 255, 0.9))
+    drop-shadow(0 0 8px rgba(75, 198, 255, 0.62));
+  transform: translateX(-50%) scaleX(0.78);
   transform-origin: 50% 100%;
+  animation: footerLightningFrames 0.72s linear forwards;
 }
 
 .footer-magic-flash {
   left: 50%;
-  top: 4px;
-  width: 92px;
-  height: 124px;
+  top: 0;
+  width: 26px;
+  height: 68px;
   z-index: 1;
-  background:
-    linear-gradient(90deg, transparent 0 42%, rgba(255, 255, 255, 0.9) 43% 56%, transparent 57%),
-    radial-gradient(ellipse at 50% 72%, rgba(255, 255, 255, 0.86) 0 12%, rgba(90, 223, 255, 0.56) 13% 30%, transparent 31%),
-    linear-gradient(180deg, rgba(97, 225, 255, 0.68), rgba(255, 255, 255, 0.36) 48%, transparent 100%);
-  box-shadow:
-    0 0 0 4px rgba(255, 255, 255, 0.32),
-    0 0 24px rgba(143, 234, 255, 1),
-    0 0 46px rgba(61, 139, 255, 0.78);
-  opacity: 0.98;
+  background: radial-gradient(ellipse at 50% 58%, rgba(112, 224, 255, 0.38) 0 18%, transparent 58%);
+  opacity: 0.62;
   transform: translateX(-50%);
 }
 
 .footer-magic-ring {
   left: 50%;
-  bottom: 8px;
+  bottom: 1px;
   z-index: 6;
-  width: 72px;
-  height: 24px;
-  border: 5px solid rgba(234, 253, 255, 0.96);
+  width: 30px;
+  height: 8px;
+  border: 2px solid rgba(181, 247, 255, 0.72);
   border-radius: 50%;
   box-shadow:
-    0 0 0 4px rgba(45, 147, 255, 0.52),
-    0 0 22px rgba(153, 239, 255, 1),
-    inset 0 0 14px rgba(255, 255, 255, 0.82);
+    0 0 8px rgba(122, 224, 255, 0.55),
+    inset 0 0 6px rgba(255, 255, 255, 0.42);
   transform: translateX(-50%);
   animation: footerLightningRing 1.18s steps(5, end) forwards;
+}
+
+.footer-lightning-crater {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: 64px;
+  height: 32px;
+  max-width: none;
+  background: transparent url("/img/pixel-medieval/playground/lightning-crater.png?v=1") center / 64px 32px no-repeat;
+  transform: translate(-50%, -50%);
+  animation: footerLightningCraterFade 2s steps(7, end) forwards;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .footer-magic-cursor {
@@ -2416,28 +2394,6 @@ hr {
   }
 }
 
-@keyframes footerMonsterSpawnIn {
-  0%,
-  24% {
-    opacity: 0;
-  }
-
-  25%,
-  49% {
-    opacity: 0.35;
-  }
-
-  50%,
-  74% {
-    opacity: 0.72;
-  }
-
-  75%,
-  100% {
-    opacity: 1;
-  }
-}
-
 @keyframes footerLightningFrames {
   0%,
   12.49% {
@@ -2483,98 +2439,55 @@ hr {
 @keyframes footerLightningFlash {
   0% {
     opacity: 0.9;
-    transform: translate(-50%, -91%) scale(0.88);
+    transform: translate(-50%, -94%);
   }
 
   18% {
     opacity: 1;
-    transform: translate(-50%, -91%) scale(1.1);
+    transform: translate(-50%, -94%);
   }
 
   58% {
     opacity: 1;
-    transform: translate(-50%, -91%) scale(1);
+    transform: translate(-50%, -94%);
   }
 
   100% {
     opacity: 0;
-    transform: translate(-50%, -91%) scale(0.92);
-  }
-}
-
-@keyframes footerLightningBolt {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) scaleY(0.72) skewX(-8deg);
-  }
-
-  10% {
-    opacity: 1;
-    transform: translateX(-50%) scaleY(1.08) skewX(7deg);
-  }
-
-  24% {
-    opacity: 0.82;
-    transform: translateX(-50%) scaleY(1) skewX(-4deg);
-  }
-
-  46% {
-    opacity: 1;
-    transform: translateX(-50%) scaleY(1.04) skewX(5deg);
-  }
-
-  72% {
-    opacity: 0.72;
-    transform: translateX(-50%) scaleY(0.96) skewX(-3deg);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) scaleY(0.92) skewX(0);
-  }
-}
-
-@keyframes footerLightningGlow {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) scale(0.72, 0.82);
-  }
-
-  12% {
-    opacity: 0.96;
-    transform: translateX(-50%) scale(1.04, 1);
-  }
-
-  52% {
-    opacity: 0.62;
-    transform: translateX(-50%) scale(1.08, 1.03);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) scale(1.18, 1.06);
+    transform: translate(-50%, -94%);
   }
 }
 
 @keyframes footerLightningRing {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.5, 0.4);
+    transform: translateX(-50%);
   }
 
   16% {
     opacity: 1;
-    transform: translateX(-50%) scale(1.08, 0.95);
+    transform: translateX(-50%);
   }
 
   56% {
-    opacity: 0.9;
-    transform: translateX(-50%) scale(1.22, 1);
+    opacity: 0.72;
+    transform: translateX(-50%);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(1.5, 1.1);
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes footerLightningCraterFade {
+  0%,
+  72% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 
@@ -2641,8 +2554,7 @@ hr {
     animation: none !important;
   }
 
-  .footer-hit-burst,
-  .footer-magic-pit {
+  .footer-hit-burst {
     animation-duration: 0.25s;
   }
 }
@@ -6511,6 +6423,38 @@ hr {
 #page:has(.message-board-page) #twikoo .tk-meta-input > *,
 #page:has(.message-board-page) #twikoo .tk-submit-action > * {
   min-width: min(100%, 10rem);
+}
+
+#page:has(.message-board-page) #twikoo .tk-meta-input > *:nth-child(3),
+#page:has(.message-board-page) #twikoo .tk-meta-input > *:has(input[placeholder*="网址"]),
+#page:has(.message-board-page) #twikoo .tk-meta-input > *:has(.el-input__inner[placeholder*="网址"]),
+#page:has(.message-board-page) #twikoo .tk-submit-action .tk-preview,
+#page:has(.message-board-page) #twikoo .tk-submit-action .tk-image,
+#page:has(.message-board-page) #twikoo .tk-submit-action .tk-upload,
+#page:has(.message-board-page) #twikoo .tk-submit-action .__preview,
+#page:has(.message-board-page) #twikoo .tk-submit-action .__image,
+#page:has(.message-board-page) #twikoo .tk-submit-action .__upload,
+#page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__preview),
+#page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__image),
+#page:has(.message-board-page) #twikoo .tk-submit-action > *:has(.__upload),
+#page:has(.message-board-page) #twikoo .tk-submit-action [title="预览"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [title="图片"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [aria-label="预览"],
+#page:has(.message-board-page) #twikoo .tk-submit-action [aria-label="图片"],
+#page:has(.message-board-page) #twikoo .tk-row.actions .tk-preview,
+#page:has(.message-board-page) #twikoo .tk-row.actions .tk-image,
+#page:has(.message-board-page) #twikoo .tk-row.actions .tk-upload,
+#page:has(.message-board-page) #twikoo .tk-row.actions .__preview,
+#page:has(.message-board-page) #twikoo .tk-row.actions .__image,
+#page:has(.message-board-page) #twikoo .tk-row.actions .__upload,
+#page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__preview),
+#page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__image),
+#page:has(.message-board-page) #twikoo .tk-row.actions > *:has(.__upload),
+#page:has(.message-board-page) #twikoo .tk-row.actions [title="预览"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [title="图片"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="预览"],
+#page:has(.message-board-page) #twikoo .tk-row.actions [aria-label="图片"] {
+  display: none !important;
 }
 
 #page:has(.message-board-page) #twikoo .el-button,

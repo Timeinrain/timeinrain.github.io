@@ -1,5 +1,7 @@
 (function () {
   var FOOTER_LIGHTNING_DURATION = 1280;
+  var FOOTER_LIGHTNING_CRATER_DURATION = 2000;
+  var messageBoardTwikooObserver = null;
 
   function createSpark(x, y) {
     var spark = document.createElement('span');
@@ -386,7 +388,6 @@
     var rafId = null;
     var maintainTimer = null;
     var castingTimer = null;
-    var shakeTimer = null;
     var score = 0;
     var mouseX = 0;
     var mouseY = 0;
@@ -394,14 +395,17 @@
     var maxMonsters = 5;
     var monsterSize = 32;
     var magicPitDuration = FOOTER_LIGHTNING_DURATION;
-    var monsterSpawnRevealDelay = 260;
+    var monsterSpawnRevealDelay = 280;
     var monsterSpawnJumpOutDuration = 430;
-    var monsterSpawnEffectDuration = 930;
-    var monsterSpawnMoveDelay = 80;
+    var monsterSpawnEffectTail = 110;
+    var monsterSpawnMoveDelay = 90;
     var monsterSpawnEffectWidth = 64;
     var monsterSpawnEffectHeight = 40;
     var monsterSpawnEffectAnchorX = 32.5;
     var monsterSpawnEffectAnchorY = 24.5;
+    var monsterSpawnEffectVersion = 7;
+    var monsterSpawnEffectRun = 0;
+    var monsterTurnLeadDuration = 160;
     var monsterTypes = ['slime', 'bunny', 'ghost', 'flame'];
 
     wand.className = 'footer-magic-cursor';
@@ -438,73 +442,56 @@
       };
     }
 
-    function getMonsterEntryRange(side, footerWidth) {
-      var fieldRange = getMonsterFieldRange(footerWidth);
-      var maxEntryDepth = Math.min(180, Math.max(fieldRange.min, footerWidth * 0.3));
-
-      if (side === 'left') {
-        return {
-          min: fieldRange.min,
-          max: Math.min(fieldRange.max, maxEntryDepth)
-        };
-      }
-
-      return {
-        min: Math.max(fieldRange.min, footerWidth - maxEntryDepth),
-        max: fieldRange.max
-      };
-    }
-
-    function chooseMonsterEntryTarget(side, footerWidth, targetX) {
-      var range = getMonsterEntryRange(side, footerWidth);
-
-      if (typeof targetX === 'number') {
-        return clamp(targetX, range.min, range.max);
-      }
-
-      return randomBetween(range.min, range.max);
-    }
-
     function chooseMonsterRoute(side, type, footerWidth, targetX, quick) {
-      var fromOutside = typeof targetX !== 'number' && Math.random() < (quick ? 0.34 : 0.24);
       var fieldRange = getMonsterFieldRange(footerWidth);
-      var target;
-      var step;
       var startX;
+      var step;
+      var endX;
 
-      if (fromOutside) {
-        target = chooseMonsterEntryTarget(side, footerWidth, targetX);
-
-        return {
-          side: side,
-          fromOutside: true,
-          startX: side === 'left' ? -monsterSize - 28 : footerWidth + monsterSize + 28,
-          endX: target
-        };
-      }
-
-      target = typeof targetX === 'number' ?
+      startX = typeof targetX === 'number' ?
         clamp(targetX, fieldRange.min, fieldRange.max) :
         randomBetween(fieldRange.min, fieldRange.max);
       step = randomBetween(
-        type === 'ghost' ? 30 : 36,
-        quick ? 68 : type === 'bunny' ? 92 : 84
+        type === 'ghost' ? 34 : 40,
+        quick ? 76 : type === 'bunny' ? 96 : 88
       );
 
-      if (target - step < fieldRange.min) {
+      if (startX - step < fieldRange.min) {
         side = 'right';
-      } else if (target + step > fieldRange.max) {
+      } else if (startX + step > fieldRange.max) {
         side = 'left';
       }
 
-      startX = side === 'left' ? target - step : target + step;
+      endX = side === 'left' ? startX - step : startX + step;
 
       return {
         side: side,
         fromOutside: false,
-        startX: clamp(startX, fieldRange.min, fieldRange.max),
-        endX: target
+        startX: startX,
+        endX: clamp(endX, fieldRange.min, fieldRange.max)
       };
+    }
+
+    function chooseMonsterWanderTarget(monster, footerWidth) {
+      var fieldRange = getMonsterFieldRange(footerWidth);
+      var fromX = clamp(monster.endX, fieldRange.min, fieldRange.max);
+      var direction = Math.random() > 0.5 ? 1 : -1;
+      var minStep = monster.type === 'ghost' ? 28 : 34;
+      var maxStep = monster.type === 'bunny' ? 78 : monster.type === 'flame' ? 66 : 72;
+      var step;
+      var endX;
+
+      if (fromX < fieldRange.min + maxStep * 0.72) direction = 1;
+      if (fromX > fieldRange.max - maxStep * 0.72) direction = -1;
+
+      step = randomBetween(minStep, maxStep);
+      endX = clamp(fromX + step * direction, fieldRange.min, fieldRange.max);
+
+      if (Math.abs(endX - fromX) < minStep * 0.55) {
+        endX = clamp(fromX - step * direction, fieldRange.min, fieldRange.max);
+      }
+
+      return endX;
     }
 
     function chooseMonsterHopCount(type, distance, quick) {
@@ -629,8 +616,9 @@
     function createMonsterSpawnEffect(monster) {
       var effect = document.createElement('img');
 
+      monsterSpawnEffectRun += 1;
       effect.className = 'footer-monster-spawn is-' + monster.type + '-spawn';
-      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=5';
+      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=' + monsterSpawnEffectVersion + '&run=' + monsterSpawnEffectRun;
       effect.alt = '';
       effect.width = monsterSpawnEffectWidth;
       effect.height = monsterSpawnEffectHeight;
@@ -638,16 +626,8 @@
       effect.draggable = false;
       effect.style.left = (monster.startX + monster.spawnFootAnchorX - monsterSpawnEffectAnchorX).toFixed(2) + 'px';
       effect.style.top = (monster.groundY + monster.spawnFootAnchorY - monsterSpawnEffectAnchorY).toFixed(2) + 'px';
-      effectsLayer.appendChild(effect);
+      field.appendChild(effect);
       monster.spawnEffect = effect;
-
-      window.setTimeout(function () {
-        if (monster.spawnEffect === effect) {
-          monster.spawnEffect = null;
-        }
-
-        effect.remove();
-      }, monsterSpawnEffectDuration);
     }
 
     function finishMonsterSpawn(monster) {
@@ -662,6 +642,60 @@
 
       monster.spawnEffect.remove();
       monster.spawnEffect = null;
+    }
+
+    function setMonsterDirection(monster, side) {
+      monster.side = side;
+      monster.node.classList.remove('from-left', 'from-right');
+      monster.node.classList.add(side === 'left' ? 'from-left' : 'from-right');
+    }
+
+    function monsterMoveSide(startX, endX) {
+      return endX < startX ? 'right' : 'left';
+    }
+
+    function configureMonsterMove(monster, startX, endX, startAt, quick, keepSpawnState) {
+      var distance = Math.abs(endX - startX);
+      var jumpRange = monsterJumpRange(monster.type);
+      var hopDuration = monster.type === 'flame' ? randomBetween(210, 285) : randomBetween(230, 315);
+
+      setMonsterDirection(monster, monsterMoveSide(startX, endX));
+      monster.startX = startX;
+      monster.endX = endX;
+      monster.start = startAt;
+      monster.hopCount = chooseMonsterHopCount(monster.type, distance, quick);
+      monster.hopDuration = hopDuration;
+      monster.duration = monster.hopCount * hopDuration;
+      monster.jump = randomBetween(jumpRange.min, jumpRange.max);
+      monster.idleFor = quick ? randomBetween(520, 1150) : randomBetween(760, 1750);
+      monster.settledAt = null;
+      monster.pendingMove = null;
+
+      monster.node.classList.remove('is-idling');
+      if (!keepSpawnState) monster.node.classList.remove('is-spawning');
+    }
+
+    function prepareMonsterWander(monster, now) {
+      var fromX = monster.endX;
+      var endX = chooseMonsterWanderTarget(monster, stage.clientWidth);
+
+      setMonsterDirection(monster, monsterMoveSide(fromX, endX));
+      monster.pendingMove = {
+        startX: fromX,
+        endX: endX,
+        startAt: now + monsterTurnLeadDuration
+      };
+    }
+
+    function startMonsterWander(monster, now) {
+      var pendingMove = monster.pendingMove;
+
+      if (!pendingMove) {
+        prepareMonsterWander(monster, now);
+        pendingMove = monster.pendingMove;
+      }
+
+      configureMonsterMove(monster, pendingMove.startX, pendingMove.endX, Math.max(now, pendingMove.startAt), false, false);
     }
 
     function scheduleMaintain(delay) {
@@ -681,14 +715,14 @@
       var type = chooseMonsterType();
       var monsterNode;
       var monster;
-      var distance;
-      var hopCount;
-      var hopDuration;
       var spawnDelay;
       var route;
-      var jumpRange;
       var spawnAt;
+      var spawnFinishedAt;
+      var spawnEffectEndsAt;
+      var moveStartAt;
       var groundY;
+      var visualSide;
 
       options = options || {};
 
@@ -703,51 +737,47 @@
       }
 
       route = chooseMonsterRoute(side, type, footerWidth, options.targetX, options.quick);
+      visualSide = monsterMoveSide(route.startX, route.endX);
       monsterNode = createMonsterNode(type);
       field.appendChild(monsterNode);
-      monsterNode.classList.add(route.side === 'left' ? 'from-left' : 'from-right');
-      distance = Math.abs(route.endX - route.startX);
-      hopCount = chooseMonsterHopCount(type, distance, options.quick);
-      if (!route.fromOutside) {
-        hopCount = Math.max(2, hopCount);
-        if (distance > 62) {
-          hopCount = Math.max(3, hopCount);
-        }
-      }
-      hopDuration = type === 'flame' ? randomBetween(230, 320) : randomBetween(260, 370);
+      monsterNode.classList.add(visualSide === 'left' ? 'from-left' : 'from-right');
       spawnDelay = Math.max(0, options.spawnDelay || 0);
       spawnAt = performance.now() + spawnDelay;
-      jumpRange = monsterJumpRange(type);
+      spawnFinishedAt = spawnAt + monsterSpawnRevealDelay + monsterSpawnJumpOutDuration;
+      spawnEffectEndsAt = spawnFinishedAt + monsterSpawnEffectTail;
+      moveStartAt = spawnEffectEndsAt + monsterSpawnMoveDelay;
       groundY = footerHeight - monsterGroundOffset(type);
 
       monster = {
         node: monsterNode,
         type: type,
         spawnAt: spawnAt,
-        spawnRevealAt: spawnAt + (route.fromOutside ? 0 : monsterSpawnRevealDelay),
-        spawnEffectStarted: route.fromOutside,
-        spawned: route.fromOutside,
-        spawnFinished: route.fromOutside,
-        start: spawnAt + (route.fromOutside ? 0 : monsterSpawnEffectDuration + monsterSpawnMoveDelay),
-        duration: hopCount * hopDuration,
-        hopCount: hopCount,
-        hopDuration: hopDuration,
-        fromOutside: route.fromOutside,
-        side: route.side,
+        spawnRevealAt: spawnAt + monsterSpawnRevealDelay,
+        spawnFinishedAt: spawnFinishedAt,
+        spawnEffectEndsAt: spawnEffectEndsAt,
+        spawnEffectStarted: false,
+        spawned: false,
+        spawnFinished: false,
+        start: moveStartAt,
+        duration: 0,
+        hopCount: 1,
+        hopDuration: 260,
+        fromOutside: false,
+        side: visualSide,
         startX: route.startX,
         endX: route.endX,
         groundY: groundY,
-        spawnFootAnchorX: monsterFootAnchorX(type, route.side),
+        spawnFootAnchorX: monsterFootAnchorX(type, visualSide),
         spawnFootAnchorY: monsterFootAnchorY(type),
-        jump: randomBetween(jumpRange.min, jumpRange.max) + (route.fromOutside ? 0 : 2),
-        idleFor: options.quick ? randomBetween(3200, 5200) : randomBetween(6800, 12000),
+        jump: 0,
+        idleFor: 0,
         settledAt: null,
         defeated: false
       };
 
-      if (!monster.fromOutside) {
-        monsterNode.classList.add('is-awaiting-spawn');
-      }
+      configureMonsterMove(monster, route.startX, route.endX, moveStartAt, options.quick, true);
+      monster.jump += 2;
+      monsterNode.classList.add('is-awaiting-spawn');
 
       monsterNode.style.transform = 'translate(' + monster.startX + 'px, ' + monster.groundY + 'px)';
       monsters.push(monster);
@@ -799,16 +829,19 @@
       return pit;
     }
 
-    function triggerLightningShake() {
-      stage.classList.remove('is-lightning-shake');
-      void stage.offsetWidth;
-      stage.classList.add('is-lightning-shake');
+    function createLightningCrater(event) {
+      var fieldRect = field.getBoundingClientRect();
+      var crater = document.createElement('span');
 
-      if (shakeTimer) window.clearTimeout(shakeTimer);
-      shakeTimer = window.setTimeout(function () {
-        stage.classList.remove('is-lightning-shake');
-        shakeTimer = null;
-      }, 180);
+      crater.className = 'footer-lightning-crater';
+      crater.setAttribute('aria-hidden', 'true');
+      crater.style.left = Math.round(event.clientX - fieldRect.left) + 'px';
+      crater.style.top = Math.round(event.clientY - fieldRect.top) + 'px';
+      field.appendChild(crater);
+
+      window.setTimeout(function () {
+        crater.remove();
+      }, FOOTER_LIGHTNING_CRATER_DURATION);
     }
 
     function defeatMonster(monster) {
@@ -843,7 +876,7 @@
       pit = createMagicStrike(event.clientX - effectRect.left, event.clientY - effectRect.top, false);
       magicPit.node = pit;
       pits.push(magicPit);
-      triggerLightningShake();
+      createLightningCrater(event);
 
       wand.classList.add('is-casting');
 
@@ -929,16 +962,20 @@
         monster.spawned = true;
         monster.node.classList.remove('is-awaiting-spawn');
         monster.node.classList.add('is-spawning');
+      }
 
-        window.setTimeout(function () {
-          finishMonsterSpawn(monster);
-        }, monsterSpawnJumpOutDuration);
+      if (monster.spawned && !monster.spawnFinished && now >= monster.spawnFinishedAt) {
+        finishMonsterSpawn(monster);
+      }
+
+      if (monster.spawnEffect && now >= monster.spawnEffectEndsAt) {
+        clearMonsterSpawnEffect(monster);
       }
 
       if (elapsed < 0) {
         if (monster.spawned && !monster.spawnFinished) {
           jumpOutProgress = clamp((now - monster.spawnRevealAt) / monsterSpawnJumpOutDuration, 0, 1);
-          y = Math.round(monster.groundY + (1 - easeInOut(jumpOutProgress)) * 12 - Math.sin(jumpOutProgress * Math.PI) * 5);
+          y = Math.round(monster.groundY + (1 - easeInOut(jumpOutProgress)) * 14 - Math.sin(jumpOutProgress * Math.PI) * 7);
         } else {
           y = monster.groundY;
         }
@@ -971,7 +1008,13 @@
         monster.node.style.transform = 'translate(' + Math.round(monster.endX) + 'px, ' + (Math.round(monster.groundY) + idleBob) + 'px)';
 
         if (now - monster.settledAt >= monster.idleFor) {
-          escapeMonster(monster);
+          if (!monster.pendingMove) {
+            prepareMonsterWander(monster, now);
+          }
+
+          if (now >= monster.pendingMove.startAt) {
+            startMonsterWander(monster, now);
+          }
         }
 
         return;
@@ -1018,7 +1061,14 @@
     });
 
     stage.addEventListener('click', function (event) {
-      if (event.button === 0) event.preventDefault();
+      if (event.button !== 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      stage.__castFooterMagic({
+        clientX: event.clientX,
+        clientY: event.clientY
+      });
     });
 
     stage.addEventListener('mouseleave', function () {
@@ -1106,7 +1156,8 @@
       '/img/pixel-medieval/hero-castle.png',
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
-      '/anim/lightning_strike.gif?v=4',
+      '/img/pixel-medieval/playground/lightning-crater.png?v=1',
+      '/anim/lightning_strike_sheet.png?v=6',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',
@@ -1377,11 +1428,118 @@
     }, true);
   }
 
+  function normalizedTwikooLabel(value) {
+    return (value || '').replace(/\s+/g, '').trim();
+  }
+
+  function removeNode(node) {
+    if (node && node.parentNode) {
+      node.parentNode.removeChild(node);
+    }
+  }
+
+  function removeTwikooActionItem(node) {
+    var root = node && node.closest && node.closest('.tk-submit-action, .tk-row.actions, .tk-actions');
+    var item = node;
+
+    if (!root) {
+      removeNode(node);
+      return;
+    }
+
+    while (item && item.parentElement && item.parentElement !== root) {
+      item = item.parentElement;
+    }
+
+    removeNode(item || node);
+  }
+
+  function cleanMessageBoardTwikooForm() {
+    var twikoo;
+    var websitePattern = /网址|网站|website|link|url/i;
+    var actionPattern = /^(预览|preview|图片|图像|image|uploadimage|上传图片)$/i;
+
+    if (!document.querySelector('.message-board-page')) return;
+
+    twikoo = document.getElementById('twikoo');
+    if (!twikoo) return;
+
+    Array.prototype.forEach.call(twikoo.querySelectorAll('.tk-meta-input > *'), function (field, index) {
+      var input = field.querySelector('input, .el-input__inner');
+      var label = normalizedTwikooLabel([
+        input && input.getAttribute('name'),
+        input && input.getAttribute('placeholder'),
+        input && input.getAttribute('aria-label'),
+        field.textContent
+      ].filter(Boolean).join(' '));
+
+      if (index === 2 || websitePattern.test(label)) {
+        removeNode(field);
+      }
+    });
+
+    Array.prototype.forEach.call(twikoo.querySelectorAll([
+      '.tk-submit-action .tk-preview',
+      '.tk-submit-action .tk-image',
+      '.tk-submit-action .tk-upload',
+      '.tk-submit-action .__preview',
+      '.tk-submit-action .__image',
+      '.tk-submit-action .__upload',
+      '.tk-row.actions .tk-preview',
+      '.tk-row.actions .tk-image',
+      '.tk-row.actions .tk-upload',
+      '.tk-row.actions .__preview',
+      '.tk-row.actions .__image',
+      '.tk-row.actions .__upload'
+    ].join(',')), removeTwikooActionItem);
+
+    Array.prototype.forEach.call(twikoo.querySelectorAll([
+      '.tk-submit-action > *',
+      '.tk-row.actions > *',
+      '.tk-actions > *'
+    ].join(',')), function (item) {
+      var label = normalizedTwikooLabel(
+        item.getAttribute('title') ||
+        item.getAttribute('aria-label') ||
+        item.textContent
+      );
+
+      if (actionPattern.test(label)) {
+        removeTwikooActionItem(item);
+      }
+    });
+  }
+
+  function initMessageBoardTwikooCleanup() {
+    var target;
+
+    if (messageBoardTwikooObserver) {
+      messageBoardTwikooObserver.disconnect();
+      messageBoardTwikooObserver = null;
+    }
+
+    if (!document.querySelector('.message-board-page')) return;
+
+    cleanMessageBoardTwikooForm();
+
+    if (!window.MutationObserver) return;
+
+    target = document.getElementById('twikoo-wrap') || document.getElementById('post-comment');
+    if (!target) return;
+
+    messageBoardTwikooObserver = new MutationObserver(cleanMessageBoardTwikooForm);
+    messageBoardTwikooObserver.observe(target, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function initFantasyPixel() {
     preloadThemeAssets();
     initThemeTransitionObserver();
     initHangingThemeToggle();
     initRightsideControls();
+    initMessageBoardTwikooCleanup();
     initAdventurerRadar();
     initCareerMap();
     initFooterSlimeGame();
