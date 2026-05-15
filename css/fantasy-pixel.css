@@ -6595,15 +6595,15 @@ hr {
   display: none !important;
 }
 
-#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo .tk-submit .tk-row.actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo .tk-submit .tk-actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo .tk-submit .tk-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-row.actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-actions > :not(.tk-send):not(.el-button):not(.el-button--primary),
-#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-action > :not(.tk-send):not(.el-button):not(.el-button--primary) {
-  display: none !important;
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > [title*="表情"],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > [aria-label*="表情"],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > [class*="owo" i],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > [class*="emoji" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > [title*="表情"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > [aria-label*="表情"],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > [class*="owo" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > [class*="emoji" i] {
+  display: inline-flex !important;
 }
 
 #page:has(.message-board-page) #twikoo .el-button,

@@ -394,7 +394,7 @@
     var mouseX = 0;
     var mouseY = 0;
     var minMonsters = 4;
-    var maxMonsters = 5;
+    var maxMonsters = 15;
     var monsterSize = 32;
     var magicPitDuration = FOOTER_LIGHTNING_DURATION;
     var magicEffectRun = 0;
@@ -519,11 +519,38 @@
       return pool[Math.floor(Math.random() * pool.length)] || 'slime';
     }
 
-    function monsterGroundOffset(type) {
-      if (type === 'bunny') return randomBetween(44, 58);
-      if (type === 'ghost') return randomBetween(54, 72);
-      if (type === 'flame') return randomBetween(40, 55);
-      return randomBetween(38, 52);
+    function monsterCapacity(footerWidth, footerHeight) {
+      var area = Math.max(0, footerWidth * footerHeight);
+
+      return Math.round(clamp(area / 30000, minMonsters, maxMonsters));
+    }
+
+    function monsterVerticalRange(footerHeight) {
+      var lowerY = Math.max(monsterSize + 44, footerHeight - 42);
+      var upperY = Math.max(monsterSize + 42, footerHeight * 0.46);
+
+      return {
+        min: Math.min(upperY, lowerY),
+        max: lowerY
+      };
+    }
+
+    function chooseMonsterGroundY(type, footerHeight) {
+      var range = monsterVerticalRange(footerHeight);
+      var typeLift = type === 'ghost' ? -8 : type === 'bunny' ? 2 : type === 'flame' ? 4 : 0;
+
+      return clamp(randomBetween(range.min, range.max) + typeLift, range.min, range.max);
+    }
+
+    function chooseMonsterWanderGroundY(monster, footerHeight) {
+      var range = monsterVerticalRange(footerHeight);
+      var step = randomBetween(-28, 28);
+      var currentY = clamp(monster.groundY, range.min, range.max);
+
+      if (currentY < range.min + 14) step = Math.abs(step);
+      if (currentY > range.max - 14) step = -Math.abs(step);
+
+      return clamp(currentY + step, range.min, range.max);
     }
 
     function monsterJumpRange(type) {
@@ -694,11 +721,16 @@
       monster.node.classList.add(side === 'left' ? 'from-left' : 'from-right');
     }
 
+    function setMonsterPosition(monster, x, y) {
+      monster.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      monster.node.style.zIndex = String(10 + Math.round(y));
+    }
+
     function monsterMoveSide(startX, endX) {
       return endX < startX ? 'right' : 'left';
     }
 
-    function configureMonsterMove(monster, startX, endX, startAt, quick, keepSpawnState) {
+    function configureMonsterMove(monster, startX, endX, startY, endY, startAt, quick, keepSpawnState) {
       var distance = Math.abs(endX - startX);
       var jumpRange = monsterJumpRange(monster.type);
       var hopDuration = monster.type === 'flame' ? randomBetween(210, 285) : randomBetween(230, 315);
@@ -706,6 +738,9 @@
       setMonsterDirection(monster, monsterMoveSide(startX, endX));
       monster.startX = startX;
       monster.endX = endX;
+      monster.startY = startY;
+      monster.endY = endY;
+      monster.groundY = startY;
       monster.start = startAt;
       monster.hopCount = chooseMonsterHopCount(monster.type, distance, quick);
       monster.hopDuration = hopDuration;
@@ -722,11 +757,15 @@
     function prepareMonsterWander(monster, now) {
       var fromX = monster.endX;
       var endX = chooseMonsterWanderTarget(monster, stage.clientWidth);
+      var fromY = monster.groundY;
+      var endY = chooseMonsterWanderGroundY(monster, stage.clientHeight);
 
       setMonsterDirection(monster, monsterMoveSide(fromX, endX));
       monster.pendingMove = {
         startX: fromX,
         endX: endX,
+        startY: fromY,
+        endY: endY,
         startAt: now + monsterTurnLeadDuration
       };
     }
@@ -739,7 +778,16 @@
         pendingMove = monster.pendingMove;
       }
 
-      configureMonsterMove(monster, pendingMove.startX, pendingMove.endX, Math.max(now, pendingMove.startAt), false, false);
+      configureMonsterMove(
+        monster,
+        pendingMove.startX,
+        pendingMove.endX,
+        pendingMove.startY,
+        pendingMove.endY,
+        Math.max(now, pendingMove.startAt),
+        false,
+        false
+      );
     }
 
     function scheduleMaintain(delay) {
@@ -759,6 +807,7 @@
       var type = chooseMonsterType();
       var monsterNode;
       var monster;
+      var capacity;
       var spawnDelay;
       var route;
       var spawnAt;
@@ -769,8 +818,9 @@
       var visualSide;
 
       options = options || {};
+      capacity = monsterCapacity(footerWidth, footerHeight);
 
-      if (footerWidth < 140 || footerHeight < 120 || liveMonsterCount() >= maxMonsters) {
+      if (footerWidth < 140 || footerHeight < 120 || liveMonsterCount() >= capacity) {
         return;
       }
 
@@ -790,7 +840,7 @@
       spawnFinishedAt = spawnAt + monsterSpawnRevealDelay + monsterSpawnJumpOutDuration;
       spawnEffectEndsAt = spawnFinishedAt + monsterSpawnEffectTail;
       moveStartAt = spawnEffectEndsAt + monsterSpawnMoveDelay;
-      groundY = footerHeight - monsterGroundOffset(type);
+      groundY = chooseMonsterGroundY(type, footerHeight);
 
       monster = {
         node: monsterNode,
@@ -810,6 +860,8 @@
         side: visualSide,
         startX: route.startX,
         endX: route.endX,
+        startY: groundY,
+        endY: groundY,
         groundY: groundY,
         spawnFootAnchorX: monsterFootAnchorX(type, visualSide),
         spawnFootAnchorY: monsterFootAnchorY(type),
@@ -819,17 +871,18 @@
         defeated: false
       };
 
-      configureMonsterMove(monster, route.startX, route.endX, moveStartAt, options.quick, true);
+      configureMonsterMove(monster, route.startX, route.endX, groundY, groundY, moveStartAt, options.quick, true);
       monster.jump += 2;
       monsterNode.classList.add('is-awaiting-spawn');
 
-      monsterNode.style.transform = 'translate(' + monster.startX + 'px, ' + monster.groundY + 'px)';
       monsters.push(monster);
+      setMonsterPosition(monster, monster.startX, monster.groundY);
       startLoop();
     }
 
     function maintainMonsters(fillToMax) {
-      var target = fillToMax ? maxMonsters : minMonsters + Math.floor(Math.random() * 2);
+      var capacity = monsterCapacity(stage.clientWidth, stage.clientHeight);
+      var target = fillToMax ? capacity : clamp(capacity - Math.floor(randomBetween(0, 2.6)), minMonsters, capacity);
       var guard = 0;
 
       while (liveMonsterCount() < target && guard < maxMonsters) {
@@ -1000,6 +1053,8 @@
       var hopEase;
       var fromX;
       var toX;
+      var yProgress;
+      var baseY;
       var x;
       var y;
       var idleBob;
@@ -1032,7 +1087,7 @@
           y = monster.groundY;
         }
 
-        monster.node.style.transform = 'translate(' + monster.startX + 'px, ' + y + 'px)';
+        setMonsterPosition(monster, monster.startX, y);
         return;
       }
 
@@ -1044,20 +1099,23 @@
       fromProgress = hopIndex / monster.hopCount;
       toProgress = (hopIndex + 1) / monster.hopCount;
       hopEase = easeInOut(hopProgress);
+      yProgress = fromProgress + (toProgress - fromProgress) * hopEase;
       fromX = monster.startX + (monster.endX - monster.startX) * fromProgress;
       toX = monster.startX + (monster.endX - monster.startX) * toProgress;
       x = Math.round(fromX + (toX - fromX) * hopEase);
-      y = Math.round(monster.groundY - Math.sin(hopProgress * Math.PI) * monster.jump * (hopIndex === 0 ? 1.08 : 1));
+      baseY = monster.startY + (monster.endY - monster.startY) * yProgress;
+      y = Math.round(baseY - Math.sin(hopProgress * Math.PI) * monster.jump * (hopIndex === 0 ? 1.08 : 1));
       progress = clamp(elapsed / monster.duration, 0, 1);
 
       if (progress >= 1) {
         if (!monster.settledAt) {
           monster.settledAt = now;
+          monster.groundY = monster.endY;
           monster.node.classList.add('is-idling');
         }
 
         idleBob = monsterIdleBob(monster.type, now - monster.settledAt);
-        monster.node.style.transform = 'translate(' + Math.round(monster.endX) + 'px, ' + (Math.round(monster.groundY) + idleBob) + 'px)';
+        setMonsterPosition(monster, Math.round(monster.endX), Math.round(monster.groundY) + idleBob);
 
         if (now - monster.settledAt >= monster.idleFor) {
           if (!monster.pendingMove) {
@@ -1072,7 +1130,7 @@
         return;
       }
 
-      monster.node.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      setMonsterPosition(monster, x, y);
     }
 
     function loop(now) {
@@ -1504,37 +1562,6 @@
     removeNode(item || node);
   }
 
-  function isTwikooSendAction(node) {
-    var label;
-    var classNames;
-
-    if (!node) return false;
-
-    label = normalizedTwikooLabel([
-      node.getAttribute && node.getAttribute('title'),
-      node.getAttribute && node.getAttribute('aria-label'),
-      node.textContent
-    ].filter(Boolean).join(' '));
-    classNames = node.className ? String(node.className) : '';
-
-    return /(^|\s)(tk-send|el-button--primary)(\s|$)/i.test(classNames) ||
-      /发送|提交|回复|send|submit|reply/i.test(label);
-  }
-
-  function removeMessageBoardTwikooSubmitActions(twikoo) {
-    if (!twikoo || !twikoo.querySelectorAll) return;
-
-    Array.prototype.forEach.call(twikoo.querySelectorAll([
-      '.tk-submit .tk-submit-action > *',
-      '.tk-submit .tk-row.actions > *',
-      '.tk-submit .tk-actions > *',
-      '.tk-submit .tk-action > *'
-    ].join(',')), function (item) {
-      if (isTwikooSendAction(item)) return;
-      removeTwikooActionItem(item);
-    });
-  }
-
   function cleanMessageBoardTwikooForm() {
     var twikoo;
     var websitePattern = /网址|网站|website|link|url/i;
@@ -1673,7 +1700,6 @@
       }
     });
 
-    removeMessageBoardTwikooSubmitActions(twikoo);
   }
 
   function initMessageBoardTwikooCleanup() {
