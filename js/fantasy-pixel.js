@@ -1,5 +1,5 @@
 (function () {
-  var FOOTER_LIGHTNING_DURATION = 760;
+  var FOOTER_LIGHTNING_DURATION = 1280;
 
   function createSpark(x, y) {
     var spark = document.createElement('span');
@@ -39,41 +39,23 @@
     return null;
   }
 
-  function createFooterLightning(x, y) {
-    var lightning = document.createElement('span');
-
-    lightning.className = 'footer-magic-pit';
-    lightning.setAttribute('aria-hidden', 'true');
-    lightning.style.left = x + 'px';
-    lightning.style.top = y + 'px';
-    document.body.appendChild(lightning);
-
-    window.setTimeout(function () {
-      lightning.remove();
-    }, FOOTER_LIGHTNING_DURATION);
-
-    return lightning;
-  }
-
   document.addEventListener('click', function (event) {
     var stage;
-    var lightning;
 
     if (event.button !== 0) return;
 
-    createSpark(event.clientX, event.clientY);
-
     stage = footerPlaygroundAtPoint(event);
-    if (!stage) return;
-
-    lightning = createFooterLightning(event.clientX, event.clientY);
-    document.dispatchEvent(new CustomEvent('footer:magic-cast', {
-      detail: {
-        clientX: event.clientX,
-        clientY: event.clientY,
-        effectNode: lightning
+    if (stage) {
+      if (typeof stage.__castFooterMagic === 'function') {
+        stage.__castFooterMagic({
+          clientX: event.clientX,
+          clientY: event.clientY
+        });
       }
-    }));
+      return;
+    }
+
+    createSpark(event.clientX, event.clientY);
   }, { passive: true });
 
   function drawAdventurerRadar(canvas) {
@@ -404,6 +386,7 @@
     var rafId = null;
     var maintainTimer = null;
     var castingTimer = null;
+    var shakeTimer = null;
     var score = 0;
     var mouseX = 0;
     var mouseY = 0;
@@ -411,10 +394,14 @@
     var maxMonsters = 5;
     var monsterSize = 32;
     var magicPitDuration = FOOTER_LIGHTNING_DURATION;
-    var monsterSpawnDuration = 420;
+    var monsterSpawnRevealDelay = 260;
+    var monsterSpawnJumpOutDuration = 430;
+    var monsterSpawnEffectDuration = 930;
+    var monsterSpawnMoveDelay = 80;
     var monsterSpawnEffectWidth = 64;
     var monsterSpawnEffectHeight = 40;
-    var monsterSpawnEffectAnchorY = 24;
+    var monsterSpawnEffectAnchorX = 32.5;
+    var monsterSpawnEffectAnchorY = 24.5;
     var monsterTypes = ['slime', 'bunny', 'ghost', 'flame'];
 
     wand.className = 'footer-magic-cursor';
@@ -521,7 +508,7 @@
     }
 
     function chooseMonsterHopCount(type, distance, quick) {
-      var maxHopDistance = type === 'bunny' ? 72 : type === 'ghost' ? 70 : type === 'flame' ? 62 : 64;
+      var maxHopDistance = type === 'bunny' ? 56 : type === 'ghost' ? 54 : type === 'flame' ? 48 : 52;
       var desiredHops = Math.ceil(distance / maxHopDistance);
 
       return clamp(desiredHops, 1, quick ? 3 : 4);
@@ -552,10 +539,17 @@
       return { min: 6, max: 10 };
     }
 
+    function monsterFootAnchorX(type, side) {
+      var anchor = type === 'slime' ? 18 : type === 'ghost' ? 16 : 15.5;
+
+      return side === 'right' ? monsterSize - anchor : anchor;
+    }
+
     function monsterFootAnchorY(type) {
       if (type === 'bunny') return 31;
       if (type === 'ghost') return 27;
-      return 28;
+      if (type === 'flame') return 28;
+      return 26;
     }
 
     function monsterIdleBob(type, elapsed) {
@@ -587,6 +581,17 @@
       mouseY = event.clientY;
       wand.style.left = mouseX + 'px';
       wand.style.top = mouseY + 'px';
+    }
+
+    function isInsideStage(event) {
+      var rect = stage.getBoundingClientRect();
+
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
     }
 
     function createMonsterNode(type) {
@@ -625,19 +630,38 @@
       var effect = document.createElement('img');
 
       effect.className = 'footer-monster-spawn is-' + monster.type + '-spawn';
-      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=1';
+      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=5';
       effect.alt = '';
       effect.width = monsterSpawnEffectWidth;
       effect.height = monsterSpawnEffectHeight;
       effect.setAttribute('aria-hidden', 'true');
       effect.draggable = false;
-      effect.style.left = Math.round(monster.spawnFootX - monsterSpawnEffectWidth / 2) + 'px';
-      effect.style.top = Math.round(monster.spawnFootY - monsterSpawnEffectAnchorY) + 'px';
-      field.appendChild(effect);
+      effect.style.left = (monster.startX + monster.spawnFootAnchorX - monsterSpawnEffectAnchorX).toFixed(2) + 'px';
+      effect.style.top = (monster.groundY + monster.spawnFootAnchorY - monsterSpawnEffectAnchorY).toFixed(2) + 'px';
+      effectsLayer.appendChild(effect);
+      monster.spawnEffect = effect;
 
       window.setTimeout(function () {
+        if (monster.spawnEffect === effect) {
+          monster.spawnEffect = null;
+        }
+
         effect.remove();
-      }, 540);
+      }, monsterSpawnEffectDuration);
+    }
+
+    function finishMonsterSpawn(monster) {
+      if (!monster || monster.spawnFinished) return;
+
+      monster.spawnFinished = true;
+      monster.node.classList.remove('is-spawning');
+    }
+
+    function clearMonsterSpawnEffect(monster) {
+      if (!monster || !monster.spawnEffect) return;
+
+      monster.spawnEffect.remove();
+      monster.spawnEffect = null;
     }
 
     function scheduleMaintain(delay) {
@@ -684,7 +708,13 @@
       monsterNode.classList.add(route.side === 'left' ? 'from-left' : 'from-right');
       distance = Math.abs(route.endX - route.startX);
       hopCount = chooseMonsterHopCount(type, distance, options.quick);
-      hopDuration = type === 'flame' ? randomBetween(330, 470) : randomBetween(360, 520);
+      if (!route.fromOutside) {
+        hopCount = Math.max(2, hopCount);
+        if (distance > 62) {
+          hopCount = Math.max(3, hopCount);
+        }
+      }
+      hopDuration = type === 'flame' ? randomBetween(230, 320) : randomBetween(260, 370);
       spawnDelay = Math.max(0, options.spawnDelay || 0);
       spawnAt = performance.now() + spawnDelay;
       jumpRange = monsterJumpRange(type);
@@ -694,19 +724,23 @@
         node: monsterNode,
         type: type,
         spawnAt: spawnAt,
+        spawnRevealAt: spawnAt + (route.fromOutside ? 0 : monsterSpawnRevealDelay),
+        spawnEffectStarted: route.fromOutside,
         spawned: route.fromOutside,
-        start: spawnAt + (route.fromOutside ? 0 : monsterSpawnDuration),
+        spawnFinished: route.fromOutside,
+        start: spawnAt + (route.fromOutside ? 0 : monsterSpawnEffectDuration + monsterSpawnMoveDelay),
         duration: hopCount * hopDuration,
         hopCount: hopCount,
         hopDuration: hopDuration,
         fromOutside: route.fromOutside,
+        side: route.side,
         startX: route.startX,
         endX: route.endX,
         groundY: groundY,
-        spawnFootX: route.startX + monsterSize / 2,
-        spawnFootY: groundY + monsterFootAnchorY(type),
-        jump: randomBetween(jumpRange.min, jumpRange.max),
-        idleFor: options.quick ? randomBetween(1700, 2600) : randomBetween(4200, 7600),
+        spawnFootAnchorX: monsterFootAnchorX(type, route.side),
+        spawnFootAnchorY: monsterFootAnchorY(type),
+        jump: randomBetween(jumpRange.min, jumpRange.max) + (route.fromOutside ? 0 : 2),
+        idleFor: options.quick ? randomBetween(3200, 5200) : randomBetween(6800, 12000),
         settledAt: null,
         defeated: false
       };
@@ -737,8 +771,44 @@
       var index = monsters.indexOf(monster);
 
       if (index !== -1) monsters.splice(index, 1);
+      clearMonsterSpawnEffect(monster);
       monster.node.remove();
       maintainMonsters(false);
+    }
+
+    function createMagicStrike(x, y, autoRemove) {
+      var pit = document.createElement('span');
+
+      pit.className = 'footer-magic-pit';
+      pit.setAttribute('aria-hidden', 'true');
+      pit.innerHTML = [
+        '<span class="footer-magic-bolt"></span>',
+        '<span class="footer-magic-flash"></span>',
+        '<span class="footer-magic-ring"></span>'
+      ].join('');
+      pit.style.left = Math.round(x) + 'px';
+      pit.style.top = Math.round(y) + 'px';
+      effectsLayer.appendChild(pit);
+
+      if (autoRemove) {
+        window.setTimeout(function () {
+          pit.remove();
+        }, magicPitDuration);
+      }
+
+      return pit;
+    }
+
+    function triggerLightningShake() {
+      stage.classList.remove('is-lightning-shake');
+      void stage.offsetWidth;
+      stage.classList.add('is-lightning-shake');
+
+      if (shakeTimer) window.clearTimeout(shakeTimer);
+      shakeTimer = window.setTimeout(function () {
+        stage.classList.remove('is-lightning-shake');
+        shakeTimer = null;
+      }, 180);
     }
 
     function defeatMonster(monster) {
@@ -763,13 +833,17 @@
     }
 
     function createMagicPit(event) {
-      var pit = event.effectNode || createFooterLightning(event.clientX, event.clientY);
+      var effectRect = effectsLayer.getBoundingClientRect();
+      var pit;
       var magicPit = {
-        node: pit,
+        node: null,
         expiresAt: performance.now() + magicPitDuration
       };
 
+      pit = createMagicStrike(event.clientX - effectRect.left, event.clientY - effectRect.top, false);
+      magicPit.node = pit;
       pits.push(magicPit);
+      triggerLightningShake();
 
       wand.classList.add('is-casting');
 
@@ -788,6 +862,13 @@
       checkMagicHits();
       startLoop();
     }
+
+    stage.__castFooterMagic = function (event) {
+      if (!isInsideStage(event)) return;
+
+      updateWand(event);
+      createMagicPit(event);
+    };
 
     function checkMagicHits() {
       if (!pits.length || !monsters.length) return;
@@ -837,22 +918,37 @@
       var x;
       var y;
       var idleBob;
+      var jumpOutProgress;
 
-      if (!monster.spawned && now >= monster.spawnAt) {
+      if (!monster.spawnEffectStarted && now >= monster.spawnAt) {
+        monster.spawnEffectStarted = true;
+        createMonsterSpawnEffect(monster);
+      }
+
+      if (!monster.spawned && now >= monster.spawnRevealAt) {
         monster.spawned = true;
         monster.node.classList.remove('is-awaiting-spawn');
         monster.node.classList.add('is-spawning');
-        createMonsterSpawnEffect(monster);
 
         window.setTimeout(function () {
-          monster.node.classList.remove('is-spawning');
-        }, monsterSpawnDuration + 80);
+          finishMonsterSpawn(monster);
+        }, monsterSpawnJumpOutDuration);
       }
 
       if (elapsed < 0) {
-        monster.node.style.transform = 'translate(' + monster.startX + 'px, ' + monster.groundY + 'px)';
+        if (monster.spawned && !monster.spawnFinished) {
+          jumpOutProgress = clamp((now - monster.spawnRevealAt) / monsterSpawnJumpOutDuration, 0, 1);
+          y = Math.round(monster.groundY + (1 - easeInOut(jumpOutProgress)) * 12 - Math.sin(jumpOutProgress * Math.PI) * 5);
+        } else {
+          y = monster.groundY;
+        }
+
+        monster.node.style.transform = 'translate(' + monster.startX + 'px, ' + y + 'px)';
         return;
       }
+
+      finishMonsterSpawn(monster);
+      clearMonsterSpawnEffect(monster);
 
       hopIndex = Math.min(monster.hopCount - 1, Math.floor(elapsed / monster.hopDuration));
       hopProgress = clamp((elapsed - hopIndex * monster.hopDuration) / monster.hopDuration, 0, 1);
@@ -1010,7 +1106,7 @@
       '/img/pixel-medieval/hero-castle.png',
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
-      '/anim/lightning_strike_sheet.png?v=9',
+      '/anim/lightning_strike.gif?v=4',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',

@@ -10,6 +10,11 @@
   var CAT_MEOW_MIN_DELAY = 7800;
   var CAT_MEOW_MAX_DELAY = 12800;
   var CAT_MEOW_DURATION = 1600;
+  var BODY_ANGLE_X_ID = 'PARAM_ANGLE_X';
+  var BODY_ANGLE_Y_ID = 'PARAM_ANGLE_Y';
+  var BODY_ANGLE_Z_ID = 'PARAM_ANGLE_Z';
+  var EYE_BALL_X_ID = 'PARAM_EYE_BALL_X';
+  var EYE_BALL_Y_ID = 'PARAM_EYE_BALL_Y';
 
   var DEPENDENCIES = [
     {
@@ -62,6 +67,21 @@
     catHopClassTimer: null,
     catMeowTimer: null,
     catMeowClassTimer: null,
+    eyeFocusRaf: null,
+    eyePointerX: window.innerWidth / 2,
+    eyePointerY: window.innerHeight / 2,
+    eyeFocusInstant: false,
+    eyeTargetX: 0,
+    eyeTargetY: 0,
+    eyeCurrentX: 0,
+    eyeCurrentY: 0,
+    bodyTargetX: 0,
+    bodyTargetY: 0,
+    bodyTargetZ: 0,
+    bodyCurrentX: 0,
+    bodyCurrentY: 0,
+    bodyCurrentZ: 0,
+    eyeTrackingBound: false,
     resizeTimer: null,
     dragging: false,
     dragMoved: false,
@@ -77,6 +97,20 @@
   };
 
   window.__timeinrainLive2dHijiki = state;
+
+  if (typeof state.eyePointerX !== 'number') state.eyePointerX = window.innerWidth / 2;
+  if (typeof state.eyePointerY !== 'number') state.eyePointerY = window.innerHeight / 2;
+  if (typeof state.eyeFocusInstant !== 'boolean') state.eyeFocusInstant = false;
+  if (typeof state.eyeTargetX !== 'number') state.eyeTargetX = 0;
+  if (typeof state.eyeTargetY !== 'number') state.eyeTargetY = 0;
+  if (typeof state.eyeCurrentX !== 'number') state.eyeCurrentX = 0;
+  if (typeof state.eyeCurrentY !== 'number') state.eyeCurrentY = 0;
+  if (typeof state.bodyTargetX !== 'number') state.bodyTargetX = 0;
+  if (typeof state.bodyTargetY !== 'number') state.bodyTargetY = 0;
+  if (typeof state.bodyTargetZ !== 'number') state.bodyTargetZ = 0;
+  if (typeof state.bodyCurrentX !== 'number') state.bodyCurrentX = 0;
+  if (typeof state.bodyCurrentY !== 'number') state.bodyCurrentY = 0;
+  if (typeof state.bodyCurrentZ !== 'number') state.bodyCurrentZ = 0;
 
   function randomItem(list) {
     return list[Math.floor(Math.random() * list.length)];
@@ -247,6 +281,7 @@
       scheduleCatMeow();
     } else {
       stopCatIdle();
+      scheduleEyeFocus(state.eyePointerX, state.eyePointerY, true);
     }
   }
 
@@ -389,6 +424,161 @@
     var index = Math.floor(Math.random() * motion.count);
 
     playMotion(motion.group, index);
+  }
+
+  function getModelFocusPoint(clientX, clientY) {
+    var root = getRoot();
+    var canvas = root.querySelector('.live2d-kanban__canvas');
+
+    if (!canvas || root.classList.contains('is-minimized') || root.classList.contains('is-hidden')) return null;
+
+    return {
+      x: clientX,
+      y: clientY
+    };
+  }
+
+  function focusModelAtPointer(instant) {
+    var model = state.model;
+    var point;
+
+    if (!model || typeof model.focus !== 'function' || document.hidden) return;
+
+    point = getModelFocusPoint(state.eyePointerX, state.eyePointerY);
+    if (!point) return;
+
+    try {
+      model.focus(point.x, point.y, instant);
+    } catch (error) {
+      // Focus support varies slightly between Live2D runtimes.
+    }
+  }
+
+  function updateEyeTargetFromPointer() {
+    var root = getRoot();
+    var stage = root.querySelector('.live2d-kanban__stage');
+    var rect;
+    var anchorX;
+    var anchorY;
+    var x;
+    var y;
+    var distance;
+
+    if (!stage || root.classList.contains('is-minimized') || root.classList.contains('is-hidden')) return;
+
+    rect = stage.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    anchorX = rect.left + rect.width * 0.5;
+    anchorY = rect.top + rect.height * 0.38;
+    x = (state.eyePointerX - anchorX) / Math.max(120, rect.width * 0.72);
+    y = (anchorY - state.eyePointerY) / Math.max(120, rect.height * 0.52);
+    distance = Math.sqrt(x * x + y * y);
+
+    if (distance > 1) {
+      x /= distance;
+      y /= distance;
+    }
+
+    state.eyeTargetX = clamp(x, -1, 1);
+    state.eyeTargetY = clamp(y, -1, 1);
+    state.bodyTargetX = clamp(x * 9, -9, 9);
+    state.bodyTargetY = clamp(y * 5, -5, 5);
+    state.bodyTargetZ = clamp(x * -4, -4, 4);
+
+    if (state.eyeFocusInstant) {
+      state.eyeCurrentX = state.eyeTargetX;
+      state.eyeCurrentY = state.eyeTargetY;
+      state.bodyCurrentX = state.bodyTargetX;
+      state.bodyCurrentY = state.bodyTargetY;
+      state.bodyCurrentZ = state.bodyTargetZ;
+    }
+  }
+
+  function setCoreParameter(coreModel, id, value) {
+    if (!coreModel) return false;
+
+    try {
+      if (typeof coreModel.setParameterValueById === 'function') {
+        coreModel.setParameterValueById(id, value);
+        return true;
+      }
+
+      if (typeof coreModel.addParameterValueById === 'function') {
+        coreModel.addParameterValueById(id, value);
+        return true;
+      }
+    } catch (error) {
+      // Some runtime builds expose a narrower Cubism core API.
+    }
+
+    return false;
+  }
+
+  function applyEyeTracking() {
+    var internalModel = state.model && state.model.internalModel;
+    var coreModel = internalModel && internalModel.coreModel;
+    var time;
+    var idleSway;
+    var ease;
+    var bodyEase;
+
+    if (!coreModel || document.hidden) return;
+    if (getRoot().classList.contains('is-minimized')) return;
+
+    ease = state.eyeFocusInstant ? 1 : 0.24;
+    bodyEase = state.eyeFocusInstant ? 1 : 0.12;
+    time = Date.now() / 1000;
+    idleSway = Math.sin(time * 1.65) * 1.35;
+
+    state.eyeCurrentX += (state.eyeTargetX - state.eyeCurrentX) * ease;
+    state.eyeCurrentY += (state.eyeTargetY - state.eyeCurrentY) * ease;
+    state.bodyCurrentX += (state.bodyTargetX - state.bodyCurrentX) * bodyEase;
+    state.bodyCurrentY += (state.bodyTargetY - state.bodyCurrentY) * bodyEase;
+    state.bodyCurrentZ += (state.bodyTargetZ - state.bodyCurrentZ) * bodyEase;
+
+    setCoreParameter(coreModel, BODY_ANGLE_X_ID, state.bodyCurrentX);
+    setCoreParameter(coreModel, BODY_ANGLE_Y_ID, state.bodyCurrentY);
+    setCoreParameter(coreModel, BODY_ANGLE_Z_ID, state.bodyCurrentZ + idleSway);
+    setCoreParameter(coreModel, EYE_BALL_X_ID, state.eyeCurrentX);
+    setCoreParameter(coreModel, EYE_BALL_Y_ID, state.eyeCurrentY);
+  }
+
+  function bindEyeTracking() {
+    var internalModel = state.model && state.model.internalModel;
+
+    if (!internalModel || state.eyeTrackingBound) return;
+
+    state.eyeTrackingBound = true;
+
+    if (typeof internalModel.on === 'function') {
+      internalModel.on('beforeModelUpdate', applyEyeTracking);
+    } else if (state.app && state.app.ticker && typeof state.app.ticker.add === 'function') {
+      state.app.ticker.add(applyEyeTracking);
+    }
+  }
+
+  function scheduleEyeFocus(clientX, clientY, instant) {
+    var requestFrame = window.requestAnimationFrame || function (callback) {
+      return window.setTimeout(callback, 16);
+    };
+
+    if (typeof clientX !== 'number' || typeof clientY !== 'number') return;
+
+    state.eyePointerX = clientX;
+    state.eyePointerY = clientY;
+    state.eyeFocusInstant = state.eyeFocusInstant || Boolean(instant);
+    updateEyeTargetFromPointer();
+
+    if (state.eyeFocusRaf) return;
+
+    state.eyeFocusRaf = requestFrame(function () {
+      var shouldFocusInstantly = state.eyeFocusInstant;
+
+      state.eyeFocusRaf = null;
+      state.eyeFocusInstant = false;
+      focusModelAtPointer(shouldFocusInstantly);
+    });
   }
 
   function scheduleIdle() {
@@ -552,18 +742,10 @@
     window.addEventListener('pointerup', endDrag, { passive: true });
     window.addEventListener('pointercancel', endDrag, { passive: true });
 
-    stage.addEventListener('pointermove', function (event) {
-      if (state.dragging) return;
+    window.addEventListener('pointermove', function (event) {
+      if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
 
-      if (state.model && typeof state.model.focus === 'function') {
-        state.model.focus(event.clientX, event.clientY);
-      }
-    }, { passive: true });
-
-    stage.addEventListener('pointerleave', function () {
-      if (state.model && typeof state.model.focus === 'function') {
-        state.model.focus(window.innerWidth / 2, window.innerHeight / 2);
-      }
+      scheduleEyeFocus(event.clientX, event.clientY, false);
     }, { passive: true });
 
     stage.addEventListener('click', function (event) {
@@ -620,6 +802,7 @@
         var root = getRoot();
 
         layoutModel();
+        scheduleEyeFocus(state.eyePointerX, state.eyePointerY, true);
         clampRootToViewport();
 
         if (root.classList.contains('is-minimized')) {
@@ -667,7 +850,9 @@
         layoutModel();
         bindModelEvents();
         bindResize();
+        bindEyeTracking();
         scheduleIdle();
+        scheduleEyeFocus(state.eyePointerX, state.eyePointerY, true);
 
         root.classList.remove('is-loading', 'is-error');
         playMotion('Idle', 0);
