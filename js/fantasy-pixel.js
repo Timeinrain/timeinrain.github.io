@@ -4,6 +4,7 @@
   var messageBoardTwikooObserver = null;
   var messageBoardTwikooCleanupTimer = null;
   var messageBoardTwikooCleanupRuns = 0;
+  var transparentPixelGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
   function createSpark(x, y) {
     var spark = document.createElement('span');
@@ -43,10 +44,10 @@
     return null;
   }
 
-  document.addEventListener('click', function (event) {
+  function castFooterMagicFromClick(event) {
     var stage;
 
-    if (event.button !== 0) return;
+    if (event.button !== 0 || event.__footerMagicHandled) return false;
 
     stage = footerPlaygroundAtPoint(event);
     if (stage) {
@@ -56,8 +57,19 @@
           clientY: event.clientY
         });
       }
-      return;
+      event.__footerMagicHandled = true;
+      return true;
     }
+
+    return false;
+  }
+
+  document.addEventListener('click', function (event) {
+    castFooterMagicFromClick(event);
+  }, { capture: true, passive: true });
+
+  document.addEventListener('click', function (event) {
+    if (event.button !== 0 || event.__footerMagicHandled) return;
 
     createSpark(event.clientX, event.clientY);
   }, { passive: true });
@@ -410,7 +422,7 @@
     var monsterSpawnEffectHeight = 40;
     var monsterSpawnEffectAnchorX = 32.5;
     var monsterSpawnEffectAnchorY = 24.5;
-    var monsterSpawnEffectVersion = 7;
+    var monsterSpawnEffectVersion = 8;
     var monsterSpawnEffectRun = 0;
     var monsterTurnLeadDuration = 160;
     var monsterTypes = ['slime', 'slime-green', 'slime-yellow', 'bunny', 'ghost', 'flame'];
@@ -653,16 +665,42 @@
       trimEffectNodes(field, '.footer-hit-burst', maxHitBurstNodes);
     }
 
+    function monsterSpawnEffectSrc(type) {
+      return '/anim/monster_spawn_' + type + '.gif?v=' + monsterSpawnEffectVersion;
+    }
+
+    function scheduleMonsterSpawnTimeline(monster, spawnAt) {
+      monster.spawnAt = spawnAt;
+      monster.spawnRevealAt = spawnAt + monsterSpawnRevealDelay;
+      monster.spawnFinishedAt = monster.spawnRevealAt + monsterSpawnJumpOutDuration;
+      monster.spawnEffectEndsAt = monster.spawnFinishedAt + monsterSpawnEffectTail;
+      monster.start = monster.spawnEffectEndsAt + monsterSpawnMoveDelay;
+    }
+
+    function restartMonsterSpawnEffect(monster) {
+      var effect = monster && monster.spawnEffect;
+
+      if (!effect) return;
+
+      effect.src = transparentPixelGif;
+      window.requestAnimationFrame(function () {
+        if (effect.isConnected) {
+          effect.src = monsterSpawnEffectSrc(monster.type);
+        }
+      });
+    }
+
     function createMonsterSpawnEffect(monster) {
       var effect = document.createElement('img');
 
       monsterSpawnEffectRun += 1;
       effect.className = 'footer-monster-spawn is-' + monster.type + '-spawn';
-      effect.src = '/anim/monster_spawn_' + monster.type + '.gif?v=' + monsterSpawnEffectVersion + '&run=' + monsterSpawnEffectRun;
+      effect.src = monsterSpawnEffectSrc(monster.type);
       effect.alt = '';
       effect.width = monsterSpawnEffectWidth;
       effect.height = monsterSpawnEffectHeight;
       effect.setAttribute('aria-hidden', 'true');
+      effect.dataset.effectRun = String(monsterSpawnEffectRun);
       effect.draggable = false;
       effect.style.left = (monster.startX + monster.spawnFootAnchorX - monsterSpawnEffectAnchorX).toFixed(2) + 'px';
       effect.style.top = (monster.groundY + monster.spawnFootAnchorY - monsterSpawnEffectAnchorY).toFixed(2) + 'px';
@@ -1065,8 +1103,17 @@
       var jumpOutProgress;
 
       if (!monster.spawnEffectStarted && now >= monster.spawnAt) {
+        if (!monster.spawned && now >= monster.spawnRevealAt - 40) {
+          scheduleMonsterSpawnTimeline(monster, now);
+          elapsed = now - monster.start;
+        }
+
         monster.spawnEffectStarted = true;
         createMonsterSpawnEffect(monster);
+      } else if (monster.spawnEffect && !monster.spawned && now >= monster.spawnRevealAt + 120) {
+        scheduleMonsterSpawnTimeline(monster, now);
+        elapsed = now - monster.start;
+        restartMonsterSpawnEffect(monster);
       }
 
       if (!monster.spawned && now >= monster.spawnRevealAt) {
@@ -1179,10 +1226,14 @@
 
       event.preventDefault();
       event.stopPropagation();
+
+      if (event.__footerMagicHandled) return;
+
       stage.__castFooterMagic({
         clientX: event.clientX,
         clientY: event.clientY
       });
+      event.__footerMagicHandled = true;
     });
 
     stage.addEventListener('mouseleave', function () {
@@ -1278,8 +1329,12 @@
       '/anim/slime-yellow_move_sheet.png?v=33',
       '/anim/slime-yellow_idle_sheet.png?v=33',
       '/anim/slime-yellow_death_sheet.png?v=33',
-      '/anim/monster_spawn_slime-green.gif?v=7',
-      '/anim/monster_spawn_slime-yellow.gif?v=7',
+      '/anim/monster_spawn_slime.gif?v=8',
+      '/anim/monster_spawn_slime-green.gif?v=8',
+      '/anim/monster_spawn_slime-yellow.gif?v=8',
+      '/anim/monster_spawn_bunny.gif?v=8',
+      '/anim/monster_spawn_ghost.gif?v=8',
+      '/anim/monster_spawn_flame.gif?v=8',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',

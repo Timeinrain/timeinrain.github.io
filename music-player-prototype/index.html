@@ -139,6 +139,7 @@
 
     .music-player {
       --dock-size: 48px;
+      --progress: 38%;
       position: fixed;
       right: clamp(14px, 2.8vw, 34px);
       bottom: clamp(16px, 4vh, 38px);
@@ -269,33 +270,71 @@
       text-transform: uppercase;
     }
 
-    .music-player__meter {
+    .music-player__seek-wrap {
       position: relative;
+      height: 12px;
+    }
+
+    .music-player__seek-wrap::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 2px;
       height: 8px;
-      overflow: hidden;
-      background: rgba(12, 8, 5, 0.76);
+      background: linear-gradient(90deg, var(--meter) 0 var(--progress), rgba(12, 8, 5, 0.76) var(--progress) 100%);
       border: 2px solid rgba(221, 183, 98, 0.62);
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.26);
+      pointer-events: none;
     }
 
-    .music-player__meter-fill {
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 38%;
-      background:
-        repeating-linear-gradient(
-          90deg,
-          var(--meter) 0,
-          var(--meter) 5px,
-          rgba(255, 244, 198, 0.9) 5px,
-          rgba(255, 244, 198, 0.9) 7px
-        );
-      animation: playerMeter 18s steps(32, end) infinite;
-      animation-play-state: paused;
+    .music-player__seek {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 12px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
     }
 
-    .music-player.is-playing .music-player__meter-fill {
-      animation-play-state: running;
+    .music-player__seek::-webkit-slider-runnable-track {
+      height: 12px;
+      background: transparent;
+    }
+
+    .music-player__seek::-webkit-slider-thumb {
+      width: 10px;
+      height: 14px;
+      margin-top: -1px;
+      appearance: none;
+      background: #fff1b7;
+      border: 2px solid #4a2a12;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.38);
+    }
+
+    .music-player__seek::-moz-range-track {
+      height: 12px;
+      background: transparent;
+      border: 0;
+    }
+
+    .music-player__seek::-moz-range-thumb {
+      width: 10px;
+      height: 14px;
+      background: #fff1b7;
+      border: 2px solid #4a2a12;
+      border-radius: 0;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.38);
+    }
+
+    .music-player__time {
+      color: var(--muted);
+      font-family: var(--font-pixel-en);
+      font-size: 11px;
+      line-height: 1;
+      text-align: right;
     }
 
     .music-player__secondary {
@@ -399,16 +438,6 @@
       text-shadow: none;
     }
 
-    @keyframes playerMeter {
-      from {
-        width: 8%;
-      }
-
-      to {
-        width: 100%;
-      }
-    }
-
     @keyframes musicBars {
       0% {
         transform: translateY(0);
@@ -481,9 +510,10 @@
             <div class="music-player__title">Medieval Castle Loop - Ebunny</div>
             <div class="music-player__phase">Day</div>
           </div>
-          <div class="music-player__meter" aria-hidden="true">
-            <span class="music-player__meter-fill"></span>
+          <div class="music-player__seek-wrap">
+            <input class="music-player__seek" type="range" min="0" max="1000" value="380" aria-label="Playback progress" title="Playback progress">
           </div>
+          <div class="music-player__time">0:18 / 0:48</div>
         </div>
 
         <div class="music-player__secondary">
@@ -510,22 +540,63 @@
       var dockButton = document.querySelector('.music-player__dock');
       var title = document.querySelector('.music-player__title');
       var phase = document.querySelector('.music-player__phase');
+      var seek = document.querySelector('.music-player__seek');
+      var time = document.querySelector('.music-player__time');
+      var activeTheme = 'light';
+      var currentSeconds = 18;
+      var seeking = false;
+      var timer = 0;
 
       var tracks = {
         light: {
           title: 'Medieval Castle Loop - Ebunny',
-          phase: 'Day'
+          phase: 'Day',
+          duration: 48
         },
         dark: {
           title: "Medieval: The Bard's Tale - RandomMind",
-          phase: 'Night'
+          phase: 'Night',
+          duration: 218
         }
       };
 
+      function formatTime(seconds) {
+        var value = Math.max(0, Math.floor(seconds));
+        var minutes = Math.floor(value / 60);
+        var rest = value % 60;
+
+        return minutes + ':' + String(rest).padStart(2, '0');
+      }
+
+      function updateProgress() {
+        var duration = tracks[activeTheme].duration;
+        var progress = Math.min(100, Math.max(0, currentSeconds / duration * 100));
+
+        player.style.setProperty('--progress', progress.toFixed(2) + '%');
+        if (!seeking) seek.value = String(Math.round(progress * 10));
+        time.textContent = formatTime(currentSeconds) + ' / ' + formatTime(duration);
+      }
+
+      function startTimer() {
+        window.clearInterval(timer);
+        timer = window.setInterval(function () {
+          if (!player.classList.contains('is-playing') || seeking) return;
+          currentSeconds += 1;
+          if (currentSeconds > tracks[activeTheme].duration) currentSeconds = 0;
+          updateProgress();
+        }, 1000);
+      }
+
       function setTheme(theme) {
+        var previousDuration = tracks[activeTheme].duration;
+        var ratio = previousDuration ? currentSeconds / previousDuration : 0;
+
+        activeTheme = theme;
+        currentSeconds = ratio * tracks[theme].duration;
         root.setAttribute('data-theme', theme);
         title.textContent = tracks[theme].title;
         phase.textContent = tracks[theme].phase;
+        updateProgress();
 
         themeButtons.forEach(function (button) {
           button.setAttribute('aria-pressed', String(button.getAttribute('data-theme-target') === theme));
@@ -537,6 +608,7 @@
         playButton.setAttribute('aria-label', isPlaying ? 'Pause music' : 'Play music');
         playButton.setAttribute('title', isPlaying ? 'Pause' : 'Play');
         playButton.querySelector('span').textContent = isPlaying ? 'Ⅱ' : '▶';
+        if (isPlaying) startTimer();
       }
 
       themeButtons.forEach(function (button) {
@@ -549,6 +621,28 @@
         setPlaying(!player.classList.contains('is-playing'));
       });
 
+      seek.addEventListener('pointerdown', function () {
+        seeking = true;
+      });
+
+      seek.addEventListener('input', function () {
+        currentSeconds = Number(seek.value) / 1000 * tracks[activeTheme].duration;
+        updateProgress();
+      });
+
+      seek.addEventListener('change', function () {
+        currentSeconds = Number(seek.value) / 1000 * tracks[activeTheme].duration;
+        seeking = false;
+        updateProgress();
+      });
+
+      document.addEventListener('pointerup', function () {
+        if (!seeking) return;
+        currentSeconds = Number(seek.value) / 1000 * tracks[activeTheme].duration;
+        seeking = false;
+        updateProgress();
+      });
+
       collapseButton.addEventListener('click', function () {
         player.classList.add('is-collapsed');
       });
@@ -556,6 +650,9 @@
       dockButton.addEventListener('click', function () {
         player.classList.remove('is-collapsed');
       });
+
+      updateProgress();
+      startTimer();
     })();
   </script>
 </body>
