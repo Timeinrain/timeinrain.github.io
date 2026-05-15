@@ -549,6 +549,7 @@
   window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
 })()</script></div><script src="/js/fantasy-pixel.js?v=20260516-lightning-blob-cache"></script><script src="/js/post-scroll-pane.js?v=20260516-post-scroll-pane-v2"></script><script src="/js/ambient-nature.js"></script><script src="/js/live2d-kanban.js?v=20260515-body"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
   const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+  let keepScrollTop = null
 
   window.pjax = new Pjax({
     elements: 'a:not([target="_blank"])',
@@ -569,6 +570,13 @@
     })
   }
 
+  document.addEventListener('click', e => {
+    const target = e.target.closest ? e.target.closest('nav#pagination .page-number, nav#pagination .extend') : null
+    if (!target) return
+    if (target.textContent.trim() !== '1') return
+    keepScrollTop = window.scrollY || window.pageYOffset
+  })
+
   document.addEventListener('pjax:send', () => {
     // removeEventListener
     btf.removeGlobalFnEvent('pjaxSendOnce')
@@ -582,6 +590,11 @@
   })
 
   document.addEventListener('pjax:complete', () => {
+    if (keepScrollTop !== null) {
+      window.scrollTo(0, keepScrollTop)
+      keepScrollTop = null
+    }
+
     btf.removeGlobalFnEvent('pjaxCompleteOnce')
     document.querySelectorAll('script[data-pjax]').forEach(item => {
       const newScript = document.createElement('script')

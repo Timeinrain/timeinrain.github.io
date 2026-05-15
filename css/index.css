@@ -2317,9 +2317,12 @@ figure.highlight pre .javascript .function {
 }
 .category-lists .category-list {
   margin-bottom: 0;
+  line-height: 1.9;
 }
 .category-lists .category-list a {
   color: var(--font-color);
+  font-size: 1.06em;
+  line-height: 1.6;
 }
 .category-lists .category-list a:hover {
   color: #d7b36a;
@@ -2327,6 +2330,7 @@ figure.highlight pre .javascript .function {
 .category-lists .category-list .category-list-count {
   margin-left: 8px;
   color: var(--card-meta);
+  font-size: 1.01em;
 }
 .category-lists .category-list .category-list-count:before {
   content: '(';
@@ -2342,8 +2346,8 @@ figure.highlight pre .javascript .function {
 }
 .category-lists ul li {
   position: relative;
-  margin: 6px 0;
-  padding: 0.12em 0.4em 0.12em 1.4em;
+  margin: 8px 0;
+  padding: 0.2em 0.4em 0.2em 1.4em;
 }
 #body-wrap {
   display: -webkit-box;
