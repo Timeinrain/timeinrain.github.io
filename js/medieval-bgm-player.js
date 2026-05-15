@@ -45,7 +45,6 @@
     dragStartTop: 0,
     dragStartedOnDock: false,
     positionRatio: null,
-    hasEnded: false,
     lastUserSeekTime: null,
     lastUserSeekUntil: 0,
     progressRaf: 0,
@@ -348,7 +347,7 @@
     window.setTimeout(function () {
       var currentTime;
 
-      if (!hasRecentUserSeek() || !state.audio || state.audio.ended) return;
+      if (!hasRecentUserSeek() || !state.audio) return;
 
       currentTime = getCurrentTime();
 
@@ -365,7 +364,7 @@
   function protectRecentUserSeek() {
     if (!hasRecentUserSeek() || !Number.isFinite(state.lastUserSeekTime)) return false;
 
-    if (getCurrentTime() + 0.3 >= state.lastUserSeekTime) return false;
+    if (Math.abs(getCurrentTime() - state.lastUserSeekTime) <= 0.3) return false;
 
     enforceRecentUserSeek();
     return true;
@@ -458,7 +457,7 @@
     function tick() {
       updateProgress();
 
-      if (!state.audio.paused && !state.audio.ended) {
+      if (!state.audio.paused && !state.hasError) {
         state.progressRaf = window.requestAnimationFrame(tick);
       } else {
         state.progressRaf = 0;
@@ -503,7 +502,6 @@
   }
 
   function attemptPlay() {
-    state.hasEnded = false;
     state.audio.play().then(function () {
       setError(false);
       updatePlaying(true);
@@ -532,7 +530,6 @@
       clearCommittedSeek();
       state.pendingSeekValue = null;
       state.isSeeking = false;
-      state.hasEnded = false;
       state.pendingRestoreTime = getStoredTrackTime(theme);
       state.playAfterTrackLoad = wasPlaying;
       state.isChangingTrack = true;
@@ -558,14 +555,13 @@
     targetTime = getSeekTargetTime(inputValue, duration);
 
     audio.currentTime = targetTime;
-    state.hasEnded = false;
 
     return targetTime;
   }
 
   function finishSeek() {
     var value = getSeekInputValue();
-    var shouldResume = state.wantedPlaying && (state.audio.paused || state.audio.ended || state.hasEnded);
+    var shouldResume = state.wantedPlaying;
     var targetTime;
 
     clearSeekCommitTimer();
@@ -681,7 +677,7 @@
     dockIcon.setAttribute('aria-hidden', 'true');
     dock.appendChild(dockIcon);
 
-    audio.loop = false;
+    audio.loop = true;
     audio.preload = 'metadata';
     audio.volume = clamp(storedVolume, 0, 1);
 
@@ -818,11 +814,6 @@
 
     state.elements.play.addEventListener('click', function () {
       if (state.audio.paused) {
-        if ((state.audio.ended || state.hasEnded) && !hasRecentUserSeek()) {
-          state.audio.currentTime = 0;
-          updateProgress();
-        }
-
         state.wantedPlaying = true;
         writeStore({ wantedPlaying: true });
         attemptPlay();
@@ -918,7 +909,6 @@
       }
     });
     state.audio.addEventListener('play', function () {
-      state.hasEnded = false;
       enforceRecentUserSeek();
       updatePlaying(true);
       startProgressLoop();
@@ -933,31 +923,16 @@
       updateProgress();
     });
     state.audio.addEventListener('ended', function () {
+      if (state.audio.loop && state.wantedPlaying && !state.hasError) {
+        updatePlaying(true);
+        startProgressLoop();
+        return;
+      }
+
       stopProgressLoop();
-      state.hasEnded = true;
-      updateProgress();
-      writeTrackTime(state.currentTheme, 0);
-
-      if (state.isSeeking || state.pendingSeekValue !== null || state.seekCommitTimer) {
-        updatePlaying(false);
-        return;
-      }
-
-      if (protectRecentUserSeek()) {
-        updatePlaying(false);
-        return;
-      }
-
       clearRecentUserSeek();
-
-      if (!state.wantedPlaying || state.hasError) {
-        updatePlaying(false);
-        return;
-      }
-
-      state.audio.currentTime = 0;
+      updatePlaying(false);
       updateProgress();
-      attemptPlay();
     });
     state.audio.addEventListener('error', function () {
       state.isChangingTrack = false;
