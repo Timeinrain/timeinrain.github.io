@@ -6,11 +6,112 @@
   var messageBoardTwikooCleanupTimer = null;
   var messageBoardTwikooCleanupRuns = 0;
   var transparentPixelGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+  var footerLightningBlob = null;
+  var footerLightningBlobPromise = null;
 
-  function footerLightningStrikeSrc(runId) {
-    var src = '/anim/lightning_strike.gif?v=' + FOOTER_LIGHTNING_ASSET_VERSION;
+  function footerLightningStrikeSrc() {
+    return '/anim/lightning_strike.gif?v=' + FOOTER_LIGHTNING_ASSET_VERSION;
+  }
 
-    return runId ? src + '#run-' + runId : src;
+  function preloadFooterLightningStrike() {
+    var fallbackImage;
+
+    if (footerLightningBlob || footerLightningBlobPromise) return footerLightningBlobPromise;
+
+    if (
+      typeof window.fetch === 'function' &&
+      window.URL &&
+      typeof window.URL.createObjectURL === 'function'
+    ) {
+      footerLightningBlobPromise = window.fetch(footerLightningStrikeSrc(), {
+        cache: 'force-cache',
+        credentials: 'same-origin',
+        priority: 'high'
+      }).then(function (response) {
+        if (!response || !response.ok) throw new Error('Lightning preload failed');
+
+        return response.blob();
+      }).then(function (blob) {
+        if (blob && blob.size > 0) footerLightningBlob = blob;
+
+        return footerLightningBlob;
+      }).catch(function () {
+        footerLightningBlobPromise = null;
+
+        return null;
+      });
+
+      return footerLightningBlobPromise;
+    }
+
+    if (typeof window.Image === 'function') {
+      fallbackImage = new window.Image();
+      fallbackImage.decoding = 'async';
+      if ('fetchPriority' in fallbackImage) fallbackImage.fetchPriority = 'high';
+      if ('loading' in fallbackImage) fallbackImage.loading = 'eager';
+      fallbackImage.src = footerLightningStrikeSrc();
+    }
+
+    footerLightningBlobPromise = Promise.resolve(null);
+    return footerLightningBlobPromise;
+  }
+
+  function createFooterLightningPlaybackSrc(runId) {
+    var objectUrl;
+
+    if (
+      footerLightningBlob &&
+      window.URL &&
+      typeof window.URL.createObjectURL === 'function'
+    ) {
+      objectUrl = window.URL.createObjectURL(footerLightningBlob);
+
+      return {
+        src: objectUrl,
+        objectUrl: objectUrl
+      };
+    }
+
+    return {
+      src: footerLightningStrikeSrc() + '#run-' + runId,
+      objectUrl: ''
+    };
+  }
+
+  function setFooterLightningBoltSrc(bolt, runId) {
+    var playback = createFooterLightningPlaybackSrc(runId);
+
+    bolt.src = playback.src;
+    if (playback.objectUrl) {
+      bolt.dataset.footerLightningObjectUrl = playback.objectUrl;
+    } else {
+      bolt.removeAttribute('data-footer-lightning-object-url');
+      preloadFooterLightningStrike().then(function () {
+        var localPlayback;
+
+        if (!footerLightningBlob || !bolt.isConnected || bolt.dataset.footerLightningObjectUrl) return;
+
+        localPlayback = createFooterLightningPlaybackSrc(runId);
+        bolt.src = localPlayback.src;
+        if (localPlayback.objectUrl) {
+          bolt.dataset.footerLightningObjectUrl = localPlayback.objectUrl;
+        }
+      });
+    }
+  }
+
+  function revokeFooterLightningBoltSrc(node) {
+    var bolt;
+    var objectUrl;
+
+    if (!node || !window.URL || typeof window.URL.revokeObjectURL !== 'function') return;
+
+    bolt = node.querySelector && node.querySelector('.footer-magic-bolt');
+    objectUrl = bolt && bolt.dataset.footerLightningObjectUrl;
+    if (!objectUrl) return;
+
+    window.URL.revokeObjectURL(objectUrl);
+    bolt.removeAttribute('data-footer-lightning-object-url');
   }
 
   function createSpark(x, y) {
@@ -757,6 +858,7 @@
     function removeMagicPitNode(node) {
       if (!node) return;
 
+      revokeFooterLightningBoltSrc(node);
       node.remove();
       pits = pits.filter(function (pit) {
         return pit.node !== node;
@@ -969,7 +1071,7 @@
         bolt.decoding = 'async';
         bolt.fetchPriority = 'high';
         bolt.loading = 'eager';
-        bolt.src = footerLightningStrikeSrc(magicEffectRun);
+        setFooterLightningBoltSrc(bolt, magicEffectRun);
       }
       pit.style.left = Math.round(x) + 'px';
       pit.style.top = Math.round(y) + 'px';
@@ -1331,7 +1433,6 @@
       '/img/pixel-medieval/grassland-layout.png',
       '/img/pixel-medieval/forest-layout.png',
       '/img/pixel-medieval/playground/lightning-crater.png?v=1',
-      footerLightningStrikeSrc(),
       '/anim/slime-green_move_sheet.png?v=33',
       '/anim/slime-green_idle_sheet.png?v=33',
       '/anim/slime-green_death_sheet.png?v=33',
@@ -1352,9 +1453,12 @@
       '/anim/flame_death_sheet.png?v=32'
     ];
 
-    if (themeAssetsPreloaded || typeof window.Image !== 'function') return;
+    if (themeAssetsPreloaded) return;
 
     themeAssetsPreloaded = true;
+    preloadFooterLightningStrike();
+    if (typeof window.Image !== 'function') return;
+
     assets.forEach(function (src) {
       var image = new window.Image();
       var isPriorityAsset = src.indexOf('lightning_strike') !== -1 ||
