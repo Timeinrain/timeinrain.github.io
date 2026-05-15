@@ -413,7 +413,7 @@
     var monsterSpawnEffectVersion = 7;
     var monsterSpawnEffectRun = 0;
     var monsterTurnLeadDuration = 160;
-    var monsterTypes = ['slime', 'bunny', 'ghost', 'flame'];
+    var monsterTypes = ['slime', 'slime-green', 'slime-yellow', 'bunny', 'ghost', 'flame'];
 
     wand.className = 'footer-magic-cursor';
     wand.setAttribute('aria-hidden', 'true');
@@ -519,6 +519,10 @@
       return pool[Math.floor(Math.random() * pool.length)] || 'slime';
     }
 
+    function isSlimeMonster(type) {
+      return type === 'slime' || type === 'slime-green' || type === 'slime-yellow';
+    }
+
     function monsterCapacity(footerWidth, footerHeight) {
       var area = Math.max(0, footerWidth * footerHeight);
 
@@ -561,7 +565,7 @@
     }
 
     function monsterFootAnchorX(type, side) {
-      var anchor = type === 'slime' ? 18 : type === 'ghost' ? 16 : 15.5;
+      var anchor = isSlimeMonster(type) ? 18 : type === 'ghost' ? 16 : 15.5;
 
       return side === 'right' ? monsterSize - anchor : anchor;
     }
@@ -1268,6 +1272,14 @@
       '/img/pixel-medieval/forest-layout.png',
       '/img/pixel-medieval/playground/lightning-crater.png?v=1',
       '/anim/lightning_strike.gif?v=8',
+      '/anim/slime-green_move_sheet.png?v=33',
+      '/anim/slime-green_idle_sheet.png?v=33',
+      '/anim/slime-green_death_sheet.png?v=33',
+      '/anim/slime-yellow_move_sheet.png?v=33',
+      '/anim/slime-yellow_idle_sheet.png?v=33',
+      '/anim/slime-yellow_death_sheet.png?v=33',
+      '/anim/monster_spawn_slime-green.gif?v=7',
+      '/anim/monster_spawn_slime-yellow.gif?v=7',
       '/anim/ghost_move_sheet.png?v=32',
       '/anim/ghost_idle_sheet.png?v=32',
       '/anim/ghost_death_sheet.png?v=32',

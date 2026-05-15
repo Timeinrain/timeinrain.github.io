@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medieval BGM Player Prototype</title>
+  <style>
+    @font-face {
+      font-family: "Ark Pixel 12px Proportional SC";
+      font-style: normal;
+      font-display: swap;
+      font-weight: 400;
+      src: url("../fonts/ark-pixel-12px-proportional-zh_cn.woff2") format("woff2");
+    }
+
+    @font-face {
+      font-family: "Ark Pixel 12px Proportional Latin";
+      font-style: normal;
+      font-display: swap;
+      font-weight: 400;
+      src: url("../fonts/ark-pixel-12px-proportional-latin.woff2") format("woff2");
+    }
+
+    :root {
+      --font-pixel: "Ark Pixel 12px Proportional SC", "Microsoft YaHei", monospace;
+      --font-pixel-en: "Ark Pixel 12px Proportional Latin", "Ark Pixel 12px Proportional SC", monospace;
+      --hero-day: url("../img/pixel-medieval/hero-castle-day.png");
+      --hero-night: url("../img/pixel-medieval/hero-castle.png");
+      --panel-top: rgba(67, 39, 20, 0.97);
+      --panel-bottom: rgba(24, 15, 10, 0.97);
+      --panel-soft: rgba(112, 66, 30, 0.58);
+      --ink: #fff1bc;
+      --muted: #d8b870;
+      --edge: #e4bd67;
+      --edge-deep: #7f461f;
+      --accent: #f2d17b;
+      --meter: #8fc9d1;
+      --danger: #b94d39;
+      --shadow: rgba(0, 0, 0, 0.42);
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --panel-top: rgba(33, 29, 41, 0.97);
+      --panel-bottom: rgba(10, 12, 20, 0.98);
+      --panel-soft: rgba(78, 63, 103, 0.5);
+      --ink: #e9d99b;
+      --muted: #aa9564;
+      --edge: #b99954;
+      --edge-deep: #4e3a22;
+      --accent: #dcc075;
+      --meter: #a9d0de;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--ink);
+      font-family: var(--font-pixel);
+      letter-spacing: 0;
+      background: #19230f;
+    }
+
+    button,
+    input {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    .prototype-stage {
+      min-height: 100vh;
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      place-items: center;
+      padding: clamp(24px, 6vw, 72px);
+      background:
+        linear-gradient(180deg, rgba(255, 235, 178, 0.18), rgba(40, 66, 28, 0.52)),
+        var(--hero-day) center / cover no-repeat;
+      image-rendering: pixelated;
+      transition: background 520ms steps(6, end);
+    }
+
+    [data-theme="dark"] .prototype-stage {
+      background:
+        linear-gradient(180deg, rgba(10, 13, 27, 0.18), rgba(3, 6, 12, 0.72)),
+        var(--hero-night) center / cover no-repeat;
+    }
+
+    .prototype-stage::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.16), transparent 22%, transparent 78%, rgba(0, 0, 0, 0.2)),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.44));
+      pointer-events: none;
+    }
+
+    .prototype-card {
+      width: min(680px, calc(100vw - 32px));
+      padding: clamp(18px, 3vw, 30px);
+      background:
+        linear-gradient(180deg, rgba(46, 25, 13, 0.82), rgba(18, 11, 8, 0.86));
+      border: 2px solid rgba(229, 189, 103, 0.72);
+      box-shadow:
+        0 8px 0 rgba(0, 0, 0, 0.26),
+        inset 0 0 0 2px rgba(104, 58, 25, 0.58);
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+    }
+
+    .prototype-card h1 {
+      margin: 0 0 10px;
+      color: #fff4c6;
+      font-family: var(--font-pixel-en);
+      font-size: clamp(25px, 5vw, 48px);
+      line-height: 1.04;
+      font-weight: 400;
+    }
+
+    .prototype-card p {
+      max-width: 52ch;
+      margin: 0;
+      color: #f0d79c;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .music-player {
+      --dock-size: 48px;
+      position: fixed;
+      right: clamp(14px, 2.8vw, 34px);
+      bottom: clamp(16px, 4vh, 38px);
+      z-index: 30;
+      width: min(320px, calc(100vw - 24px));
+      color: var(--ink);
+      font-family: var(--font-pixel);
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.58);
+    }
+
+    .music-player.is-collapsed {
+      width: var(--dock-size);
+    }
+
+    .music-player__panel {
+      position: relative;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 78px;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+      border: 2px solid var(--edge);
+      box-shadow:
+        0 4px 0 var(--shadow),
+        inset 0 0 0 2px var(--panel-soft);
+      transition:
+        opacity 180ms steps(4, end),
+        transform 180ms steps(4, end);
+    }
+
+    .music-player__panel::before,
+    .music-player__panel::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      box-shadow: 0 54px 0 var(--edge-deep);
+      opacity: 0.9;
+    }
+
+    .music-player__panel::before {
+      left: 8px;
+    }
+
+    .music-player__panel::after {
+      right: 8px;
+    }
+
+    .music-player.is-collapsed .music-player__panel {
+      opacity: 0;
+      transform: translateY(8px) scale(0.94);
+      pointer-events: none;
+    }
+
+    .music-player__button {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      color: #241306;
+      border: 2px solid rgba(255, 239, 180, 0.84);
+      background:
+        linear-gradient(180deg, #f6d98b, #b8732d);
+      box-shadow:
+        0 3px 0 rgba(0, 0, 0, 0.34),
+        inset 0 0 0 2px rgba(101, 53, 18, 0.38);
+      cursor: pointer;
+    }
+
+    .music-player__button:hover,
+    .music-player__button:focus-visible {
+      color: #120b05;
+      background:
+        linear-gradient(180deg, #fff1b7, #d39445);
+      outline: 2px solid rgba(143, 201, 209, 0.72);
+      outline-offset: 2px;
+    }
+
+    .music-player__button:active {
+      transform: translateY(2px);
+      box-shadow:
+        0 1px 0 rgba(0, 0, 0, 0.44),
+        inset 0 0 0 2px rgba(101, 53, 18, 0.48);
+    }
+
+    .music-player__play {
+      width: 42px;
+      height: 42px;
+      font-size: 21px;
+    }
+
+    .music-player__meta {
+      min-width: 0;
+      display: grid;
+      gap: 7px;
+      padding-inline: 2px;
+    }
+
+    .music-player__status {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .music-player__title {
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.1;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .music-player__phase {
+      flex: 0 0 auto;
+      color: var(--meter);
+      font-family: var(--font-pixel-en);
+      font-size: 12px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .music-player__meter {
+      position: relative;
+      height: 8px;
+      overflow: hidden;
+      background: rgba(12, 8, 5, 0.76);
+      border: 2px solid rgba(221, 183, 98, 0.62);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.26);
+    }
+
+    .music-player__meter-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 38%;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          var(--meter) 0,
+          var(--meter) 5px,
+          rgba(255, 244, 198, 0.9) 5px,
+          rgba(255, 244, 198, 0.9) 7px
+        );
+      animation: playerMeter 18s steps(32, end) infinite;
+      animation-play-state: paused;
+    }
+
+    .music-player.is-playing .music-player__meter-fill {
+      animation-play-state: running;
+    }
+
+    .music-player__secondary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .music-player__volume {
+      width: 74px;
+      accent-color: var(--accent);
+    }
+
+    .music-player__dock {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      display: none;
+      width: var(--dock-size);
+      height: var(--dock-size);
+      padding: 0;
+      color: #241306;
+      border: 2px solid rgba(255, 239, 180, 0.86);
+      background:
+        linear-gradient(180deg, #f6d98b, #b8732d);
+      box-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.38),
+        inset 0 0 0 2px rgba(89, 45, 16, 0.42);
+      cursor: pointer;
+    }
+
+    .music-player.is-collapsed .music-player__dock {
+      display: grid;
+      place-items: center;
+    }
+
+    .music-player__dock-icon {
+      position: relative;
+      width: 24px;
+      height: 22px;
+    }
+
+    .music-player__dock-icon::before,
+    .music-player__dock-icon::after {
+      content: "";
+      position: absolute;
+      bottom: 2px;
+      width: 5px;
+      background: #2a1607;
+      box-shadow: 8px -6px 0 #2a1607, 16px -2px 0 #2a1607;
+      animation: musicBars 920ms steps(3, end) infinite;
+    }
+
+    .music-player__dock-icon::before {
+      left: 1px;
+      height: 10px;
+    }
+
+    .music-player__dock-icon::after {
+      left: 1px;
+      height: 6px;
+      opacity: 0.34;
+      animation-delay: 180ms;
+    }
+
+    [data-theme="dark"] .music-player__dock-icon::before,
+    [data-theme="dark"] .music-player__dock-icon::after {
+      background: #14100b;
+      box-shadow: 8px -6px 0 #14100b, 16px -2px 0 #14100b;
+    }
+
+    .theme-switcher {
+      position: fixed;
+      top: clamp(12px, 3vw, 30px);
+      right: clamp(12px, 3vw, 30px);
+      z-index: 20;
+      display: inline-flex;
+      gap: 6px;
+      padding: 6px;
+      background: rgba(20, 12, 8, 0.76);
+      border: 2px solid rgba(229, 189, 103, 0.68);
+      box-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.28),
+        inset 0 0 0 1px rgba(112, 66, 30, 0.58);
+    }
+
+    .theme-switcher button {
+      min-width: 58px;
+      height: 30px;
+      padding: 0 10px;
+      color: #fff4c6;
+      border: 2px solid transparent;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .theme-switcher button[aria-pressed="true"] {
+      color: #241306;
+      background: linear-gradient(180deg, #ffe79d, #c88135);
+      border-color: rgba(255, 239, 180, 0.82);
+      text-shadow: none;
+    }
+
+    @keyframes playerMeter {
+      from {
+        width: 8%;
+      }
+
+      to {
+        width: 100%;
+      }
+    }
+
+    @keyframes musicBars {
+      0% {
+        transform: translateY(0);
+      }
+
+      33% {
+        transform: translateY(-3px);
+      }
+
+      66% {
+        transform: translateY(2px);
+      }
+
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .prototype-stage {
+        align-items: start;
+        padding-top: 86px;
+      }
+
+      .prototype-card {
+        padding: 18px;
+      }
+
+      .prototype-card p {
+        font-size: 14px;
+      }
+
+      .music-player {
+        right: 12px;
+        bottom: 12px;
+      }
+
+      .music-player__panel {
+        grid-template-columns: 40px minmax(0, 1fr);
+        min-height: 92px;
+      }
+
+      .music-player__secondary {
+        grid-column: 2;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="prototype-stage">
+    <div class="theme-switcher" aria-label="Theme preview">
+      <button type="button" data-theme-target="light" aria-pressed="true">Day</button>
+      <button type="button" data-theme-target="dark" aria-pressed="false">Night</button>
+    </div>
+
+    <section class="prototype-card" aria-labelledby="prototype-title">
+      <h1 id="prototype-title">Timeinrain Tavern</h1>
+      <p>白天使用 Medieval Castle Loop，夜晚切换到 Medieval: The Bard's Tale。播放器保持在右下角，以小型浮窗陪伴页面浏览。</p>
+    </section>
+
+    <aside class="music-player is-playing" aria-label="Background music player">
+      <div class="music-player__panel">
+        <button class="music-player__button music-player__play" type="button" aria-label="Pause music" title="Pause">
+          <span aria-hidden="true">Ⅱ</span>
+        </button>
+
+        <div class="music-player__meta">
+          <div class="music-player__status">
+            <div class="music-player__title">Medieval Castle Loop - Ebunny</div>
+            <div class="music-player__phase">Day</div>
+          </div>
+          <div class="music-player__meter" aria-hidden="true">
+            <span class="music-player__meter-fill"></span>
+          </div>
+        </div>
+
+        <div class="music-player__secondary">
+          <input class="music-player__volume" type="range" min="0" max="100" value="22" aria-label="Volume" title="Volume">
+          <button class="music-player__button music-player__collapse" type="button" aria-label="Collapse player" title="Collapse">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="music-player__dock" type="button" aria-label="Open music player" title="Open player">
+        <span class="music-player__dock-icon" aria-hidden="true"></span>
+      </button>
+    </aside>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var themeButtons = Array.prototype.slice.call(document.querySelectorAll('[data-theme-target]'));
+      var player = document.querySelector('.music-player');
+      var playButton = document.querySelector('.music-player__play');
+      var collapseButton = document.querySelector('.music-player__collapse');
+      var dockButton = document.querySelector('.music-player__dock');
+      var title = document.querySelector('.music-player__title');
+      var phase = document.querySelector('.music-player__phase');
+
+      var tracks = {
+        light: {
+          title: 'Medieval Castle Loop - Ebunny',
+          phase: 'Day'
+        },
+        dark: {
+          title: "Medieval: The Bard's Tale - RandomMind",
+          phase: 'Night'
+        }
+      };
+
+      function setTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        title.textContent = tracks[theme].title;
+        phase.textContent = tracks[theme].phase;
+
+        themeButtons.forEach(function (button) {
+          button.setAttribute('aria-pressed', String(button.getAttribute('data-theme-target') === theme));
+        });
+      }
+
+      function setPlaying(isPlaying) {
+        player.classList.toggle('is-playing', isPlaying);
+        playButton.setAttribute('aria-label', isPlaying ? 'Pause music' : 'Play music');
+        playButton.setAttribute('title', isPlaying ? 'Pause' : 'Play');
+        playButton.querySelector('span').textContent = isPlaying ? 'Ⅱ' : '▶';
+      }
+
+      themeButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          setTheme(button.getAttribute('data-theme-target'));
+        });
+      });
+
+      playButton.addEventListener('click', function () {
+        setPlaying(!player.classList.contains('is-playing'));
+      });
+
+      collapseButton.addEventListener('click', function () {
+        player.classList.add('is-collapsed');
+      });
+
+      dockButton.addEventListener('click', function () {
+        player.classList.remove('is-collapsed');
+      });
+    })();
+  </script>
+</body>
+</html>
