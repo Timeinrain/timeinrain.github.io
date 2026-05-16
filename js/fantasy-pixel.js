@@ -1,32 +1,45 @@
 (function () {
   var FOOTER_LIGHTNING_DURATION = 1900;
   var FOOTER_LIGHTNING_CRATER_DURATION = 2000;
-  var FOOTER_LIGHTNING_ASSET_VERSION = 9;
+  var FOOTER_LIGHTNING_ASSET_VERSION = 10;
+  var FOOTER_LIGHTNING_PREWARM_TIMEOUT = 420;
+  var FOOTER_LIGHTNING_READY_TIMEOUT = 1800;
   var messageBoardTwikooObserver = null;
   var messageBoardTwikooCleanupTimer = null;
   var messageBoardTwikooCleanupRuns = 0;
   var transparentPixelGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
   var footerLightningBlob = null;
   var footerLightningBlobPromise = null;
+  var footerLightningPreloadImage = null;
+  var lastFooterMagicTouchAt = 0;
 
   function footerLightningStrikeSrc() {
     return '/anim/lightning_strike.gif?v=' + FOOTER_LIGHTNING_ASSET_VERSION;
   }
 
+  function isCoarsePointerDevice() {
+    return Boolean(
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+      'ontouchstart' in window
+    );
+  }
+
   function preloadFooterLightningStrike() {
     var fallbackImage;
 
-    if (footerLightningBlob || footerLightningBlobPromise) return footerLightningBlobPromise;
+    if (footerLightningBlob) return Promise.resolve(footerLightningBlob);
+    if (footerLightningBlobPromise) return footerLightningBlobPromise;
 
     if (
+      !isCoarsePointerDevice() &&
       typeof window.fetch === 'function' &&
       window.URL &&
       typeof window.URL.createObjectURL === 'function'
     ) {
       footerLightningBlobPromise = window.fetch(footerLightningStrikeSrc(), {
         cache: 'force-cache',
-        credentials: 'same-origin',
-        priority: 'high'
+        credentials: 'same-origin'
       }).then(function (response) {
         if (!response || !response.ok) throw new Error('Lightning preload failed');
 
@@ -36,9 +49,11 @@
 
         return footerLightningBlob;
       }).catch(function () {
+        return null;
+      }).then(function (blob) {
         footerLightningBlobPromise = null;
 
-        return null;
+        return blob;
       });
 
       return footerLightningBlobPromise;
@@ -46,6 +61,7 @@
 
     if (typeof window.Image === 'function') {
       fallbackImage = new window.Image();
+      footerLightningPreloadImage = fallbackImage;
       fallbackImage.decoding = 'async';
       if ('fetchPriority' in fallbackImage) fallbackImage.fetchPriority = 'high';
       if ('loading' in fallbackImage) fallbackImage.loading = 'eager';
@@ -60,6 +76,7 @@
     var objectUrl;
 
     if (
+      !isCoarsePointerDevice() &&
       footerLightningBlob &&
       window.URL &&
       typeof window.URL.createObjectURL === 'function'
@@ -73,9 +90,85 @@
     }
 
     return {
-      src: footerLightningStrikeSrc() + '#run-' + runId,
+      src: footerLightningStrikeSrc() + '&run=' + runId,
       objectUrl: ''
     };
+  }
+
+  function resolveWithTimeout(promise, timeout, fallback) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var timer = window.setTimeout(function () {
+        if (done) return;
+        done = true;
+        resolve(fallback);
+      }, timeout);
+
+      promise.then(function (value) {
+        if (done) return;
+        done = true;
+        window.clearTimeout(timer);
+        resolve(value);
+      }, function () {
+        if (done) return;
+        done = true;
+        window.clearTimeout(timer);
+        resolve(fallback);
+      });
+    });
+  }
+
+  function waitForFooterLightningImage(bolt, timeout) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var timer;
+
+      function finish(ready) {
+        if (done) return;
+        done = true;
+        if (timer) window.clearTimeout(timer);
+        bolt.removeEventListener('load', onLoad);
+        bolt.removeEventListener('error', onError);
+        resolve(ready);
+      }
+
+      function finishLoaded() {
+        if (typeof bolt.decode === 'function') {
+          bolt.decode().then(function () {
+            finish(true);
+          }, function () {
+            finish(true);
+          });
+          return;
+        }
+
+        finish(true);
+      }
+
+      function onLoad() {
+        finishLoaded();
+      }
+
+      function onError() {
+        finish(false);
+      }
+
+      if (!bolt || !bolt.isConnected) {
+        resolve(false);
+        return;
+      }
+
+      if (bolt.complete && bolt.naturalWidth > 0) {
+        finishLoaded();
+        return;
+      }
+
+      bolt.addEventListener('load', onLoad);
+      bolt.addEventListener('error', onError);
+      timer = window.setTimeout(function () {
+        finish(false);
+      }, timeout);
+    });
   }
 
   function setFooterLightningBoltSrc(bolt, runId) {
@@ -86,18 +179,27 @@
       bolt.dataset.footerLightningObjectUrl = playback.objectUrl;
     } else {
       bolt.removeAttribute('data-footer-lightning-object-url');
-      preloadFooterLightningStrike().then(function () {
-        var localPlayback;
-
-        if (!footerLightningBlob || !bolt.isConnected || bolt.dataset.footerLightningObjectUrl) return;
-
-        localPlayback = createFooterLightningPlaybackSrc(runId);
-        bolt.src = localPlayback.src;
-        if (localPlayback.objectUrl) {
-          bolt.dataset.footerLightningObjectUrl = localPlayback.objectUrl;
-        }
-      });
     }
+
+    return waitForFooterLightningImage(bolt, FOOTER_LIGHTNING_READY_TIMEOUT);
+  }
+
+  function prepareFooterLightningBolt(bolt, runId) {
+    if (!bolt) return Promise.resolve(false);
+
+    return resolveWithTimeout(
+      preloadFooterLightningStrike(),
+      FOOTER_LIGHTNING_PREWARM_TIMEOUT,
+      null
+    ).then(function () {
+      if (!bolt.isConnected) return false;
+
+      if (isCoarsePointerDevice()) {
+        return resolveWithTimeout(setFooterLightningBoltSrc(bolt, runId), 180, false);
+      }
+
+      return setFooterLightningBoltSrc(bolt, runId);
+    });
   }
 
   function revokeFooterLightningBoltSrc(node) {
@@ -155,10 +257,15 @@
   function castFooterMagicFromClick(event) {
     var stage;
 
-    if (event.button !== 0 || event.__footerMagicHandled) return false;
+    if ((typeof event.button === 'number' && event.button !== 0) || event.__footerMagicHandled) return false;
 
     stage = footerPlaygroundAtPoint(event);
     if (stage) {
+      if (lastFooterMagicTouchAt && Date.now() - lastFooterMagicTouchAt < 700) {
+        event.__footerMagicHandled = true;
+        return true;
+      }
+
       if (typeof stage.__castFooterMagic === 'function') {
         stage.__castFooterMagic({
           clientX: event.clientX,
@@ -497,6 +604,8 @@
       playground.appendChild(effectsLayer);
     }
 
+    preloadFooterLightningStrike();
+
     if (stage.dataset.slimeGameReady === 'true') return;
 
     stage.dataset.slimeGameReady = 'true';
@@ -829,9 +938,22 @@
       monster.spawnEffect = null;
     }
 
-    function activateEffectNode(node) {
+    function activateEffectNode(node, onActivated) {
       window.requestAnimationFrame(function () {
-        if (node.isConnected) node.classList.add('is-active');
+        if (!node.isConnected) return;
+
+        node.classList.add('is-active');
+        if (typeof onActivated === 'function') onActivated();
+      });
+    }
+
+    function armMagicPitNode(pit, bolt, runId, onActivated) {
+      pit.classList.add('is-arming');
+      prepareFooterLightningBolt(bolt, runId).then(function () {
+        if (!pit.isConnected) return;
+
+        pit.classList.remove('is-arming');
+        activateEffectNode(pit, onActivated);
       });
     }
 
@@ -1053,14 +1175,16 @@
       maintainMonsters(false);
     }
 
-    function createMagicStrike(x, y, autoRemove) {
+    function createMagicStrike(x, y, autoRemove, onActivated) {
       var pit = document.createElement('span');
       var bolt;
+      var runId;
 
       magicEffectRun += 1;
+      runId = magicEffectRun;
       pit.className = 'footer-magic-pit';
       pit.setAttribute('aria-hidden', 'true');
-      pit.dataset.effectRun = String(magicEffectRun);
+      pit.dataset.effectRun = String(runId);
       pit.innerHTML = [
         '<img class="footer-magic-bolt" alt="" draggable="false">',
         '<span class="footer-magic-flash"></span>',
@@ -1071,18 +1195,19 @@
         bolt.decoding = 'async';
         bolt.fetchPriority = 'high';
         bolt.loading = 'eager';
-        setFooterLightningBoltSrc(bolt, magicEffectRun);
       }
       pit.style.left = Math.round(x) + 'px';
       pit.style.top = Math.round(y) + 'px';
       effectsLayer.appendChild(pit);
-      activateEffectNode(pit);
+      armMagicPitNode(pit, bolt, runId, function () {
+        if (typeof onActivated === 'function') onActivated();
 
-      if (autoRemove) {
-        window.setTimeout(function () {
-          removeMagicPitNode(pit);
-        }, magicPitDuration);
-      }
+        if (autoRemove) {
+          window.setTimeout(function () {
+            removeMagicPitNode(pit);
+          }, magicPitDuration);
+        }
+      });
 
       return pit;
     }
@@ -1130,10 +1255,15 @@
       var pit;
       var magicPit = {
         node: null,
-        expiresAt: performance.now() + magicPitDuration
+        expiresAt: performance.now() + magicPitDuration + FOOTER_LIGHTNING_READY_TIMEOUT
       };
 
-      pit = createMagicStrike(event.clientX - effectRect.left, event.clientY - effectRect.top, false);
+      pit = createMagicStrike(event.clientX - effectRect.left, event.clientY - effectRect.top, false, function () {
+        magicPit.expiresAt = performance.now() + magicPitDuration;
+        window.setTimeout(function () {
+          removeMagicPitNode(pit);
+        }, magicPitDuration);
+      });
       magicPit.node = pit;
       pits.push(magicPit);
       trimEffectNodes(effectsLayer, '.footer-magic-pit', maxMagicPitNodes, removeMagicPitNode);
@@ -1146,10 +1276,6 @@
         wand.classList.remove('is-casting');
       }, 420);
 
-      window.setTimeout(function () {
-        removeMagicPitNode(pit);
-      }, magicPitDuration);
-
       checkMagicHits();
       startLoop();
     }
@@ -1157,6 +1283,7 @@
     stage.__castFooterMagic = function (event) {
       if (!isInsideStage(event)) return;
 
+      preloadFooterLightningStrike();
       updateWand(event);
       createMagicPit(event);
     };
@@ -1180,6 +1307,7 @@
     function clearExpiredPits(now) {
       pits = pits.filter(function (pit) {
         if (pit.expiresAt > now) return true;
+        revokeFooterLightningBoltSrc(pit.node);
         pit.node.remove();
         return false;
       });
@@ -1316,6 +1444,7 @@
       active = true;
       stage.classList.add('is-magic-zone');
       wand.classList.add('is-visible');
+      preloadFooterLightningStrike();
       updateWand(event);
       startLoop();
     });
@@ -1331,6 +1460,43 @@
       updateWand(event.detail);
       createMagicPit(event.detail);
     });
+
+    stage.addEventListener('pointerdown', function (event) {
+      if (event.pointerType === 'mouse') return;
+      if (typeof event.button === 'number' && event.button !== 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      lastFooterMagicTouchAt = Date.now();
+      active = true;
+      stage.classList.add('is-magic-zone');
+      wand.classList.add('is-visible');
+      stage.__castFooterMagic({
+        clientX: event.clientX,
+        clientY: event.clientY
+      });
+    }, { passive: false });
+
+    if (!window.PointerEvent) {
+      stage.addEventListener('touchstart', function (event) {
+        var touch = event.changedTouches && event.changedTouches[0];
+
+        if (!touch) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        lastFooterMagicTouchAt = Date.now();
+        active = true;
+        stage.classList.add('is-magic-zone');
+        wand.classList.add('is-visible');
+        stage.__castFooterMagic({
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+      }, { passive: false });
+    }
 
     stage.addEventListener('click', function (event) {
       if (event.button !== 0) return;
@@ -1407,6 +1573,10 @@
   var themeTogglePullTimer = null;
   var themeTogglePullFrame = 0;
   var themeTransitionFrame = 0;
+  var themeApplyTimer = null;
+  var themeSwitchingTimer = null;
+  var PIXEL_THEME_APPLY_DELAY = 110;
+  var PIXEL_THEME_SWITCHING_DURATION = 1360;
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1418,6 +1588,10 @@
     transition.className = 'pixel-theme-transition is-to-' + mode;
     transition.setAttribute('aria-hidden', 'true');
     transition.innerHTML = [
+      '<span class="pixel-theme-transition__sky"></span>',
+      '<span class="pixel-theme-transition__clouds"></span>',
+      '<span class="pixel-theme-transition__stars"></span>',
+      '<span class="pixel-theme-transition__horizon"></span>',
       '<span class="pixel-theme-transition__sun"></span>',
       '<span class="pixel-theme-transition__moon"></span>'
     ].join('');
@@ -1449,6 +1623,16 @@
     }, 1320);
   }
 
+  function markThemeSwitching() {
+    document.documentElement.classList.add('is-pixel-theme-switching');
+
+    if (themeSwitchingTimer) window.clearTimeout(themeSwitchingTimer);
+    themeSwitchingTimer = window.setTimeout(function () {
+      themeSwitchingTimer = null;
+      document.documentElement.classList.remove('is-pixel-theme-switching');
+    }, PIXEL_THEME_SWITCHING_DURATION);
+  }
+
   function scheduleThemeTransition(mode) {
     if (!window.requestAnimationFrame) {
       playThemeTransition(mode);
@@ -1476,6 +1660,7 @@
       if (mode === lastObservedTheme) return;
       lastObservedTheme = mode;
       updateHangingThemeToggle(mode);
+      markThemeSwitching();
       scheduleThemeTransition(mode);
     });
 
@@ -1496,24 +1681,29 @@
   }
 
   function runThemeModeChange(mode) {
-    var viewTransition;
+    applyThemeMode(mode);
+  }
 
-    if (!document.startViewTransition || prefersReducedMotion()) {
-      applyThemeMode(mode);
+  function scheduleThemeModeChange(mode) {
+    if (themeApplyTimer) {
+      window.clearTimeout(themeApplyTimer);
+      themeApplyTimer = null;
+    }
+
+    if (prefersReducedMotion()) {
+      runThemeModeChange(mode);
+      notifyThemeChange(mode);
       return;
     }
 
-    try {
-      viewTransition = document.startViewTransition(function () {
-        applyThemeMode(mode);
-      });
+    markThemeSwitching();
+    scheduleThemeTransition(mode);
 
-      if (viewTransition && viewTransition.finished) {
-        viewTransition.finished.catch(function () {});
-      }
-    } catch (error) {
-      applyThemeMode(mode);
-    }
+    themeApplyTimer = window.setTimeout(function () {
+      themeApplyTimer = null;
+      runThemeModeChange(mode);
+      notifyThemeChange(mode);
+    }, PIXEL_THEME_APPLY_DELAY);
   }
 
   function setTheme(mode) {
@@ -1521,8 +1711,6 @@
 
     if (mode !== 'dark' && mode !== 'light') return;
     if (currentThemeMode() === mode) return;
-
-    runThemeModeChange(mode);
 
     saveTheme(mode);
 
@@ -1532,11 +1720,7 @@
 
     lastObservedTheme = mode;
     updateHangingThemeToggle(mode);
-    scheduleThemeTransition(mode);
-
-    window.setTimeout(function () {
-      notifyThemeChange(mode);
-    }, 0);
+    scheduleThemeModeChange(mode);
   }
 
   function currentThemeMode() {

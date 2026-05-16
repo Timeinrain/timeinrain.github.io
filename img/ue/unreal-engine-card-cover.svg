@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="756" height="347" viewBox="0 0 756 347" role="img" aria-labelledby="title desc">
+  <title id="title">Unreal Engine article cover</title>
+  <desc id="desc">A cinematic Unreal Engine inspired neon portal cover with a glowing circular emblem in a rocky landscape.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#170817"/>
+      <stop offset="0.28" stop-color="#22143f"/>
+      <stop offset="0.55" stop-color="#3d214c"/>
+      <stop offset="0.78" stop-color="#a44c5d"/>
+      <stop offset="1" stop-color="#191a35"/>
+    </linearGradient>
+    <radialGradient id="horizon" cx="50%" cy="58%" r="56%">
+      <stop offset="0" stop-color="#f4a36d" stop-opacity="0.72"/>
+      <stop offset="0.42" stop-color="#5d407e" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#050613" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="portalGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0.62" stop-color="#1d6dff" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#49d4ff" stop-opacity="0.9"/>
+      <stop offset="0.82" stop-color="#178cff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#082b7a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.55 0 0 0 0 1 0 0 0 1 0" result="blue"/>
+      <feMerge>
+        <feMergeNode in="blue"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="logoShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#030512" flood-opacity="0.85"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#72cfff" flood-opacity="0.55"/>
+    </filter>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8aa5c7"/>
+      <stop offset="0.42" stop-color="#1c2c56"/>
+      <stop offset="1" stop-color="#050816"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="756" height="347" fill="url(#sky)"/>
+  <rect width="756" height="347" fill="url(#horizon)"/>
+  <path d="M0 210 C82 172 142 174 218 196 C286 216 330 185 396 195 C478 207 527 172 611 185 C669 194 715 213 756 201 L756 347 L0 347 Z" fill="#060613" opacity="0.88"/>
+  <path d="M0 242 L36 196 L65 218 L99 177 L145 231 L184 206 L218 236 L274 214 L316 237 L354 212 L392 236 L438 203 L480 235 L527 212 L566 236 L611 193 L662 232 L703 211 L756 238 L756 347 L0 347 Z" fill="#080813"/>
+  <path d="M18 251 C74 239 119 248 169 260 C236 276 304 253 368 262 C447 273 510 251 588 259 C646 265 706 279 756 262 L756 347 L0 347 Z" fill="#0f1227" opacity="0.74"/>
+
+  <ellipse cx="378" cy="285" rx="154" ry="28" fill="#02030a" opacity="0.76"/>
+  <ellipse cx="378" cy="284" rx="122" ry="19" fill="#12275c" opacity="0.75"/>
+  <ellipse cx="378" cy="280" rx="104" ry="12" fill="#53c4ff" opacity="0.18"/>
+
+  <circle cx="378" cy="155" r="118" fill="url(#portalGlow)" filter="url(#softGlow)"/>
+  <circle cx="378" cy="155" r="113" fill="none" stroke="#8ce7ff" stroke-width="6" filter="url(#softGlow)"/>
+  <circle cx="378" cy="155" r="94" fill="rgba(4,8,22,0.24)" stroke="url(#metal)" stroke-width="12"/>
+  <circle cx="378" cy="155" r="82" fill="rgba(8,12,32,0.18)" stroke="#0b163e" stroke-width="3"/>
+
+  <g filter="url(#logoShadow)">
+    <text x="378" y="201" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="142" font-weight="900" fill="#14193d" stroke="#6dbdff" stroke-width="2.2">U</text>
+  </g>
+  <path d="M258 273 C298 259 329 267 356 274 C388 283 426 272 459 276 C492 281 518 288 542 282" fill="none" stroke="#bff3ff" stroke-width="3" opacity="0.28"/>
+  <path d="M210 282 C260 271 297 279 333 286 C385 296 441 286 496 290 C548 294 596 301 643 291" fill="none" stroke="#488fff" stroke-width="4" opacity="0.2"/>
+</svg>

@@ -4,6 +4,141 @@
   
     
     <entry>
+      <title>Course Notes 2004：Simulating Ocean Water 海水渲染笔记</title>
+      <link href="/2026/05/16/%E5%9B%BE%E5%BD%A2%E5%AD%A6/course-notes-2004-simulating-ocean-water/"/>
+      <url>/2026/05/16/%E5%9B%BE%E5%BD%A2%E5%AD%A6/course-notes-2004-simulating-ocean-water/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>参考：Jerry Tessendorf, <a href="https://jtessen.people.clemson.edu/reports/papers_files/coursenotes2004.pdf">Simulating Ocean Water</a>, SIGGRAPH Course Notes, 2004.</p></blockquote><p><strong>目录</strong></p><ul><li>这篇 Course Notes 解决什么问题</li><li>海面渲染的两部分</li><li>从正弦波到频谱海面</li><li>Phillips 频谱</li><li>频域到空间域：FFT 高度场</li><li>法线、斜率与水平位移</li><li>平铺、时间与多尺度</li><li>交互波：iWave 思路</li><li>海水材质与光学</li><li>实时工程中的落地方式</li><li>小结</li></ul><hr><h3 id="这篇-Course-Notes-解决什么问题"><a href="#这篇-Course-Notes-解决什么问题" class="headerlink" title="这篇 Course Notes 解决什么问题"></a>这篇 Course Notes 解决什么问题</h3><p>海面是图形学里很特别的对象：它不是稳定的固体表面，而是持续运动、尺度跨度极大的统计现象。近处需要看到小浪、泡沫和反射细节，远处又要呈现大范围起伏和海天连接。如果逐个模拟水分子，显然不适合实时渲染；如果只贴一张法线贴图，又很难表现出海浪的方向、能量和传播。</p><p>Tessendorf 的 <em>Simulating Ocean Water</em> 给出的核心思路是：把海浪看成频域中的大量波分量，用统计频谱描述风驱动海面，再通过 FFT 快速变回空间域高度场。它不是唯一的海水方案，但它把“看起来像海”的很多关键要素整理成了工程上可实现的框架。</p><h3 id="海面渲染的两部分"><a href="#海面渲染的两部分" class="headerlink" title="海面渲染的两部分"></a>海面渲染的两部分</h3><p>海水渲染通常可以拆成两层：</p><ul><li>几何层：海面的位置、起伏、法线、浪尖、水平位移。</li><li>光学层：反射、折射、Fresnel、吸收、散射、泡沫和天空环境。</li></ul><p>几何层回答“水面在哪里、朝向哪里”；光学层回答“它如何与光交互”。这两层必须配合：没有合理法线，再好的 Fresnel 也只会像一块塑料；没有合理反射和透射，再漂亮的波形也会像普通蓝色布料。</p><h3 id="从正弦波到频谱海面"><a href="#从正弦波到频谱海面" class="headerlink" title="从正弦波到频谱海面"></a>从正弦波到频谱海面</h3><p>最容易想到的海浪模型是把若干正弦波叠加起来：</p><p>$$h(\mathbf{x},t)&#x3D;\sum_i A_i \cos(\mathbf{k}_i\cdot\mathbf{x}-\omega_i t+\phi_i)$$</p><p>其中 \(\mathbf{x}\) 是水平面位置，\(A_i\) 是振幅，\(\mathbf{k}_i\) 是波数向量，\(\omega_i\) 是角频率，\(\phi_i\) 是相位。</p><p>这个模型直观，但手动挑选波的数量、方向和强度很难覆盖真实海面。频谱海面的想法是：不要一个一个设计波，而是在频域中为不同波数分配能量。风越强、吹得越久，某些方向和波长的能量就越高。</p><p>换句话说，频谱回答的是：“不同尺度、不同方向的波，应该各有多少能量？”</p><h3 id="Phillips-频谱"><a href="#Phillips-频谱" class="headerlink" title="Phillips 频谱"></a>Phillips 频谱</h3><p>Course Notes 中常用 Phillips spectrum 描述风驱动海浪。一个常见形式是：</p><p>$$P_h(\mathbf{k}) &#x3D;A\frac{\exp(-1&#x2F;(kL)^2)}{k^4}|\hat{\mathbf{k}}\cdot\hat{\mathbf{w}}|^2\exp(-k^2l^2)$$</p><p>这里：</p><ul><li>\(\mathbf{k}\) 是波数向量，\(k&#x3D;|\mathbf{k}|\)。</li><li>\(\hat{\mathbf{w}}\) 是风向。</li><li>\(L&#x3D;\frac{V^2}{g}\) 与风速 \(V\) 有关，可理解为风能影响的最大波长尺度。</li><li>\(A\) 控制整体浪高。</li><li>\(l\) 用于抑制过短的小波，避免高频噪声过强。</li></ul><p>实际实现中公式可能会有符号或阻尼项上的调整，但直觉不变：与风向一致的波能量更强；极长波和极短波都会被限制；中间某些尺度的波贡献主要形态。</p><h3 id="频域到空间域：FFT-高度场"><a href="#频域到空间域：FFT-高度场" class="headerlink" title="频域到空间域：FFT 高度场"></a>频域到空间域：FFT 高度场</h3><p>有了频谱之后，需要为每个频率点生成初始复振幅：</p><p>$$\tilde{h}_0(\mathbf{k}) &#x3D;\frac{1}{\sqrt{2}}(\xi_r+i\xi_i)\sqrt{P_h(\mathbf{k})}$$</p><p>\(\xi_r\) 和 \(\xi_i\) 是服从高斯分布的随机数。它们让海面具有随机性，而 \(\sqrt{P_h(\mathbf{k})}\) 决定不同频率成分的能量大小。</p><p>深水波的色散关系常写为：</p><p>$$\omega(\mathbf{k})&#x3D;\sqrt{g|\mathbf{k}|}$$</p><p>于是任意时刻的频域高度可以写成：</p><p>$$\tilde{h}(\mathbf{k},t)&#x3D;\tilde{h}_0(\mathbf{k})e^{i\omega t}+\tilde{h}_0^*(-\mathbf{k})e^{-i\omega t}$$</p><p>最后用逆 FFT 得到空间域高度：</p><p>$$h(\mathbf{x},t)&#x3D;\sum_{\mathbf{k}}\tilde{h}(\mathbf{k},t)e^{i\mathbf{k}\cdot\mathbf{x}}$$</p><p>工程上会在一个 \(N \times N\) 的频率网格上计算 \(\tilde{h}\)，再通过 IFFT 得到同样大小的高度贴图。这个贴图可以用于顶点位移，也可以生成法线贴图供远处海面使用。</p><img class="ocean-wave-texture-image" src="/img/graphics/course-notes-2004-simulating-ocean-water/wave-height-texture.jpg" alt="FFT 生成的海面高度纹理"><h3 id="法线、斜率与水平位移"><a href="#法线、斜率与水平位移" class="headerlink" title="法线、斜率与水平位移"></a>法线、斜率与水平位移</h3><p>只得到高度还不够。海水最依赖法线，因为反射高光、天空倒影和 Fresnel 都由法线控制。</p><p>如果高度场为 \(h(x,z)\)，法线可以近似为：</p><p>$$\mathbf{n}&#x3D;\mathrm{normalize}\left(-\frac{\partial h}{\partial x},1,-\frac{\partial h}{\partial z}\right)$$</p><p>在频域中求导非常方便，因为空间导数对应频域乘以 \(i\mathbf{k}\)。因此可以像生成高度一样，额外生成斜率贴图。</p><p>为了让浪更尖，Tessendorf 还讨论了水平位移，也就是让海面点不仅上下动，还沿水平方向被推开：</p><p>$$\mathbf{D}(\mathbf{x},t)&#x3D;\sum_{\mathbf{k}}-i\frac{\mathbf{k}}{|\mathbf{k}|}\tilde{h}(\mathbf{k},t)e^{i\mathbf{k}\cdot\mathbf{x}}$$</p><p>渲染时常写成：</p><p>$$\mathbf{x}&#39;&#x3D;\mathbf{x}+\lambda\mathbf{D}(\mathbf{x},t)$$</p><p>\(\lambda\) 控制浪尖锐程度。它太小时海面平；太大时可能出现翻折，需要配合泡沫或浪尖处理。</p><h3 id="平铺、时间与多尺度"><a href="#平铺、时间与多尺度" class="headerlink" title="平铺、时间与多尺度"></a>平铺、时间与多尺度</h3><p>FFT 海面天然是在有限网格上周期平铺的，所以远处可能看到重复。常见处理方式包括：</p><ul><li>使用多个不同尺度的海面 patch 叠加。</li><li>为不同 patch 设置不同风向、速度或相位偏移。</li><li>近处用真实位移，远处用法线贴图和低频起伏。</li><li>相机周围使用跟随网格，避免玩家走出高精度区域。</li></ul><p>时间演化也要注意稳定性。频谱海面不是简单把纹理向某个方向滚动，而是每个频率按照自己的 \(\omega\) 演化。这样不同波长传播速度不同，海面会更自然。</p><h3 id="交互波：iWave-思路"><a href="#交互波：iWave-思路" class="headerlink" title="交互波：iWave 思路"></a>交互波：iWave 思路</h3><p>论文笔记中还提到 iWave，用于模拟物体与水面的局部交互。频谱海面适合大范围风浪，但船、角色、落石等局部扰动通常需要额外叠加。</p><p>iWave 的思想更像在二维网格上求解局部波传播：</p><ul><li>外部物体给水面一个局部扰动。</li><li>扰动沿网格向外传播。</li><li>传播过程加入阻尼，避免无限振荡。</li><li>最终把交互波高度与频谱海面高度叠加。</li></ul><p>在实时项目里，可以把这类交互做成 render target：角色脚步、船体、子弹或技能在水面写入扰动，再用 ping-pong 贴图更新波场。</p><h3 id="海水材质与光学"><a href="#海水材质与光学" class="headerlink" title="海水材质与光学"></a>海水材质与光学</h3><p>几何波形解决的是“形”，材质解决的是“水感”。海水材质通常包含：</p><ul><li>反射：反射天空、云、太阳和岸边物体。</li><li>折射：看到水下物体时产生偏移和颜色变化。</li><li>Fresnel：掠射角反射更强，正视角透射更多。</li><li>吸收：光在水中传播越远，红色衰减越明显，水体偏蓝绿。</li><li>散射：水体内部微粒造成体积感和雾化感。</li><li>泡沫：浪尖、岸边、船尾和交互区域出现白色细节。</li></ul><p>Fresnel 常用 Schlick 近似：</p><p>$$F(\mathbf{v},\mathbf{n})&#x3D;F_0+(1-F_0)(1-\mathbf{v}\cdot\mathbf{n})^5$$</p><p>吸收可以用 Beer-Lambert 形式表达：</p><p>$$T&#x3D;e^{-\sigma d}$$</p><p>\(d\) 是光在水中的路径长度，\(\sigma\) 是吸收系数。实际 shader 里通常会结合深度图、场景颜色和水体颜色做近似。</p><p><img src="/img/graphics/course-notes-2004-simulating-ocean-water/ocean-surface-render.jpg" alt="Tessendorf 频谱海面的渲染效果"></p><h3 id="实时工程中的落地方式"><a href="#实时工程中的落地方式" class="headerlink" title="实时工程中的落地方式"></a>实时工程中的落地方式</h3><p>一个常见实时海水管线可以这样组织：</p><ol><li>CPU 或 GPU 初始化频谱参数：风向、风速、浪高、随机种子。</li><li>每帧在 compute shader 中更新频域高度 \(\tilde{h}(\mathbf{k},t)\)。</li><li>对高度、斜率、水平位移分别做 IFFT。</li><li>近处网格读取高度和位移，执行顶点位移。</li><li>像素阶段读取法线、深度、反射、折射和泡沫 mask。</li><li>远处使用低频几何加多层法线贴图，减少顶点和 FFT 成本。</li><li>交互扰动通过 render target 叠加到高度或法线中。</li></ol><p>如果不需要物理一致性，游戏项目也常用 Gerstner Waves 做近中景浪形，再用滚动法线贴图补高频细节。Tessendorf 频谱方案更适合大海、远洋、航海、开放世界等需要整体海面统计感的场景。</p><h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><em>Simulating Ocean Water</em> 的价值不只是给了一个 FFT 公式，而是把海面拆成了可以工程化的几块：</p><ul><li>用频谱控制海浪能量分布。</li><li>用 FFT 快速生成大范围高度场。</li><li>用斜率和水平位移提升视觉真实感。</li><li>用交互波补充局部扰动。</li><li>用 Fresnel、吸收、散射和泡沫完成水体材质。</li></ul><p>海水渲染的难点在于尺度混合：低频决定海的体积和方向，高频决定水的闪烁和细节，光学决定它是不是“像水”。Tessendorf 的 Course Notes 正好提供了一条从数学模型到实时实现的路线。</p><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul><li>Jerry Tessendorf, <a href="https://jtessen.people.clemson.edu/reports/papers_files/coursenotes2004.pdf">Simulating Ocean Water</a>, SIGGRAPH Course Notes, 2004.</li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> 图形学 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 图形学 </tag>
+            
+            <tag> 海水渲染 </tag>
+            
+            <tag> FFT </tag>
+            
+            <tag> Tessendorf </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>UE游戏开发技术点索引</title>
+      <link href="/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/"/>
+      <url>/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/</url>
+      
+        <content type="html"><![CDATA[<p><strong>目录</strong></p><ul><li>如何使用这份索引</li><li>引擎基础</li><li>C++、反射与蓝图</li><li>Gameplay Framework 与 3C</li><li>GAS 与战斗系统</li><li>AI 与寻路</li><li>动画系统</li><li>UI 与交互</li><li>渲染、材质与特效</li><li>物理、碰撞与运动</li><li>音频系统</li><li>关卡、大世界与内容生产</li><li>网络同步</li><li>工具流与编辑器扩展</li><li>构建、打包与平台</li><li>性能优化与调试</li><li>工程架构与长期维护</li><li>UE5 重点技术</li><li>参考资料</li></ul><hr><h3 id="如何使用这份索引"><a href="#如何使用这份索引" class="headerlink" title="如何使用这份索引"></a>如何使用这份索引</h3><p>这篇文章不是单篇教程，而是一份 UE 游戏开发的技术点地图。它适合在三种场景下使用：</p><ul><li>准备学习路线时，看自己还缺哪一块。</li><li>做项目拆解时，把需求落到 UE 的具体系统上。</li><li>复盘问题时，快速定位应该查哪类文档、源码或示例项目。</li></ul><p>UE 的技术点很多，真正重要的不是一次性全部背下来，而是知道它们分别解决什么问题、在哪个层级工作、和其他系统如何发生关系。</p><h3 id="引擎基础"><a href="#引擎基础" class="headerlink" title="引擎基础"></a>引擎基础</h3><p>这一层决定了“UE 为什么这样组织项目”。如果这些概念不清楚，后面的 Gameplay、蓝图、资源管理和网络同步都会显得很碎。</p><ul><li>项目结构：<code>uproject</code>、<code>uplugin</code>、<code>Source</code>、<code>Content</code>、<code>Config</code>、<code>Saved</code>、<code>Intermediate</code>。</li><li>模块系统：Runtime 模块、Editor 模块、Developer 模块、ThirdParty 模块。</li><li>构建系统：UBT、UHT、<code>Build.cs</code>、<code>Target.cs</code>、模块依赖、预编译头、Unity Build。</li><li>对象模型：<code>UObject</code>、<code>AActor</code>、<code>UActorComponent</code>、<code>UStruct</code>、<code>UEnum</code>。</li><li>反射基础：<code>UCLASS</code>、<code>USTRUCT</code>、<code>UPROPERTY</code>、<code>UFUNCTION</code>、<code>UINTERFACE</code>。</li><li>生命周期：Engine 启动、GameInstance 初始化、World 创建、Level 加载、BeginPlay、Tick、EndPlay。</li><li>内存管理：GC、引用链、Outer、Package、CDO、默认对象、强引用、弱引用、软引用。</li><li>配置系统：<code>Default*.ini</code>、Project Settings、Console Variable、Command Line。</li><li>日志系统：<code>UE_LOG</code>、Log Category、输出窗口、日志文件。</li><li>时间系统：World Time、Real Time、Delta Seconds、Timer、Latent Action。</li></ul><p>需要重点理解的是：UE 不是“普通 C++ 程序加编辑器”，而是建立在反射、对象生命周期、资源序列化和模块加载之上的大型运行时。</p><h3 id="C-、反射与蓝图"><a href="#C-、反射与蓝图" class="headerlink" title="C++、反射与蓝图"></a>C++、反射与蓝图</h3><p>C++ 和蓝图不是互相替代的关系，更像是两个不同层级的生产工具：C++ 适合稳定、底层、可复用的系统，蓝图适合快速组合、可视化调参和内容侧迭代。</p><ul><li>C++ 基础：头文件组织、模块 API 宏、前向声明、智能指针、容器、委托。</li><li>UE 容器：<code>TArray</code>、<code>TMap</code>、<code>TSet</code>、<code>TQueue</code>、<code>TWeakObjectPtr</code>、<code>TSoftObjectPtr</code>。</li><li>委托系统：单播、多播、动态委托、事件分发器、生命周期解绑。</li><li>反射暴露：属性编辑、蓝图可读写、分类、元数据、细节面板显示规则。</li><li>蓝图类型：Blueprint Class、Level Blueprint、Blueprint Function Library、Macro Library、Interface。</li><li>蓝图通信：直接引用、接口、事件分发器、组件消息、Subsystem。</li><li>异步蓝图节点：Latent Action、Async Action、任务型节点。</li><li>热更新与迭代：Live Coding、Hot Reload 的限制、编辑器重启边界。</li><li>C++ 与蓝图边界：用 C++ 定结构和协议，用蓝图配置表现和流程。</li></ul><p>经验上，越靠近底层数据结构、网络协议和性能热点，越应该放在 C++；越靠近关卡配置、角色表现和内容调参，越适合留给蓝图。</p><h3 id="Gameplay-Framework-与-3C"><a href="#Gameplay-Framework-与-3C" class="headerlink" title="Gameplay Framework 与 3C"></a>Gameplay Framework 与 3C</h3><p>3C 指 Character、Camera、Control，是游戏手感的核心。Gameplay Framework 则提供了 UE 对“游戏世界如何运行”的默认分层。</p><ul><li>World 与 Level：世界上下文、Persistent Level、Streaming Level、World Partition。</li><li>Actor 系统：生成、销毁、Tick、Replication、组件组合、Actor 生命周期。</li><li>Component 系统：Scene Component、Actor Component、Child Actor Component、自定义组件。</li><li>GameMode：只在服务器存在，负责规则、出生、胜负、流程。</li><li>GameState：同步给客户端的全局游戏状态。</li><li>PlayerController：玩家输入、相机控制、客户端 RPC 入口、UI 入口。</li><li>PlayerState：玩家身份、分数、队伍、可跨 Pawn 保留的数据。</li><li>Pawn 与 Character：可被 Controller 控制的实体，Character 额外包含胶囊体和移动组件。</li><li>CharacterMovement：走、跑、跳、飞、游泳、网络移动预测、根运动协调。</li><li>Enhanced Input：Input Action、Input Mapping Context、触发器、修饰器、动态切换输入层。</li><li>Camera：Spring Arm、Camera Component、Camera Manager、镜头震动、镜头过渡。</li><li>Interaction：Overlap、Trace、Hit Result、Gameplay Tag 标记、交互接口。</li><li>Damage：Damage Type、Apply Damage、受击反馈、死亡流程。</li><li>Save Game：存档对象、槽位、序列化、版本兼容。</li></ul><p>这一层的检查标准很直接：角色能不能被稳定控制，镜头是否舒服，交互是否清晰，规则是否放在正确的服务器或客户端对象上。</p><h3 id="GAS-与战斗系统"><a href="#GAS-与战斗系统" class="headerlink" title="GAS 与战斗系统"></a>GAS 与战斗系统</h3><p>GAS 是 Gameplay Ability System，适合处理技能、属性、Buff、冷却、消耗、预测和网络同步。它学习成本较高，但在复杂战斗或多人游戏中非常值得掌握。</p><ul><li>Ability System Component：技能系统的核心挂载点。</li><li>Attribute Set：生命、法力、攻击、防御、移速等属性集合。</li><li>Gameplay Ability：技能逻辑、激活条件、取消、提交、任务。</li><li>Gameplay Effect：属性修改、持续效果、周期效果、Instant 效果。</li><li>Gameplay Cue：技能表现事件，例如命中特效、音效、屏幕反馈。</li><li>Gameplay Tag：状态、技能、阵营、免疫、打断条件的统一标记语言。</li><li>Ability Task：等待输入、等待动画、等待目标数据、等待事件。</li><li>Cost 与 Cooldown：消耗、冷却、公共冷却、可预测冷却。</li><li>Prediction：客户端预测、服务器确认、回滚与失败处理。</li><li>Replication Mode：Full、Mixed、Minimal 的同步成本差异。</li><li>Targeting：目标选择、范围检测、Trace、锁定、命中盒。</li><li>战斗表现：受击停顿、击退、霸体、打断、连招、取消窗口。</li></ul><p>如果项目只是简单交互，自己写轻量技能系统会更快；如果项目有大量技能、状态、Buff 和多人预测，GAS 的结构化收益会越来越明显。</p><h3 id="AI-与寻路"><a href="#AI-与寻路" class="headerlink" title="AI 与寻路"></a>AI 与寻路</h3><p>AI 不是只有行为树。完整 AI 往往包含感知、决策、导航、动作执行、群体协作和调试工具。</p><ul><li>Navigation：NavMesh、Recast、Detour、Nav Modifier、Nav Link、动态导航。</li><li>Path Following：路径请求、路径点、移动失败、到达判定。</li><li>AIController：控制非玩家角色，驱动感知、黑板和行为树。</li><li>Behavior Tree：Selector、Sequence、Task、Service、Decorator。</li><li>Blackboard：AI 的运行时记忆，用于保存目标、状态和决策变量。</li><li>EQS：环境查询，用于选择掩体、站位、目标点。</li><li>AI Perception：视觉、听觉、伤害感知、阵营感知。</li><li>StateTree：状态机式决策，适合清晰阶段和条件切换。</li><li>MassEntity &#x2F; MassAI：面向大量实体的 ECS 风格框架。</li><li>Crowd：Detour Crowd、RVO Avoidance、局部避障。</li><li>调试：AI Debug、NavMesh 可视化、行为树运行态、EQS 调试。</li></ul><p>AI 的关键不是让每个节点复杂，而是让“感知、决策、执行”之间的数据边界清楚。</p><h3 id="动画系统"><a href="#动画系统" class="headerlink" title="动画系统"></a>动画系统</h3><p>动画系统连接了角色输入、移动、技能、物理和表现。只会做状态机还不够，复杂项目往往需要理解动画数据如何被混合、重定向和运行时修正。</p><ul><li>Skeletal Mesh：骨架、蒙皮、Socket、Physics Asset。</li><li>Skeleton：骨骼层级、Retarget、IK Rig、IK Retargeter。</li><li>Animation Sequence：单段动画、压缩、曲线、Notify。</li><li>Animation Montage：技能、攻击、分段、Slot、Section、Root Motion。</li><li>Blend Space：速度、方向、姿态二维混合。</li><li>Animation Blueprint：Anim Graph、Event Graph、状态机、Layered Blend。</li><li>State Machine：状态、转移条件、同步组、过渡动画。</li><li>Aim Offset：瞄准偏移、上半身叠加。</li><li>IK：Two Bone IK、FABRIK、Full Body IK、Control Rig。</li><li>Motion Warping：攻击、跳跃、翻越时对 Root Motion 进行目标修正。</li><li>Control Rig：程序化骨骼控制、编辑器内绑定、动画修正。</li><li>Animation Notify：命中特效、音效、攻击判定、脚步事件。</li><li>Pose Cache 与 Linked Anim Graph：动画复用与性能控制。</li><li>Cloth 与 Ragdoll：布料、物理资产、死亡布娃娃。</li></ul><p>动画的工程目标是让“状态正确”和“表现自然”同时成立：逻辑层不要被动画绑死，动画层也要能拿到足够信息。</p><h3 id="UI-与交互"><a href="#UI-与交互" class="headerlink" title="UI 与交互"></a>UI 与交互</h3><p>UE 的 UI 主要分为 UMG 和 Slate。UMG 面向游戏内界面与设计迭代，Slate 更接近底层和编辑器工具。</p><ul><li>UMG：Widget Blueprint、UserWidget、Canvas、Overlay、Panel、ListView。</li><li>Slate：底层 UI 框架，常用于编辑器扩展和复杂工具。</li><li>CommonUI：跨平台输入、菜单栈、手柄导航、通用按钮体系。</li><li>MVVM：数据绑定、ViewModel、界面状态与数据状态分离。</li><li>UI 生命周期：Construct、PreConstruct、OnInitialized、Destruct。</li><li>输入路由：鼠标、键盘、手柄、Focus、Input Mode、光标显示。</li><li>Drag &amp; Drop：拖拽操作、背包、技能栏、编辑器工具。</li><li>UI 动画：Widget Animation、过渡、弹窗、提示。</li><li>本地化：Text、String Table、Culture、字体回退。</li><li>性能：Invalidation、Retainer Box、Slate Insights、Widget 重建次数。</li></ul><p>UI 最常见的问题不是“做不出来”，而是状态来源混乱。推荐尽早决定：哪些数据来自服务器，哪些来自本地缓存，哪些只是表现状态。</p><h3 id="渲染、材质与特效"><a href="#渲染、材质与特效" class="headerlink" title="渲染、材质与特效"></a>渲染、材质与特效</h3><p>渲染侧技术点很多，可以按“资产、材质、灯光、后处理、特效、底层扩展”来分。</p><ul><li>Mesh：Static Mesh、Skeletal Mesh、Nanite、LOD、HLOD。</li><li>Material：材质节点、材质函数、材质实例、参数集合、Layered Material。</li><li>Texture：贴图压缩、Mip、Virtual Texture、Runtime Virtual Texture。</li><li>Lighting：动态光、静态光、Stationary Light、Lightmass、Lumen。</li><li>Shadow：Virtual Shadow Maps、Cascade Shadow Map、Contact Shadow。</li><li>Reflection：SSR、Reflection Capture、Lumen Reflection、Planar Reflection。</li><li>Post Process：Bloom、DOF、Tone Mapping、Color Grading、Custom Depth、Stencil。</li><li>Niagara：System、Emitter、Module、Parameter、Data Interface、GPU 粒子。</li><li>Decal：贴花材质、延迟贴花、投射范围、排序。</li><li>Rendering Feature：Forward、Deferred、Mobile Renderer、Path Tracing。</li><li>Shader：Global Shader、Material Shader、Compute Shader、Shader Permutation。</li><li>RHI 与 Render Thread：渲染线程、Render Dependency Graph、底层图形 API 抽象。</li></ul><p>如果目标是游戏玩法开发，重点应放在材质实例、灯光、后处理和 Niagara 的使用；如果目标是技术美术或渲染程序，则需要进一步阅读渲染线程、RDG 和 Shader 扩展。</p><h3 id="物理、碰撞与运动"><a href="#物理、碰撞与运动" class="headerlink" title="物理、碰撞与运动"></a>物理、碰撞与运动</h3><p>UE5 使用 Chaos 作为核心物理系统。游戏开发中大多数物理问题，首先要看碰撞配置是否正确。</p><ul><li>Collision：Object Channel、Trace Channel、Preset、Response。</li><li>Query：Line Trace、Sweep、Overlap、Multi Trace、复杂碰撞。</li><li>Physics Body：Simulate Physics、Mass、Damping、Constraint。</li><li>Physics Material：摩擦、弹性、物理表面类型。</li><li>Character Collision：胶囊体、地面检测、台阶高度、斜坡限制。</li><li>Constraint：铰链、弹簧、限制轴、断裂阈值。</li><li>Ragdoll：物理资产、碰撞体、约束、动画到物理切换。</li><li>Chaos Destruction：Geometry Collection、破碎、Field System。</li><li>Vehicle：Chaos Vehicle、轮胎、悬挂、驱动模型。</li><li>Projectile：Projectile Movement、弹道、反弹、命中回调。</li></ul><p>碰撞问题排查时，优先检查 Channel、Preset、是否使用复杂碰撞、是否在服务器执行、是否被移动组件覆盖。</p><h3 id="音频系统"><a href="#音频系统" class="headerlink" title="音频系统"></a>音频系统</h3><p>音频经常被低估，但它对反馈和空间感非常关键。</p><ul><li>Sound Wave：音频资产、压缩、流式加载。</li><li>Sound Cue：随机、混合、调制、条件播放。</li><li>MetaSounds：节点式程序音频与可参数化声音。</li><li>Attenuation：距离衰减、空间化、遮挡。</li><li>Concurrency：同时播放数量、优先级、抢占规则。</li><li>Submix：混音、效果链、录制、分析。</li><li>Quartz：节拍同步、音乐游戏或节奏系统。</li><li>Audio Component：跟随 Actor、淡入淡出、动态参数。</li></ul><p>游戏音频的工程重点是“什么时候播、在哪里播、能否被打断、是否会叠爆”。</p><h3 id="关卡、大世界与内容生产"><a href="#关卡、大世界与内容生产" class="headerlink" title="关卡、大世界与内容生产"></a>关卡、大世界与内容生产</h3><p>这一层关注内容如何被组织、加载和协作生产。</p><ul><li>Level：Persistent Level、Sub Level、Level Instance。</li><li>World Partition：网格化加载、运行时流送、One File Per Actor。</li><li>Data Layer：按任务、状态或版本组织世界内容。</li><li>Level Streaming：手动加载、蓝图加载、距离加载。</li><li>HLOD：远距离代理、合批、内存与绘制调用优化。</li><li>Landscape：地形、Layer、材质、草地、洞穴限制。</li><li>Foliage：植被实例、密度、剔除、交互。</li><li>PCG：程序化内容生成、规则图、地形与植被生成。</li><li>Spline：道路、轨道、河流、相机路径。</li><li>Sequencer：过场、镜头、动画轨、事件轨。</li><li>Take Recorder：录制角色、相机和实时表演。</li><li>Asset Pipeline：DCC 导入、FBX、glTF、重导入、命名规范。</li></ul><p>大型项目里，关卡技术不只是美术问题，它会直接影响多人协作、加载时间、内存峰值和包体结构。</p><h3 id="网络同步"><a href="#网络同步" class="headerlink" title="网络同步"></a>网络同步</h3><p>UE 的网络模型以服务器权威为核心。网络同步的核心问题是：什么由服务器决定，什么由客户端预测，什么只需要本地表现。</p><ul><li>架构：Listen Server、Dedicated Server、Client、Authority、Autonomous Proxy、Simulated Proxy。</li><li>Actor Replication：<code>bReplicates</code>、Net Update Frequency、Relevancy、Dormancy。</li><li>Property Replication：Replicated、RepNotify、条件同步、Push Model。</li><li>RPC：Server、Client、NetMulticast、Reliable、Unreliable、Owner 要求。</li><li>Ownership：Actor Owner、Controller、连接归属、RPC 调用权限。</li><li>Movement Replication：CharacterMovement、移动预测、服务器校正。</li><li>Subobject Replication：组件、子对象、对象通道、同步生命周期。</li><li>Replication Graph：大规模 Actor 按空间或规则分发。</li><li>Iris：UE5 新一代复制系统，需要按项目版本确认成熟度。</li><li>Lag Compensation：延迟补偿、回滚检测、命中确认。</li><li>Prediction：输入预测、技能预测、表现预测、失败回滚。</li><li>Online Subsystem：登录、会话、好友、匹配、平台服务。</li><li>网络调试：Net PktLag、Net PktLoss、Network Profiler、Insights。</li></ul><p>网络系统最忌讳“先单机写完再补联机”。如果项目未来一定要多人，核心对象、技能、交互和状态从第一天就应该按服务器权威设计。</p><h3 id="工具流与编辑器扩展"><a href="#工具流与编辑器扩展" class="headerlink" title="工具流与编辑器扩展"></a>工具流与编辑器扩展</h3><p>工具流决定团队效率。很多看似“开发慢”的问题，本质是缺少编辑器扩展、数据校验和自动化流程。</p><ul><li>插件开发：模块拆分、Runtime &#x2F; Editor 分离、插件依赖。</li><li>Editor Utility Widget：快速做编辑器内工具。</li><li>Blutility：批处理资产、场景对象操作。</li><li>Python：资产导入、批量重命名、自动化处理。</li><li>Slate 工具：自定义窗口、Tab、面板、列表、属性编辑。</li><li>Details Customization：自定义细节面板。</li><li>Asset Action：资源右键菜单、批处理、导入导出。</li><li>Factory 与 Reimport：自定义资源类型、导入器、重导入逻辑。</li><li>Data Validation：资源检查、命名检查、提交前校验。</li><li>Commandlet：无界面命令行任务、CI、批量处理。</li><li>JSON &#x2F; CSV &#x2F; DataTable：外部数据接入。</li><li>第三方库：ThirdParty 模块、静态库、动态库、平台差异。</li></ul><p>当某个操作在团队里被重复做三次以上，就值得考虑做成工具。</p><h3 id="构建、打包与平台"><a href="#构建、打包与平台" class="headerlink" title="构建、打包与平台"></a>构建、打包与平台</h3><p>打包不是最后一步，它会反过来约束资源、模块、平台 API 和工程结构。</p><ul><li>Cooking：资源烘焙、平台格式转换、引用收集。</li><li>Packaging：Pak、Io Store、压缩、加密、签名。</li><li>Build Configuration：Debug、DebugGame、Development、Shipping、Test。</li><li>Target：Editor、Game、Client、Server。</li><li>Dedicated Server：服务器目标、无渲染、部署脚本。</li><li>Patch 与 DLC：Chunk、Primary Asset Label、增量更新。</li><li>平台差异：Windows、Linux、Android、iOS、Console。</li><li>移动端：触控、包体、Shader 复杂度、纹理压缩、性能预算。</li><li>CI&#x2F;CD：BuildGraph、RunUAT、自动构建、自动打包、自动上传。</li><li>崩溃收集：Crash Reporter、符号文件、版本号。</li></ul><p>建议在项目早期就建立最小打包链路。能在编辑器里跑，不代表能在目标平台稳定运行。</p><h3 id="性能优化与调试"><a href="#性能优化与调试" class="headerlink" title="性能优化与调试"></a>性能优化与调试</h3><p>性能优化不能靠猜，先观测再下结论。</p><ul><li>CPU Profiling：<code>stat unit</code>、<code>stat game</code>、Unreal Insights。</li><li>GPU Profiling：<code>profilegpu</code>、RenderDoc、GPU Visualizer。</li><li>内存：Memory Insights、LLM、对象引用、资源常驻。</li><li>加载：Async Loading、Asset Manager、软引用、流式关卡。</li><li>Tick 优化：禁用无用 Tick、Tick Interval、定时器、事件驱动。</li><li>Actor 数量：合批、对象池、Mass、组件拆分。</li><li>渲染优化：LOD、HLOD、Nanite、实例化、遮挡剔除、材质复杂度。</li><li>UI 优化：Invalidation、Retainer、ListView 虚拟化、减少绑定。</li><li>网络优化：Relevancy、Dormancy、Replication Graph、同步频率。</li><li>动画优化：Update Rate Optimization、LOD、Pose Cache、骨骼数量。</li><li>资源审计：Size Map、Reference Viewer、Asset Audit。</li><li>调试工具：Gameplay Debugger、Visual Logger、Collision Analyzer、Console Command。</li></ul><p>优化的基本顺序是：先确认瓶颈在 CPU、GPU、内存、IO 还是网络，再处理占比最高的那一项。</p><h3 id="工程架构与长期维护"><a href="#工程架构与长期维护" class="headerlink" title="工程架构与长期维护"></a>工程架构与长期维护</h3><p>项目越大，越需要把“能跑”升级成“能改、能查、能扩展”。</p><ul><li>模块边界：核心运行时、玩法模块、表现模块、编辑器工具模块分离。</li><li>插件化：通用系统做插件，项目专属逻辑留在 Game 模块。</li><li>Subsystem：GameInstanceSubsystem、WorldSubsystem、LocalPlayerSubsystem、EngineSubsystem。</li><li>数据驱动：DataAsset、DataTable、Primary Asset、Gameplay Tag。</li><li>事件系统：委托、消息总线、Gameplay Message Subsystem。</li><li>状态机：角色状态、关卡状态、任务状态、UI 状态。</li><li>存档架构：运行时状态、配置状态、账号状态分离。</li><li>测试：Functional Test、Automation Test、Gauntlet。</li><li>版本控制：Git &#x2F; Perforce、LFS、大文件锁、二进制资产协作。</li><li>命名规范：资源前缀、目录结构、蓝图变量、Tag 命名。</li><li>代码规范：模块依赖方向、头文件依赖、日志分类、错误处理。</li></ul><p>好的 UE 架构通常不是把所有东西抽象得很复杂，而是让每个系统知道自己的边界：谁拥有数据，谁负责同步，谁负责表现，谁可以被编辑器工具修改。</p><h3 id="UE5-重点技术"><a href="#UE5-重点技术" class="headerlink" title="UE5 重点技术"></a>UE5 重点技术</h3><p>UE5 相比 UE4，在内容生产、大世界、渲染和输入系统上变化很明显。学习时可以单独标记这些技术点。</p><ul><li>Nanite：虚拟化几何，减少传统 LOD 制作压力，但需要理解材质、透明、变形等限制。</li><li>Lumen：动态全局光照与反射，适合实时迭代，但需要关注性能预算。</li><li>Virtual Shadow Maps：高质量动态阴影，常和 Nanite 配合。</li><li>World Partition：替代传统大世界手动分块的一套自动流送方案。</li><li>One File Per Actor：改善关卡多人协作，减少二进制资产冲突。</li><li>Data Layers：按状态、任务或版本组织世界内容。</li><li>Enhanced Input：更灵活的输入映射与运行时上下文切换。</li><li>CommonUI：跨平台 UI 输入和菜单体系。</li><li>Control Rig &#x2F; IK Retargeter：更完整的动画绑定与重定向流程。</li><li>Motion Warping：让根运动更容易对齐目标点。</li><li>StateTree：行为逻辑和状态切换的新选择。</li><li>MassEntity：大规模实体模拟和数据导向框架。</li><li>PCG：程序化内容生成工具链。</li><li>MetaSounds：程序化音频和节点式声音逻辑。</li><li>Iris：新复制系统，适合关注 UE 网络同步演进。</li><li>Substrate：材质模型演进方向，需要按项目版本确认启用策略。</li></ul><p>学习 UE5 时不要只追新功能。更重要的是判断：这个技术是否解决当前项目的真实问题，是否适合目标平台，团队是否有维护能力。</p><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul><li><a href="https://www.bearchild.top/2022/01/01/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/%5BUE%5D%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/">BearChild - [UE]知识总结</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-in-unreal-engine">Epic Games - Gameplay Framework in Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-ability-system-for-unreal-engine">Epic Games - Gameplay Ability System for Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/animating-characters-and-objects-in-unreal-engine">Epic Games - Animating Characters and Objects in Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-and-multiplayer-in-unreal-engine">Epic Games - Networking and Multiplayer in Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/world-partition-in-unreal-engine">Epic Games - World Partition in Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/physics-in-unreal-engine">Epic Games - Physics in Unreal Engine</a></li><li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-insights-in-unreal-engine">Epic Games - Unreal Insights in Unreal Engine</a></li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> UE游戏开发 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> UE游戏开发 </tag>
+            
+            <tag> Unreal Engine </tag>
+            
+            <tag> 技术点索引 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>乐理知识（目录）</title>
+      <link href="/2023/06/18/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/music-theory-00-catalog/"/>
+      <url>/2023/06/18/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/music-theory-00-catalog/</url>
+      
+        <content type="html"><![CDATA[<p><strong>目录</strong></p><ul><li>音名、唱名与十二平均律</li><li>音程、音阶与调式</li><li>三和弦、七和弦与转位</li><li>调性、功能和声与常见进行</li><li>节奏、拍号与律动</li><li>旋律写作与动机发展</li><li>编曲中的声部连接</li><li>听感分析与扒谱方法</li></ul><hr><h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><p>乐理不是把音乐变成公式，而是给听感、演奏和创作提供一套可沟通的语言。</p><p>这个目录会从音高、节奏、和弦这些基础概念开始，逐步进入调性、和声、旋律与编曲分析。目标是让理论能回到耳朵里，也能落到实际创作里。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 乐理知识 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 乐理知识 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>金融知识（目录）</title>
+      <link href="/2023/02/12/%E9%87%91%E8%9E%8D%E7%9F%A5%E8%AF%86/finance-knowledge-00-catalog/"/>
+      <url>/2023/02/12/%E9%87%91%E8%9E%8D%E7%9F%A5%E8%AF%86/finance-knowledge-00-catalog/</url>
+      
+        <content type="html"><![CDATA[<p><strong>目录</strong></p><ul><li>货币、利率与通胀</li><li>债券、久期与收益率曲线</li><li>股票估值与财务报表基础</li><li>基金、指数与资产配置</li><li>风险、收益与分散化</li><li>衍生品入门：期货、期权与套期保值</li><li>宏观周期与市场情绪</li><li>个人财务规划与长期投资</li></ul><hr><h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><p>金融知识的核心不是记住术语，而是理解现金流、风险、时间价值和人的预期如何共同影响价格。</p><p>这个目录会收纳偏基础、偏长期有效的金融笔记，尽量把概念放回真实问题里讨论：为什么利率变化会影响资产价格，为什么收益总是和风险一起出现，以及普通人如何更清醒地看待投资选择。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 金融知识 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 金融知识 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>UE游戏开发（目录）</title>
+      <link href="/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/"/>
+      <url>/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/</url>
+      
+        <content type="html"><![CDATA[<p><strong>目录</strong></p><ul><li>UE 游戏开发技术点索引</li><li>Unreal Engine 项目结构与资源管理</li><li>Actor、Component 与 Gameplay Framework</li><li>输入系统与角色控制</li><li>蓝图通信与 C++ 扩展</li><li>动画蓝图、状态机与蒙太奇</li><li>UI、存档与常用系统</li><li>网络同步与多人游戏基础</li><li>性能分析、打包与发布</li></ul><hr><h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><p>UE 游戏开发很容易从某个功能点直接扎进去，但更稳定的学习路线是先理解引擎的对象模型、生命周期和工程组织方式，再逐步进入角色、动画、UI、网络和性能优化。</p><p>这个目录会作为 UE 相关文章的入口，后续文章可以按“能做出东西”与“能解释清楚引擎为什么这样工作”两条线一起展开。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> UE游戏开发 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> UE游戏开发 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>《Real-Time Rendering》读书笔记（四）Shading Basics</title>
       <link href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/"/>
       <url>/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/</url>

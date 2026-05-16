@@ -1,0 +1,740 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Tag: 技术点索引 | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="QQ:809365697 VX:timeinrain">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Timeinrain&#39;s Blog">
+<meta property="og:url" content="https://timeinrain.github.io/tags/%E6%8A%80%E6%9C%AF%E7%82%B9%E7%B4%A2%E5%BC%95/index.html">
+<meta property="og:site_name" content="Timeinrain&#39;s Blog">
+<meta property="og:description" content="QQ:809365697 VX:timeinrain">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://timeinrain.github.io/img/avatar_wuwu.png">
+<meta property="article:author" content="timeinrain">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://timeinrain.github.io/img/avatar_wuwu.png"><script type="application/ld+json"></script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://timeinrain.github.io/tags/%E6%8A%80%E6%9C%AF%E7%82%B9%E7%B4%A2%E5%BC%95/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d1110')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#211a13')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"You have switched to Traditional Chinese","cht_to_chs":"You have switched to Simplified Chinese","day_to_night":"You have switched to Dark Mode","night_to_day":"You have switched to Light Mode","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Tag: 技术点索引',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'tag'
+}</script><link rel="preload" as="image" href="/anim/lightning_strike.gif?v=10" type="image/gif" fetchpriority="high"><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css?v=20260516-mobile-lightning"><link rel="stylesheet" href="/css/ambient-nature.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.webp);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">31</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/projects/"><i class="fa-fw fas fa-gamepad"></i><span> Projects</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div></div></div><div class="page" id="body-wrap"><header class="not-home-page" id="page-header" style="background-image: url(/img/pixel-medieval/hero-castle.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo" loading="lazy"><span class="site-name">Timeinrain's Blog</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/projects/"><i class="fa-fw fas fa-gamepad"></i><span> Projects</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="page-site-info"><h1 id="site-title">技术点索引</h1></div></header><main class="layout" id="content-inner"><div id="tag"><div class="article-sort-header"><div class="article-sort-title">Tag - 技术点索引</div><a class="page-parent-link" href="/tags/" title="返回标签总览" aria-label="返回标签总览"><i class="fas fa-arrow-left"></i><span>返回标签总览</span></a></div><div class="article-sort"><div class="article-sort-item year">2026</div><div class="article-sort-item"><a class="article-sort-item-img" href="/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/" title="UE游戏开发技术点索引"><img src="/img/ue/unreal-engine-card-cover.png" alt="UE游戏开发技术点索引" onerror="this.onerror=null;this.src='/img/404.jpg'" loading="lazy"></a><div class="article-sort-item-info"><div class="article-sort-item-time"><i class="far fa-calendar-alt"></i><time class="post-meta-date-created" datetime="2026-05-15T22:30:29.000Z" title="Created 2026-05-16 06:30:29">2026-05-16</time></div><a class="article-sort-item-title" href="/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/" title="UE游戏开发技术点索引">UE游戏开发技术点索引</a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">31</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>
+  #card-visitor-map{display:none}
+  #visitor-map-box{min-height:240px;text-align:center;max-width:100%;overflow:hidden}
+</style>
+<div id="visitor-map-box"><div class="visitor-map-note">访客地图加载中...</div></div>
+<script>
+(function () {
+  var MAP_SCRIPT_ID = 'mmvst_globe'
+  var MAP_SCRIPT_SRC = 'https://mapmyvisitors.com/globe.js?d=lQIKiewKrqplSOJrDPKvAkx4IXPe0l9zHMbPb5vB4Fw'
+  var MAX_RETRY = 3
+  var RETRY_DELAY = 2500
+  var LOAD_TIMEOUT = 15000
+  var box = null
+
+  function ensureNote () {
+    var note = box.querySelector('.visitor-map-note')
+    if (!note) {
+      note = document.createElement('div')
+      note.className = 'visitor-map-note'
+      note.style.cssText = 'padding:16px 0;color:#888;font-size:13px'
+      box.appendChild(note)
+    }
+    return note
+  }
+
+  function clearNote () {
+    var note = box.querySelector('.visitor-map-note')
+    if (note) note.remove()
+  }
+
+  function setNote (text) {
+    var note = ensureNote()
+    note.textContent = text
+  }
+
+  function removeOldScript () {
+    var old = document.getElementById(MAP_SCRIPT_ID)
+    if (!old || !old.parentNode) return
+    old.parentNode.removeChild(old)
+  }
+
+  function loadMap (attempt) {
+    if (!box) return
+    if (box.dataset.mapLoaded === '1') return
+    if (box.dataset.mapLoading === '1' && attempt === 1) return
+    box.dataset.mapLoading = '1'
+    box.dataset.mapAttempt = String(attempt)
+
+    removeOldScript()
+    setNote('访客地图加载中...')
+
+    var script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.id = MAP_SCRIPT_ID
+    script.src = MAP_SCRIPT_SRC
+    script.async = true
+
+    var timeout = setTimeout(function () {
+      fail('加载超时')
+    }, LOAD_TIMEOUT)
+
+    function done () {
+      box.dataset.mapLoading = '0'
+      clearTimeout(timeout)
+    }
+
+    function fail (msg) {
+      done()
+      removeOldScript()
+      if (attempt < MAX_RETRY) {
+        setNote('访客地图加载失败，' + attempt + '/' + MAX_RETRY + '，' + msg + '，' + RETRY_DELAY / 1000 + '秒后重试…')
+        setTimeout(function () {
+          loadMap(attempt + 1)
+        }, RETRY_DELAY)
+        return
+      }
+      setNote('访客地图暂时无法加载，请稍后刷新页面重试。')
+    }
+
+    script.onload = function () {
+      done()
+      box.dataset.mapLoaded = '1'
+      box.dataset.mapAttempt = '0'
+      clearNote()
+    }
+    script.onerror = function () {
+      fail('请求失败')
+    }
+
+    box.appendChild(script)
+  }
+
+  function syncVisitorMap () {
+    var card = document.getElementById('card-visitor-map')
+    box = document.getElementById('visitor-map-box')
+    if (!card || !box) return
+    var home = !!document.getElementById('recent-posts')
+    card.style.display = home ? 'block' : 'none'
+    if (!home) return
+    if (box.dataset.mapLoaded === '1') return
+    if (box.dataset.mapLoading === '1' && box.dataset.mapAttempt !== '1') return
+    loadMap(1)
+  }
+  syncVisitorMap()
+  document.addEventListener('pjax:complete', syncVisitorMap)
+})()
+</script>
+</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/05/16/%E5%9B%BE%E5%BD%A2%E5%AD%A6/course-notes-2004-simulating-ocean-water/" title="Course Notes 2004：Simulating Ocean Water 海水渲染笔记"><img src="/img/graphics/course-notes-2004-simulating-ocean-water/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Course Notes 2004：Simulating Ocean Water 海水渲染笔记" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/16/%E5%9B%BE%E5%BD%A2%E5%AD%A6/course-notes-2004-simulating-ocean-water/" title="Course Notes 2004：Simulating Ocean Water 海水渲染笔记">Course Notes 2004：Simulating Ocean Water 海水渲染笔记</a><time datetime="2026-05-15T22:41:32.000Z" title="Created 2026-05-16 06:41:32">2026-05-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/" title="UE游戏开发技术点索引"><img src="/img/ue/unreal-engine-card-cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="UE游戏开发技术点索引" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/16/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-technical-index/" title="UE游戏开发技术点索引">UE游戏开发技术点索引</a><time datetime="2026-05-15T22:30:29.000Z" title="Created 2026-05-16 06:30:29">2026-05-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/06/18/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/music-theory-00-catalog/" title="乐理知识（目录）"><img src="/img/music/music-theory-card-cover.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="乐理知识（目录）" loading="lazy" /></a><div class="content"><a class="title" href="/2023/06/18/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/music-theory-00-catalog/" title="乐理知识（目录）">乐理知识（目录）</a><time datetime="2023-06-18T13:10:00.000Z" title="Created 2023-06-18 21:10:00">2023-06-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/02/12/%E9%87%91%E8%9E%8D%E7%9F%A5%E8%AF%86/finance-knowledge-00-catalog/" title="金融知识（目录）">金融知识（目录）</a><time datetime="2023-02-12T11:45:00.000Z" title="Created 2023-02-12 19:45:00">2023-02-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/" title="UE游戏开发（目录）"><img src="/img/ue/unreal-engine-card-cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="UE游戏开发（目录）" loading="lazy" /></a><div class="content"><a class="title" href="/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/" title="UE游戏开发（目录）">UE游戏开发（目录）</a><time datetime="2022-09-03T12:30:00.000Z" title="Created 2022-09-03 20:30:00">2022-09-03</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+            <i class="fas fa-folder-open"></i>
+            <span>Categories</span>
+            
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/"><span class="card-category-list-name">UE游戏开发</span><span class="card-category-list-count">2</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/"><span class="card-category-list-name">乐理知识</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/"><span class="card-category-list-name">图形学</span><span class="card-category-list-count">6</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%B8%B8%E6%88%8F%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95/"><span class="card-category-list-name">游戏中的算法</span><span class="card-category-list-count">2</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E7%AE%97%E6%B3%95/"><span class="card-category-list-name">算法</span><span class="card-category-list-count">9</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E9%87%91%E8%9E%8D%E7%9F%A5%E8%AF%86/"><span class="card-category-list-name">金融知识</span><span class="card-category-list-count">1</span></a></li>
+          </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>Tags</span></div><div class="card-tag-cloud"><a href="/tags/%E4%B9%90%E7%90%86%E7%9F%A5%E8%AF%86/" style="font-size: 1.1em; color: #999">乐理知识</a> <a href="/tags/%E9%98%9F%E5%88%97/" style="font-size: 1.1em; color: #999">队列</a> <a href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/" style="font-size: 1.4em; color: #99a5b6">图形学</a> <a href="/tags/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/" style="font-size: 1.2em; color: #999da3">UE游戏开发</a> <a href="/tags/%E5%B9%B6%E6%9F%A5%E9%9B%86/" style="font-size: 1.1em; color: #999">并查集</a> <a href="/tags/%E9%87%91%E8%9E%8D%E7%9F%A5%E8%AF%86/" style="font-size: 1.1em; color: #999">金融知识</a> <a href="/tags/%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/" style="font-size: 1.1em; color: #999">二分查找</a> <a href="/tags/%E5%8F%8C%E6%8C%87%E9%92%88/" style="font-size: 1.1em; color: #999">双指针</a> <a href="/tags/%E6%B8%B8%E6%88%8F%E4%B8%AD%E7%9A%84%E7%AE%97%E6%B3%95/" style="font-size: 1.2em; color: #999da3">游戏中的算法</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 1.1em; color: #999">数据结构</a> <a href="/tags/FFT/" style="font-size: 1.1em; color: #999">FFT</a> <a href="/tags/%E9%80%92%E5%BD%92/" style="font-size: 1.1em; color: #999">递归</a> <a href="/tags/RVO/" style="font-size: 1.1em; color: #999">RVO</a> <a href="/tags/Real-Time-Rendering/" style="font-size: 1.3em; color: #99a1ac">Real-Time Rendering</a> <a href="/tags/BFS/" style="font-size: 1.1em; color: #999">BFS</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 1.1em; color: #999">动态规划</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 1.2em; color: #999da3">图论</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF/" style="font-size: 1.1em; color: #999">最短路</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 1.1em; color: #999">树状数组</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 1.5em; color: #99a9bf">算法</a> <a href="/tags/%E6%8A%80%E6%9C%AF%E7%82%B9%E7%B4%A2%E5%BC%95/" style="font-size: 1.1em; color: #999">技术点索引</a> <a href="/tags/%E6%A0%88/" style="font-size: 1.1em; color: #999">栈</a> <a href="/tags/Tessendorf/" style="font-size: 1.1em; color: #999">Tessendorf</a> <a href="/tags/%E6%8E%92%E5%BA%8F/" style="font-size: 1.1em; color: #999">排序</a> <a href="/tags/%E6%B5%B7%E6%B0%B4%E6%B8%B2%E6%9F%93/" style="font-size: 1.1em; color: #999">海水渲染</a> <a href="/tags/DFS/" style="font-size: 1.1em; color: #999">DFS</a> <a href="/tags/%E5%A4%8D%E6%9D%82%E5%BA%A6/" style="font-size: 1.1em; color: #999">复杂度</a> <a href="/tags/Unreal-Engine/" style="font-size: 1.1em; color: #999">Unreal Engine</a> <a href="/tags/%E9%81%BF%E9%9A%9C/" style="font-size: 1.2em; color: #999da3">避障</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 1.1em; color: #999">线段树</a> <a href="/tags/ORCA/" style="font-size: 1.1em; color: #999">ORCA</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>Archives</span>
+      <a class="card-more-btn" href="/archives/"
+            title="View More">
+            <i class="fas fa-angle-right"></i>
+          </a>
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/05/">
+            <span class="card-archive-list-date">
+              May 2026
+            </span>
+            <span class="card-archive-list-count">2</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2023/06/">
+            <span class="card-archive-list-date">
+              June 2023
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2023/02/">
+            <span class="card-archive-list-date">
+              February 2023
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2022/09/">
+            <span class="card-archive-list-date">
+              September 2022
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2021/10/">
+            <span class="card-archive-list-date">
+              October 2021
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2021/09/">
+            <span class="card-archive-list-date">
+              September 2021
+            </span>
+            <span class="card-archive-list-count">4</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2021/08/">
+            <span class="card-archive-list-date">
+              August 2021
+            </span>
+            <span class="card-archive-list-count">2</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2020/12/">
+            <span class="card-archive-list-date">
+              December 2020
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>Website Info</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">Article Count :</div><div class="item-count">21</div></div><div class="webinfo-item"><div class="item-name">Total Word Count :</div><div class="item-count">40.3k</div></div><div class="webinfo-item"><div class="item-name">Last Update :</div><div class="item-count" id="last-push-date" data-lastPushDate="2026-05-16T01:46:10.290Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/pixel-medieval/hero-castle.webp);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/fantasy-pixel.js?v=20260516-mobile-lightning"></script><script src="/js/post-scroll-pane.js?v=20260516-post-scroll-pane-v2"></script><script src="/js/ambient-nature.js"></script><script src="/js/live2d-kanban.js?v=20260515-body"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+  let paginationScrollTop = null
+
+  const restorePaginationScroll = () => {
+    if (paginationScrollTop === null) return
+
+    const top = paginationScrollTop
+    paginationScrollTop = null
+    const restore = () => window.scrollTo(0, top)
+
+    restore()
+    window.requestAnimationFrame(restore)
+    window.setTimeout(restore, 80)
+    window.setTimeout(restore, 240)
+  }
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('click', e => {
+    const target = e.target.closest ? e.target.closest('nav#pagination .page-number, nav#pagination .extend') : null
+    if (!target) return
+    paginationScrollTop = window.scrollY || window.pageYOffset
+  })
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    restorePaginationScroll()
+
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="Search for Posts" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div></body></html>
