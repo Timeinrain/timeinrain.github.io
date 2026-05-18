@@ -1314,7 +1314,7 @@ hr {
 
 #body-wrap.post .post-main {
   display: flex;
-  align-self: flex-start;
+  align-self: stretch;
   flex-direction: column;
   gap: 1.35rem;
   width: 74%;
@@ -1323,8 +1323,24 @@ hr {
 
 #body-wrap.post #post {
   position: relative;
+  flex: 1 1 auto;
   width: 100%;
   padding: 96px 40px 50px;
+}
+
+#body-wrap.page #recent-posts {
+  display: flex;
+  align-self: stretch;
+  flex-direction: column;
+}
+
+#body-wrap.page #recent-posts .recent-post-items {
+  flex: 0 0 auto;
+}
+
+#body-wrap.page #recent-posts #pagination {
+  margin-top: auto;
+  padding-top: 1.2rem;
 }
 
 #body-wrap.post #post-comment {
@@ -1643,24 +1659,12 @@ hr {
 
 @media (min-width: 901px) {
   #body-wrap.post #content-inner.layout {
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   #body-wrap.post #post {
-    position: sticky;
-    top: 20px;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scroll-padding-top: 24px;
-    scrollbar-gutter: stable;
-    transition: top 0.3s, max-height 0.3s;
-  }
-
-  #body-wrap.post #page-header.nav-visible:not(.fixed) + #content-inner #post,
-  #body-wrap.post #page-header.fixed + #content-inner #post {
-    top: 70px;
-    max-height: calc(100vh - 90px);
+    min-height: calc(100vh - 140px);
+    overflow: visible;
   }
 }
 
@@ -8142,24 +8146,32 @@ html.is-pixel-theme-switching #page {
   color: #3f3326;
   background: transparent;
   box-shadow: none;
-  font-family: Georgia, "Times New Roman", serif !important;
+  font-family: var(--pixel-font) !important;
   font-size: var(--book-dash-font-size);
-  font-weight: 400;
+  font-weight: 700;
   line-height: var(--book-writing-line);
+  text-shadow:
+    1px 0 0 rgba(255, 238, 180, 0.38),
+    0 1px 0 rgba(255, 238, 180, 0.34) !important;
   transform: none;
 }
 
 #page .magic-category-book .category-list-link {
   min-width: 0;
-  color: #2a1f14 !important;
-  font-family: "STKaiti", "KaiTi", "FangSong", var(--article-readable-font) !important;
+  color: #261407 !important;
+  font-family: var(--pixel-font) !important;
   font-size: var(--book-category-font-size);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-weight: 700;
+  letter-spacing: 0.025em;
   line-height: var(--book-writing-line);
   overflow-wrap: anywhere;
   text-decoration: none !important;
-  text-shadow: 0 1px 0 rgba(255, 241, 195, 0.42) !important;
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
+  text-shadow:
+    1px 0 0 rgba(255, 238, 180, 0.44),
+    0 1px 0 rgba(255, 238, 180, 0.38),
+    2px 2px 0 rgba(98, 55, 17, 0.18) !important;
 }
 
 #page .magic-category-book .category-list-link:hover,
@@ -8168,13 +8180,17 @@ html.is-pixel-theme-switching #page {
 }
 
 #page .magic-category-book .category-list-count {
-  margin-left: 0.18rem;
-  color: #574532 !important;
-  font-family: Georgia, "Times New Roman", serif !important;
+  margin-left: 0.24rem;
+  color: #5b3e1d !important;
+  font-family: var(--pixel-font-en) !important;
   font-size: var(--book-count-font-size);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   line-height: var(--book-writing-line);
-  text-shadow: 0 1px 0 rgba(255, 241, 195, 0.32) !important;
+  -webkit-font-smoothing: none;
+  text-shadow:
+    1px 0 0 rgba(255, 238, 180, 0.34),
+    0 1px 0 rgba(255, 238, 180, 0.3) !important;
 }
 
 #page .magic-category-book .category-list-count::before {
@@ -8231,4 +8247,37 @@ html.is-pixel-theme-switching #page {
   #page .magic-category-book {
     width: 720px;
   }
+}
+
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .tk-image,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .__image,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .tk-upload,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .__upload,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .tk-input-image,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .tk-action-icon.__image,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action .tk-action-icon.__upload,
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action [class*="image" i],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action [class*="upload" i],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action [class*="owo" i],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action [class*="emoji" i],
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action > *:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action label:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo .tk-submit .tk-submit-action label:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .tk-image,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .__image,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .tk-upload,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .__upload,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .tk-input-image,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .tk-action-icon.__image,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action .tk-action-icon.__upload,
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action [class*="image" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action [class*="upload" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action [class*="owo" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action [class*="emoji" i],
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > *:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action > *:has(.tk-input-image),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action label:has(input[type="file"]),
+#page:has(.message-board-page) #twikoo-wrap .tk-submit .tk-submit-action label:has(.tk-input-image) {
+  display: inline-flex !important;
 }

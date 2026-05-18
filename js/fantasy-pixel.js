@@ -2075,7 +2075,6 @@
     initThemeTransitionObserver();
     initHangingThemeToggle();
     initRightsideControls();
-    initMessageBoardTwikooCleanup();
     initAdventurerRadar();
     initCareerMap();
     initFooterSlimeGame();
