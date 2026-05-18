@@ -338,6 +338,21 @@ main.layout,
   z-index: 1510 !important;
 }
 
+#sidebar #menu-mask,
+#search-mask {
+  z-index: 1900 !important;
+}
+
+#sidebar #sidebar-menus {
+  z-index: 1901 !important;
+}
+
+#local-search .search-dialog,
+#algolia-search .search-dialog,
+.search-dialog {
+  z-index: 1902 !important;
+}
+
 #blog-info .nav-site-title {
   display: inline-flex;
   align-items: center;
