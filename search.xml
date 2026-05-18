@@ -114,31 +114,6 @@
     
     
     <entry>
-      <title>UE游戏开发（目录）</title>
-      <link href="/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/"/>
-      <url>/2022/09/03/UE%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/ue-game-development-00-catalog/</url>
-      
-        <content type="html"><![CDATA[<p><strong>目录</strong></p><ul><li>UE 游戏开发技术点索引</li><li>Unreal Engine 项目结构与资源管理</li><li>Actor、Component 与 Gameplay Framework</li><li>输入系统与角色控制</li><li>蓝图通信与 C++ 扩展</li><li>动画蓝图、状态机与蒙太奇</li><li>UI、存档与常用系统</li><li>网络同步与多人游戏基础</li><li>性能分析、打包与发布</li></ul><hr><h3 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h3><p>UE 游戏开发很容易从某个功能点直接扎进去，但更稳定的学习路线是先理解引擎的对象模型、生命周期和工程组织方式，再逐步进入角色、动画、UI、网络和性能优化。</p><p>这个目录会作为 UE 相关文章的入口，后续文章可以按“能做出东西”与“能解释清楚引擎为什么这样工作”两条线一起展开。</p>]]></content>
-      
-      
-      <categories>
-          
-          <category> UE游戏开发 </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> UE游戏开发 </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>《Real-Time Rendering》读书笔记（四）Shading Basics</title>
       <link href="/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/"/>
       <url>/2021/10/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/real-time-rendering-04-shading-basics/</url>
@@ -292,9 +267,9 @@
             
             <tag> 游戏中的算法 </tag>
             
-            <tag> 避障 </tag>
-            
             <tag> ORCA </tag>
+            
+            <tag> 避障 </tag>
             
         </tags>
       
@@ -321,9 +296,9 @@
             
             <tag> 游戏中的算法 </tag>
             
-            <tag> RVO </tag>
-            
             <tag> 避障 </tag>
+            
+            <tag> RVO </tag>
             
         </tags>
       
