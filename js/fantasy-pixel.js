@@ -630,6 +630,8 @@
     var maxMagicPitNodes = 8;
     var maxLightningCraterNodes = 10;
     var maxHitBurstNodes = 70;
+    var monsterSpawnIntervalMin = 950;
+    var monsterSpawnIntervalMax = 1650;
     var monsterSpawnRevealDelay = 280;
     var monsterSpawnJumpOutDuration = 430;
     var monsterSpawnEffectTail = 110;
@@ -1064,12 +1066,13 @@
 
     function scheduleMaintain(delay) {
       if (maintainTimer) window.clearTimeout(maintainTimer);
+      if (document.hidden) return;
 
       maintainTimer = window.setTimeout(function () {
         maintainTimer = null;
-        maintainMonsters(false);
-        scheduleMaintain(randomBetween(850, 1500));
-      }, delay || randomBetween(700, 1200));
+        maintainMonsters();
+        scheduleMaintain(randomBetween(monsterSpawnIntervalMin, monsterSpawnIntervalMax));
+      }, delay || randomBetween(monsterSpawnIntervalMin, monsterSpawnIntervalMax));
     }
 
     function spawnMonster(options) {
@@ -1152,17 +1155,13 @@
       startLoop();
     }
 
-    function maintainMonsters(fillToMax) {
+    function maintainMonsters() {
       var capacity = monsterCapacity(stage.clientWidth, stage.clientHeight);
-      var target = fillToMax ? capacity : clamp(capacity - Math.floor(randomBetween(0, 2.6)), minMonsters, capacity);
-      var guard = 0;
 
-      while (liveMonsterCount() < target && guard < maxMonsters) {
+      if (liveMonsterCount() < capacity) {
         spawnMonster({
-          quick: fillToMax,
-          spawnDelay: guard * randomBetween(fillToMax ? 120 : 180, fillToMax ? 260 : 360)
+          quick: false
         });
-        guard += 1;
       }
     }
 
@@ -1172,7 +1171,6 @@
       if (index !== -1) monsters.splice(index, 1);
       clearMonsterSpawnEffect(monster);
       monster.node.remove();
-      maintainMonsters(false);
     }
 
     function createMagicStrike(x, y, autoRemove, onActivated) {
@@ -1243,7 +1241,6 @@
       scoreNode.textContent = String(score);
       createMagicBurst(monsterRect.left - fieldRect.left + monsterRect.width / 2, monsterRect.top - fieldRect.top + monsterRect.height / 2, monster.type);
       wand.classList.add('is-casting');
-      maintainMonsters(false);
 
       window.setTimeout(function () {
         removeMonster(monster);
@@ -1524,13 +1521,12 @@
         window.clearTimeout(maintainTimer);
         maintainTimer = null;
       } else if (!document.hidden && !maintainTimer) {
-        maintainMonsters(false);
         scheduleMaintain(700);
       }
     });
 
-    maintainMonsters(false);
-    scheduleMaintain(900);
+    maintainMonsters();
+    scheduleMaintain(monsterSpawnIntervalMin);
     startLoop();
   }
 

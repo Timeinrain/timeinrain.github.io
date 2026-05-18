@@ -292,9 +292,9 @@
             
             <tag> 游戏中的算法 </tag>
             
-            <tag> ORCA </tag>
-            
             <tag> 避障 </tag>
+            
+            <tag> ORCA </tag>
             
         </tags>
       
@@ -321,9 +321,9 @@
             
             <tag> 游戏中的算法 </tag>
             
-            <tag> 避障 </tag>
-            
             <tag> RVO </tag>
+            
+            <tag> 避障 </tag>
             
         </tags>
       
