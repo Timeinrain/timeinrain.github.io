@@ -1,0 +1,975 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>FFT海水渲染在UE中的落地方案（三）：初版Shading方案 | Timeinrain's Blog</title><meta name="author" content="timeinrain"><meta name="copyright" content="timeinrain"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1110"><meta name="description" content="前两篇解决“水面在哪里”。本篇解决“它为什么像水”。初版 shading 不追求一步到位，而是把法线、Fresnel、反射、折射、吸收、泡沫这些核心部分组织成可调、可降级、可调试的 UE 材质方案。  目录  Shading输入 材质模型选择 法线与多频细节 Fresnel和高光 反射 折射与吸收 泡沫 Pass位置和调试 参考资料   Shading输入初版材质不要只依赖一张法线贴图。FFT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFT海水渲染在UE中的落地方案（三）：初版Shading方案">
+<meta property="og:url" content="https://timeinrain.github.io/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-03-shading/index.html">
+<meta property="og:site_name" content="Timeinrain&#39;s Blog">
+<meta property="og:description" content="前两篇解决“水面在哪里”。本篇解决“它为什么像水”。初版 shading 不追求一步到位，而是把法线、Fresnel、反射、折射、吸收、泡沫这些核心部分组织成可调、可降级、可调试的 UE 材质方案。  目录  Shading输入 材质模型选择 法线与多频细节 Fresnel和高光 反射 折射与吸收 泡沫 Pass位置和调试 参考资料   Shading输入初版材质不要只依赖一张法线贴图。FFT">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://timeinrain.github.io/img/graphics/fft-ocean-rendering-in-ue/cover.png">
+<meta property="article:published_time" content="2026-05-18T19:30:00.000Z">
+<meta property="article:modified_time" content="2026-05-18T19:30:00.000Z">
+<meta property="article:author" content="timeinrain">
+<meta property="article:tag" content="FFT">
+<meta property="article:tag" content="Shading">
+<meta property="article:tag" content="Unreal Engine">
+<meta property="article:tag" content="图形学">
+<meta property="article:tag" content="海水渲染">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://timeinrain.github.io/img/graphics/fft-ocean-rendering-in-ue/cover.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "FFT海水渲染在UE中的落地方案（三）：初版Shading方案",
+  "url": "https://timeinrain.github.io/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-03-shading/",
+  "image": "https://timeinrain.github.io/img/graphics/fft-ocean-rendering-in-ue/cover.png",
+  "datePublished": "2026-05-18T19:30:00.000Z",
+  "dateModified": "2026-05-18T19:30:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "timeinrain",
+      "url": "https://timeinrain.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://timeinrain.github.io/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-03-shading/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d1110')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#211a13')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"You have switched to Traditional Chinese","cht_to_chs":"You have switched to Simplified Chinese","day_to_night":"You have switched to Dark Mode","night_to_day":"You have switched to Light Mode","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'FFT海水渲染在UE中的落地方案（三）：初版Shading方案',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preload" as="image" href="/anim/lightning_strike.gif?v=10" type="image/gif" fetchpriority="high"><link rel="stylesheet" href="/css/cursor.css"><link rel="stylesheet" href="/css/fantasy-pixel.css?v=20260519-categories-centered-v3"><link rel="stylesheet" href="/css/ambient-nature.css"><link rel="stylesheet" href="/css/live2d-kanban.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/pixel-medieval/grassland-layout.webp);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/projects/"><i class="fa-fw fas fa-gamepad"></i><span> Projects</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/graphics/fft-ocean-rendering-in-ue/cover.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="/img/favicon.png" alt="Logo" loading="lazy"><span class="site-name">Timeinrain's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">FFT海水渲染在UE中的落地方案（三）：初版Shading方案</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-dungeon"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-scroll"></i><span> Tags</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-book-open"></i><span> Categories</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-shield-alt"></i><span> Allies</span></a></div><div class="menus_item"><a class="site-page" href="/message/"><i class="fa-fw fas fa-feather-alt"></i><span> Message Board</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-hat-wizard"></i><span> About Me</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> Profile</span></a></li><li><a class="site-page child" href="/projects/"><i class="fa-fw fas fa-gamepad"></i><span> Projects</span></a></li><li><a class="site-page child" href="/map/"><i class="fa-fw fas fa-map"></i><span> Adventure Map</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">FFT海水渲染在UE中的落地方案（三）：初版Shading方案</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-05-18T19:30:00.000Z" title="Created 2026-05-19 03:30:00">2026-05-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-05-18T19:30:00.000Z" title="Updated 2026-05-19 03:30:00">2026-05-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>6mins</span></span></div></div></div></header><main class="layout" id="content-inner"><div class="post-main nc"><div id="post"><div class="page-parent-nav"><a class="page-parent-link" href="/categories/%E5%9B%BE%E5%BD%A2%E5%AD%A6/" title="返回 图形学" aria-label="返回 图形学"><i class="fas fa-arrow-left"></i><span>返回 图形学</span></a></div><article class="container post-content" id="article-container"><blockquote>
+<p>前两篇解决“水面在哪里”。本篇解决“它为什么像水”。初版 shading 不追求一步到位，而是把法线、Fresnel、反射、折射、吸收、泡沫这些核心部分组织成可调、可降级、可调试的 UE 材质方案。</p>
+</blockquote>
+<p><strong>目录</strong></p>
+<ul>
+<li>Shading输入</li>
+<li>材质模型选择</li>
+<li>法线与多频细节</li>
+<li>Fresnel和高光</li>
+<li>反射</li>
+<li>折射与吸收</li>
+<li>泡沫</li>
+<li>Pass位置和调试</li>
+<li>参考资料</li>
+</ul>
+<hr>
+<h3 id="Shading输入"><a href="#Shading输入" class="headerlink" title="Shading输入"></a>Shading输入</h3><p>初版材质不要只依赖一张法线贴图。FFT 模拟已经给出了更有价值的数据：</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>来源</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DisplacementTexture</code></td>
+<td>FFT post pass</td>
+<td>顶点位移、局部高度、深度过渡</td>
+</tr>
+<tr>
+<td><code>NormalTexture</code></td>
+<td>斜率 IFFT 或高度差分</td>
+<td>主法线和高光方向</td>
+</tr>
+<tr>
+<td><code>FoamTexture</code></td>
+<td>Jacobian、曲率或浪尖阈值</td>
+<td>白沫 mask</td>
+</tr>
+<tr>
+<td><code>SceneDepth</code></td>
+<td>UE 场景深度</td>
+<td>水深、岸边、折射遮挡</td>
+</tr>
+<tr>
+<td><code>SceneColor</code></td>
+<td>屏幕颜色</td>
+<td>简化折射</td>
+</tr>
+<tr>
+<td><code>Reflection</code></td>
+<td>SSR、Planar、Capture 或天空</td>
+<td>水面反射</td>
+</tr>
+</tbody></table>
+<p>可以把材质拆成几个 material function：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">MF_OceanUV</span><br><span class="line">MF_OceanNormal</span><br><span class="line">MF_OceanFresnel</span><br><span class="line">MF_OceanReflection</span><br><span class="line">MF_OceanRefraction</span><br><span class="line">MF_OceanAbsorption</span><br><span class="line">MF_OceanFoam</span><br></pre></td></tr></table></figure>
+
+<p>这样后面做移动端或远海降级时，不需要重写整张材质图。</p>
+<p><img src="/img/graphics/fft-ocean-rendering-in-ue/03-material-functions-placeholder.png" alt="截图占位：初版海水材质图分组" loading="lazy"></p>
+<h3 id="材质模型选择"><a href="#材质模型选择" class="headerlink" title="材质模型选择"></a>材质模型选择</h3><p>UE5 项目优先考虑 <code>Single Layer Water</code>。Epic 文档中说明这个模型用于物理基础水面，能在单层深度近似下处理散射、吸收、反射、折射和阴影。它的渲染位置也比较特殊：材质可以用 Opaque 或 Masked blend mode，水的透明表现会在 base pass 和 deferred lighting 之后、常规 translucency 和 post process 之前执行。</p>
+<p>如果是 UE4 或需要完全自定义，可以使用两种方案：</p>
+<ul>
+<li><code>Translucent</code> 材质：容易接 SceneColor 和 DepthFade，但排序、阴影、性能和反射控制更麻烦。</li>
+<li><code>Opaque + 自定义水面合成</code>：更像专用渲染 pass，控制力强，但工程复杂度高。</li>
+</ul>
+<p>初版建议：</p>
+<ul>
+<li>UE5：Single Layer Water + FFT 法线&#x2F;位移&#x2F;泡沫。</li>
+<li>UE4：Translucent 或 Surface ForwardShading 材质先跑通，再按项目需要迁移到自定义 pass。</li>
+</ul>
+<p>从 UE 源码看，Single Layer Water 至少要关注这些真实入口：</p>
+<ul>
+<li><code>ShouldRenderSingleLayerWater</code> 会检查 view 中是否有 Single Layer Water 材质和对应 mesh pass draw。</li>
+<li><code>RenderSingleLayerWaterDepthPrepass</code> 可在 base pass 前后生成水面深度。</li>
+<li><code>AddCopySceneWithoutWaterPass</code> 会准备 <code>SceneColorWithoutSingleLayerWaterTexture</code> 和 <code>SceneDepthWithoutSingleLayerWaterTexture</code>，供后续折射和合成使用。</li>
+<li><code>RenderSingleLayerWaterInner</code> 执行 <code>EMeshPass::SingleLayerWaterPass</code>。</li>
+<li><code>RenderSingleLayerWaterReflections</code> 接入 SSR、Lumen 或 reflection capture 一类反射路径。</li>
+</ul>
+<p>这说明 FFT 海水的材质输入可以保持普通 UE 材质参数形式，但如果采用 Single Layer Water，最终 shading 会进入引擎专门的 water pass，而不是普通 translucent pass。</p>
+<h3 id="法线与多频细节"><a href="#法线与多频细节" class="headerlink" title="法线与多频细节"></a>法线与多频细节</h3><p>FFT 法线负责中低频结构，滚动法线贴图负责高频闪烁：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">N_fft = NormalTexture(OceanUV)</span><br><span class="line">N_detail_a = DetailNormalA(WorldUV * ScaleA + Time * SpeedA)</span><br><span class="line">N_detail_b = DetailNormalB(WorldUV * ScaleB + Time * SpeedB)</span><br><span class="line">N_final = BlendAngleCorrectedNormals(N_fft, N_detail_a, N_detail_b)</span><br></pre></td></tr></table></figure>
+
+<p>为什么还需要 detail normal？因为受分辨率限制，<code>256 x 256</code> 或 <code>512 x 512</code> 的 FFT 贴图很难稳定覆盖近景小涟漪。把高频交给普通法线贴图，能减少 FFT 分辨率压力。</p>
+<p>关键是让 detail normal 的方向与风向有关：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DetailSpeedA = WindDirection * 0.12</span><br><span class="line">DetailSpeedB = rotate(WindDirection, 35deg) * 0.07</span><br></pre></td></tr></table></figure>
+
+<p>这样近处闪烁不会和主浪完全脱节。</p>
+<h3 id="Fresnel和高光"><a href="#Fresnel和高光" class="headerlink" title="Fresnel和高光"></a>Fresnel和高光</h3><p>Fresnel 是水感的骨架。初版可以用 Schlick 近似：</p>
+<p>$$
+F &#x3D; F_0 + (1 - F_0)(1 - \max(0, N \cdot V))^5
+$$</p>
+<p>水的 \(F_0\) 通常很低，可以从 <code>0.02</code> 左右开始调。掠射角反射强，正视角更多看到水下颜色。</p>
+<p>太阳高光建议单独做一层，避免完全依赖 UE 默认 specular：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">float3 H = normalize(L + V);</span><br><span class="line">float sunSpec = pow(saturate(dot(N, H)), SunPower) * SunIntensity;</span><br></pre></td></tr></table></figure>
+
+<p>高光强度要受 roughness、风速和法线频率影响：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Roughness = lerp(0.015, 0.08, WindStrength)</span><br><span class="line">SunPower = lerp(900, 160, WindStrength)</span><br></pre></td></tr></table></figure>
+
+<p>风越大，水面越碎，高光越宽；风越小，高光越尖。</p>
+<h3 id="反射"><a href="#反射" class="headerlink" title="反射"></a>反射</h3><p>反射来源可以按成本分级：</p>
+<ol>
+<li>Planar Reflection：近景质量最高，成本也最高。</li>
+<li>SSR 或 Lumen reflection：适合屏幕内对象，但会有屏幕空间缺失。</li>
+<li>Reflection Capture：稳定便宜，适合中远景。</li>
+<li>Sky cubemap：远海和移动端兜底。</li>
+</ol>
+<p>初版可以这样合成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ReflectionColor =</span><br><span class="line">  NearWeight * SSR_or_Planar</span><br><span class="line">+ MidWeight  * ReflectionCapture</span><br><span class="line">+ FarWeight  * SkyColor</span><br></pre></td></tr></table></figure>
+
+<p>权重由距离、视角和平台决定。远处海面不需要昂贵反射，天空颜色和太阳高光通常已经能撑住视觉。</p>
+<p><img src="/img/graphics/fft-ocean-rendering-in-ue/03-reflection-levels-placeholder.png" alt="截图占位：反射来源分级对比，Planar&#x2F;SSR&#x2F;Cubemap&#x2F;Sky" loading="lazy"></p>
+<h3 id="折射与吸收"><a href="#折射与吸收" class="headerlink" title="折射与吸收"></a>折射与吸收</h3><p>水体颜色不是简单的蓝色，而是由深度、吸收和散射共同决定。初版可以从 SceneDepth 得到屏幕空间水深：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WaterDepth = SceneDepthBehindWater - WaterSurfaceDepth</span><br></pre></td></tr></table></figure>
+
+<p>再用 Beer-Lambert 近似：</p>
+<p>$$
+T &#x3D; e^{-\sigma d}
+$$</p>
+<p>工程中通常写成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">float3 transmittance = exp(-AbsorptionColor * WaterDepth);</span><br><span class="line">float3 underwaterColor = lerp(ShallowColor, DeepColor, saturate(WaterDepth / DepthRange));</span><br></pre></td></tr></table></figure>
+
+<p>折射偏移使用法线的屏幕空间分量：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">float2 refractOffset = N.xy * RefractionStrength * saturate(WaterDepth / RefractionDepthRange);</span><br><span class="line">float3 sceneColor = SceneColor(UV + refractOffset);</span><br></pre></td></tr></table></figure>
+
+<p>需要注意两个问题：</p>
+<ul>
+<li>浅水或岸边不要过度偏移，否则边缘会穿帮。</li>
+<li>水面前方物体不能被错误折射到水下，要用深度比较限制。</li>
+</ul>
+<p>UE 的 Single Layer Water 源码里已经有一些值得借鉴的工程开关，例如 <code>r.Water.SingleLayer.RefractionDownsampleFactor</code> 控制折射相关纹理降采样，<code>r.Water.SingleLayerWater.RefractionDistanceCulling</code>、<code>RefractionFresnelCulling</code> 和 <code>RefractionDepthCulling</code> 控制折射剔除。自定义水面材质也可以复用这个思路：远距离、低 Fresnel 贡献或水深不足时，降低甚至跳过折射。</p>
+<h3 id="泡沫"><a href="#泡沫" class="headerlink" title="泡沫"></a>泡沫</h3><p>泡沫可以先从三类 mask 合成：</p>
+<ul>
+<li>浪尖泡沫：来自 Jacobian 或曲率，表示波面压缩。</li>
+<li>岸边泡沫：来自水深，越浅越容易出现。</li>
+<li>交互泡沫：来自角色、船体或粒子写入的 render target。</li>
+</ul>
+<p>浪尖泡沫的一个简单条件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">float crestFoam = saturate((JacobianThreshold - Jacobian) * FoamSharpness);</span><br></pre></td></tr></table></figure>
+
+<p>岸边泡沫：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">float shoreFoam = 1.0 - saturate(WaterDepth / ShoreFoamDepth);</span><br></pre></td></tr></table></figure>
+
+<p>最后用噪声破碎：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">float foamNoise = FoamNoise.Sample(Sampler, WorldUV * FoamScale + Time * FoamSpeed).r;</span><br><span class="line">float foam = saturate((crestFoam + shoreFoam + interactionFoam) * foamNoise);</span><br></pre></td></tr></table></figure>
+
+<p>泡沫颜色不应是纯白常量。可以让它受天空光、太阳方向和水深影响：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FoamColor = lerp(WetWhite, SunlitWhite, SunNdotL)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Pass位置和调试"><a href="#Pass位置和调试" class="headerlink" title="Pass位置和调试"></a>Pass位置和调试</h3><p>如果使用 Single Layer Water，要理解它不是普通 translucent。它会在 base pass 和 deferred lighting 之后参与水面合成，因此有些 SceneColor 或 depth 相关节点表现和普通半透明材质不同。调试时不要只看材质图，要结合 RenderDoc 或 UE 的 GPU Visualizer 看实际 pass。</p>
+<p>初版调试建议：</p>
+<ul>
+<li><code>ViewMode_NormalOnly</code>：只看最终法线。</li>
+<li><code>ViewMode_Fresnel</code>：只看 Fresnel 权重。</li>
+<li><code>ViewMode_Depth</code>：只看水深。</li>
+<li><code>ViewMode_ReflectionWeight</code>：只看反射来源权重。</li>
+<li><code>ViewMode_Foam</code>：只看泡沫 mask。</li>
+</ul>
+<p><img src="/img/graphics/fft-ocean-rendering-in-ue/03-shading-debug-placeholder.png" alt="截图占位：法线、Fresnel、水深、泡沫四联调试图" loading="lazy"></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>Epic Games, <a target="_blank" rel="noopener" href="https://dev.epicgames.com/documentation/zh-cn/unreal-engine/single-layer-water-shading-model-in-unreal-engine">Single Layer Water Shading Model</a>.</li>
+<li>Epic Games, <a target="_blank" rel="noopener" href="https://dev.epicgames.com/documentation/en-us/unreal-engine/water-system-in-unreal-engine?application_version=5.6">Water System in Unreal Engine</a>.</li>
+<li>Jerry Tessendorf, <a target="_blank" rel="noopener" href="https://jtessen.people.clemson.edu/reports/papers_files/coursenotes2004.pdf">Simulating Ocean Water</a>.</li>
+<li>Mark Finch, <a target="_blank" rel="noopener" href="https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models">Effective Water Simulation from Physical Models</a>, <em>GPU Gems</em>, NVIDIA.</li>
+<li>NVIDIA, <a target="_blank" rel="noopener" href="https://developer.download.nvidia.com/assets/gamedev/files/sdk/11/OceanCS_Slides.pdf">Ocean Surface Simulation</a>.</li>
+<li>Valentin Ang, <a target="_blank" rel="noopener" href="https://history.siggraph.org/wp-content/uploads/2022/09/2018-Talks-Ang_The-Technical-Art-of-Sea-of-Thieves.pdf">The Technical Art of Sea of Thieves</a>, SIGGRAPH 2018 Talks.</li>
+<li>Barthélémy Paleologue, <a target="_blank" rel="noopener" href="https://barthpaleologue.github.io/Blog/posts/ocean-simulation-webgpu/">Ocean Simulation with FFT and WebGPU</a>.</li>
+<li>YivanLee, <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/60374372">虚幻4渲染编程（环境模拟篇）〖第七卷：海洋模拟-上-海洋模拟理论推导〗</a>.</li>
+<li>Eric Bruneton, Fabrice Neyret, <a target="_blank" rel="noopener" href="https://diglib.eg.org/items/fb727c69-2be2-4edd-833e-f7a9baea9b63">Real-time Realistic Ocean Lighting using Seamless Transitions from Geometry to BRDF</a>.</li>
+<li>Unreal Engine Source, <code>Engine/Source/Runtime/Renderer/Private/SingleLayerWaterRendering.cpp</code>.</li>
+</ul>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Unreal-Engine/">Unreal Engine</a><a class="post-meta__tags" href="/tags/%E5%9B%BE%E5%BD%A2%E5%AD%A6/">图形学</a><a class="post-meta__tags" href="/tags/%E6%B5%B7%E6%B0%B4%E6%B8%B2%E6%9F%93/">海水渲染</a><a class="post-meta__tags" href="/tags/FFT/">FFT</a><a class="post-meta__tags" href="/tags/Shading/">Shading</a></div><div class="post-share"><div class="social-share" data-image="/img/graphics/fft-ocean-rendering-in-ue/cover.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-04-meshing-optimization/" title="FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post" loading="lazy"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋</div></div><div class="info-2"><div class="info-item-1"> 基础网格能证明 FFT 海水管线成立，但它不是开放世界海洋的最终答案。本篇把 Projected Grid、LOD、无限海洋、远近海洋采用不同波的方案作为 meshing 优化项单独讨论。  目录  基础网格的问题 Projected Grid LOD环与Clipmap 无限海洋 远近海洋使用不同波 UE中的落地顺序 调试指标 参考资料   基础网格的问题第二篇中的规则平面有三个问题：  顶点分布和屏幕无关：近处顶点不够，远处顶点浪费。 patch 有边界：相机飞远后容易看到平铺和尽头。 波形尺度混在一起：近处需要真实位移，远处更需要稳定轮廓和低成本 shading。  因此 meshing 优化不只是“让网格更大”，而是让顶点预算集中到屏幕上真正需要的地方。 海洋网格的优化目标可以写成： 123近处：顶点密度高，支持 FFT 位移、泡沫、交互。中景：顶点密度适中，保留低频波和法线变化。远景：几何成本低，靠法线、天空反射和雾化维持海天线。  Projected GridProjected Grid 的思路是：不要在世界空间均匀铺网格，而是在屏幕或投影空间铺一张规则网格，再把它反...</div></div></div></a><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-02-meshing-renderer-pass/" title="FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post" loading="lazy"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织</div></div><div class="info-2"><div class="info-item-1"> 本篇先做“能跑起来”的基础版本：一个跟随相机的规则网格，一组 RDG&#x2F;Compute Pass 生成海面位移和法线，材质把这些贴图采样到 World Position Offset 和水面 shading。Projected Grid、LOD 和无限海洋先不塞进基础篇，后续作为优化项单独讨论。  目录  初版架构 插件和Shader目录 基础网格 Pass顺序 关键资源 材质绑定 调试与最终效果 常见问题 参考资料   初版架构基础版海水可以分成三层：  OceanSimulation：负责频谱更新、FFT、位移和法线贴图生成。 OceanSurface：负责提交海面网格，给材质提供海面贴图和参数。 OceanMaterial：负责最终反射、折射、泡沫和颜色。  在 UE 中，最推荐的边界是：模拟管线写在渲染线程，网格和材质参数由组件管理。 12345678910111213141516Actor / Component  ├─ 收集风向、浪高、PatchLength、相机位置  ├─ 更新动态材质参数  └─ 通过 SceneViewExtension 或 Rend...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-06-shading-optimization/" title="FFT海水渲染在UE中的落地方案（六）：Shading优化策略"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-19</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（六）：Shading优化策略</div></div><div class="info-2"><div class="info-item-1"> 初版 shading 解决“像水”，优化版 shading 解决“在项目里稳定地像水”。本文从距离分层、法线预算、反射降级、泡沫稳定、移动端材质路径几个方向整理后续优化方案。  目录  Shading优化的核心判断 距离分层 法线预算 反射降级链 折射和水深优化 泡沫稳定性 移动端Shading路径 UE材质组织 参考资料   Shading优化的核心判断海水 shading 的成本通常来自：  多层法线采样。 SceneColor&#x2F;SceneDepth 访问。 反射查询。 泡沫噪声和交互 RT。 分支和材质 permutation。  优化时不要平均砍。海水的视觉重要性随距离和镜头角度变化很大： 123近处看细节：泡沫、折射、法线、小浪。中景看结构：主浪、高光、反射方向。远景看整体：海天线、颜色、雾、天空反射。  因此优化原则是：  近处保留真实细节。 中景保留方向和亮度。 远景保留稳定轮廓和颜色。  距离分层材质中可以统一计算一个距离权重： 1234float dist = distance(CameraWorldPosition, AbsoluteWorldPo...</div></div></div></a><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-05-mobile-baked-textures/" title="FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-19</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建</div></div><div class="info-2"><div class="info-item-1"> 移动端不一定适合每帧跑完整 FFT。更稳的方案是离线或加载期烘焙一段周期海水贴图，运行时在材质里插值重建。本文重点讨论把 xyz 偏移图打包到 rgb 三个通道，以及如何在 UE 中使用这些贴图。  目录  为什么移动端要烘焙 烘焙什么 XYZ位移打包到RGB 时间插值 空间多尺度 UE资源组织 精度与压缩 降级策略 参考资料   为什么移动端要烘焙完整 FFT 海水在桌面端很自然：Compute Shader、UAV、浮点纹理、多 pass ping-pong 都不是稀缺能力。移动端的问题不只是算力，更是带宽、热功耗、API 差异和材质复杂度。 移动端海水通常更看重：  帧时间稳定。 贴图采样数量可控。 shader permutation 少。 不依赖复杂 compute 或高精度 UAV。 能在中低端设备保持一致表现。  因此可以把 FFT 计算前移：在离线工具、编辑器 commandlet 或 PC 构建流程里生成一段周期动画。运行时只采样贴图并插值。 烘焙什么最小烘焙结果： 1234567891011121314DisplacementFrames:  frame0:...</div></div></div></a><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-01-overview/" title="FFT海水渲染在UE中的落地方案（一）：从论文到工程管线"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-19</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（一）：从论文到工程管线</div></div><div class="info-2"><div class="info-item-1"> 系列说明：本文是“FFT海水渲染在UE中的落地方案”的总览篇，目标不是重新推导所有海洋学公式，而是把论文中的频谱海面模型整理成一个可以在 Unreal Engine 中拆模块、写 shader、接材质、做优化的工程路线。  目录  目标和边界 论文模型给了什么 频谱海面的最小数据链 从频域到UE资源 一帧里的工程流程 初版效果需要哪些可视化 系列后续文章 参考资料   目标和边界FFT 海水渲染的核心问题可以拆成两句话：  用物理或统计模型生成“像海”的大范围波形。 在实时渲染器里把这些波形稳定、可控、可优化地画出来。  Tessendorf 的 Simulating Ocean Water 和 Flügge 的 GPGPU FFT Ocean Simulation 都走的是频谱路线：先在频域里描述不同方向、不同波长的波有多少能量，再用 IFFT 变回空间域的高度、位移和法线。YivanLee 的“海洋模拟”系列更接近 UE 工程落点；NVIDIA OceanCS、GPU Gems、WebGPU&#x2F;Unity 的 FFT 海水实现则可以从不同渲染 API 角度交叉验证资...</div></div></div></a><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-04-meshing-optimization/" title="FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-19</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋</div></div><div class="info-2"><div class="info-item-1"> 基础网格能证明 FFT 海水管线成立，但它不是开放世界海洋的最终答案。本篇把 Projected Grid、LOD、无限海洋、远近海洋采用不同波的方案作为 meshing 优化项单独讨论。  目录  基础网格的问题 Projected Grid LOD环与Clipmap 无限海洋 远近海洋使用不同波 UE中的落地顺序 调试指标 参考资料   基础网格的问题第二篇中的规则平面有三个问题：  顶点分布和屏幕无关：近处顶点不够，远处顶点浪费。 patch 有边界：相机飞远后容易看到平铺和尽头。 波形尺度混在一起：近处需要真实位移，远处更需要稳定轮廓和低成本 shading。  因此 meshing 优化不只是“让网格更大”，而是让顶点预算集中到屏幕上真正需要的地方。 海洋网格的优化目标可以写成： 123近处：顶点密度高，支持 FFT 位移、泡沫、交互。中景：顶点密度适中，保留低频波和法线变化。远景：几何成本低，靠法线、天空反射和雾化维持海天线。  Projected GridProjected Grid 的思路是：不要在世界空间均匀铺网格，而是在屏幕或投影空间铺一张规则网格，再把它反...</div></div></div></a><a class="pagination-related" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-02-meshing-renderer-pass/" title="FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织"><img class="cover" src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-19</div><div class="info-item-2">FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织</div></div><div class="info-2"><div class="info-item-1"> 本篇先做“能跑起来”的基础版本：一个跟随相机的规则网格，一组 RDG&#x2F;Compute Pass 生成海面位移和法线，材质把这些贴图采样到 World Position Offset 和水面 shading。Projected Grid、LOD 和无限海洋先不塞进基础篇，后续作为优化项单独讨论。  目录  初版架构 插件和Shader目录 基础网格 Pass顺序 关键资源 材质绑定 调试与最终效果 常见问题 参考资料   初版架构基础版海水可以分成三层：  OceanSimulation：负责频谱更新、FFT、位移和法线贴图生成。 OceanSurface：负责提交海面网格，给材质提供海面贴图和参数。 OceanMaterial：负责最终反射、折射、泡沫和颜色。  在 UE 中，最推荐的边界是：模拟管线写在渲染线程，网格和材质参数由组件管理。 12345678910111213141516Actor / Component  ├─ 收集风向、浪高、PatchLength、相机位置  ├─ 更新动态材质参数  └─ 通过 SceneViewExtension 或 Rend...</div></div></div></a><a class="pagination-related" href="/2026/05/16/%E5%9B%BE%E5%BD%A2%E5%AD%A6/course-notes-2004-simulating-ocean-water/" title="Course Notes 2004：Simulating Ocean Water 海水渲染笔记"><img class="cover" src="/img/graphics/course-notes-2004-simulating-ocean-water/cover.png" alt="cover" loading="lazy"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-16</div><div class="info-item-2">Course Notes 2004：Simulating Ocean Water 海水渲染笔记</div></div><div class="info-2"><div class="info-item-1"> 参考：Jerry Tessendorf, Simulating Ocean Water, SIGGRAPH Course Notes, 2004.  目录  这篇 Course Notes 解决什么问题 海面渲染的两部分 从正弦波到频谱海面 Phillips 频谱 频域到空间域：FFT 高度场 法线、斜率与水平位移 平铺、时间与多尺度 交互波：iWave 思路 海水材质与光学 实时工程中的落地方式 小结   这篇 Course Notes 解决什么问题海面是图形学里很特别的对象：它不是稳定的固体表面，而是持续运动、尺度跨度极大的统计现象。近处需要看到小浪、泡沫和反射细节，远处又要呈现大范围起伏和海天连接。如果逐个模拟水分子，显然不适合实时渲染；如果只贴一张法线贴图，又很难表现出海浪的方向、能量和传播。 Tessendorf 的 Simulating Ocean Water 给出的核心思路是：把海浪看成频域中的大量波分量，用统计频谱描述风驱动海面，再通过 FFT 快速变回空间域高度场。它不是唯一的海水方案，但它把“看起来像海”的很多关键要素整理成了工程上可实现的框架。 海面渲染的...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar_wuwu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar" loading="lazy" /></div><div class="author-info-name">timeinrain</div><div class="author-info-description">timeinrain</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Timeinrain"><i class="fab fa-github"></i><span>Github</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://www.zhihu.com/people/zhang-yi-chuan-11-76" target="_blank" title="Zhihu"><i class="fab fa-zhihu" style="color: #24292e;"></i></a><a class="social-icon" href="https://qm.qq.com/q/YlxmlGOqyK" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:809365697@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到我的个人网站。这个网站主要负责记录我的学习笔记和生活感悟，还在完善中~ Contact Me by qq:809365697 vx:timeinrain</div></div><div class="card-widget card-visitor-map" id="card-visitor-map"><div class="item-headline"><i class="fas fa-globe"></i><span>Visitor Map</span></div><div class="item-content"><style>
+  #card-visitor-map{display:none}
+  #visitor-map-box{min-height:240px;text-align:center;max-width:100%;overflow:hidden}
+</style>
+<div id="visitor-map-box"><div class="visitor-map-note">访客地图加载中...</div></div>
+<script>
+(function () {
+  var MAP_SCRIPT_ID = 'mmvst_globe'
+  var MAP_SCRIPT_SRC = 'https://mapmyvisitors.com/globe.js?d=lQIKiewKrqplSOJrDPKvAkx4IXPe0l9zHMbPb5vB4Fw'
+  var MAX_RETRY = 3
+  var RETRY_DELAY = 2500
+  var LOAD_TIMEOUT = 15000
+  var box = null
+
+  function ensureNote () {
+    var note = box.querySelector('.visitor-map-note')
+    if (!note) {
+      note = document.createElement('div')
+      note.className = 'visitor-map-note'
+      note.style.cssText = 'padding:16px 0;color:#888;font-size:13px'
+      box.appendChild(note)
+    }
+    return note
+  }
+
+  function clearNote () {
+    var note = box.querySelector('.visitor-map-note')
+    if (note) note.remove()
+  }
+
+  function setNote (text) {
+    var note = ensureNote()
+    note.textContent = text
+  }
+
+  function removeOldScript () {
+    var old = document.getElementById(MAP_SCRIPT_ID)
+    if (!old || !old.parentNode) return
+    old.parentNode.removeChild(old)
+  }
+
+  function loadMap (attempt) {
+    if (!box) return
+    if (box.dataset.mapLoaded === '1') return
+    if (box.dataset.mapLoading === '1' && attempt === 1) return
+    box.dataset.mapLoading = '1'
+    box.dataset.mapAttempt = String(attempt)
+
+    removeOldScript()
+    setNote('访客地图加载中...')
+
+    var script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.id = MAP_SCRIPT_ID
+    script.src = MAP_SCRIPT_SRC
+    script.async = true
+
+    var timeout = setTimeout(function () {
+      fail('加载超时')
+    }, LOAD_TIMEOUT)
+
+    function done () {
+      box.dataset.mapLoading = '0'
+      clearTimeout(timeout)
+    }
+
+    function fail (msg) {
+      done()
+      removeOldScript()
+      if (attempt < MAX_RETRY) {
+        setNote('访客地图加载失败，' + attempt + '/' + MAX_RETRY + '，' + msg + '，' + RETRY_DELAY / 1000 + '秒后重试…')
+        setTimeout(function () {
+          loadMap(attempt + 1)
+        }, RETRY_DELAY)
+        return
+      }
+      setNote('访客地图暂时无法加载，请稍后刷新页面重试。')
+    }
+
+    script.onload = function () {
+      done()
+      box.dataset.mapLoaded = '1'
+      box.dataset.mapAttempt = '0'
+      clearNote()
+    }
+    script.onerror = function () {
+      fail('请求失败')
+    }
+
+    box.appendChild(script)
+  }
+
+  function syncVisitorMap () {
+    var card = document.getElementById('card-visitor-map')
+    box = document.getElementById('visitor-map-box')
+    if (!card || !box) return
+    var home = !!document.getElementById('recent-posts')
+    card.style.display = home ? 'block' : 'none'
+    if (!home) return
+    if (box.dataset.mapLoaded === '1') return
+    if (box.dataset.mapLoading === '1' && box.dataset.mapAttempt !== '1') return
+    loadMap(1)
+  }
+  syncVisitorMap()
+  document.addEventListener('pjax:complete', syncVisitorMap)
+})()
+</script>
+</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Shading%E8%BE%93%E5%85%A5"><span class="toc-number">1.</span> <span class="toc-text">Shading输入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9"><span class="toc-number">2.</span> <span class="toc-text">材质模型选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%95%E7%BA%BF%E4%B8%8E%E5%A4%9A%E9%A2%91%E7%BB%86%E8%8A%82"><span class="toc-number">3.</span> <span class="toc-text">法线与多频细节</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Fresnel%E5%92%8C%E9%AB%98%E5%85%89"><span class="toc-number">4.</span> <span class="toc-text">Fresnel和高光</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84"><span class="toc-number">5.</span> <span class="toc-text">反射</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%98%E5%B0%84%E4%B8%8E%E5%90%B8%E6%94%B6"><span class="toc-number">6.</span> <span class="toc-text">折射与吸收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A1%E6%B2%AB"><span class="toc-number">7.</span> <span class="toc-text">泡沫</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pass%E4%BD%8D%E7%BD%AE%E5%92%8C%E8%B0%83%E8%AF%95"><span class="toc-number">8.</span> <span class="toc-text">Pass位置和调试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">9.</span> <span class="toc-text">参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-06-shading-optimization/" title="FFT海水渲染在UE中的落地方案（六）：Shading优化策略"><img src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="FFT海水渲染在UE中的落地方案（六）：Shading优化策略" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-06-shading-optimization/" title="FFT海水渲染在UE中的落地方案（六）：Shading优化策略">FFT海水渲染在UE中的落地方案（六）：Shading优化策略</a><time datetime="2026-05-18T20:00:00.000Z" title="Created 2026-05-19 04:00:00">2026-05-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-05-mobile-baked-textures/" title="FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建"><img src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-05-mobile-baked-textures/" title="FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建">FFT海水渲染在UE中的落地方案（五）：移动端烘焙贴图与位移重建</a><time datetime="2026-05-18T19:50:00.000Z" title="Created 2026-05-19 03:50:00">2026-05-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-04-meshing-optimization/" title="FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋"><img src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-04-meshing-optimization/" title="FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋">FFT海水渲染在UE中的落地方案（四）：Projected Grid、LOD与无限海洋</a><time datetime="2026-05-18T19:40:00.000Z" title="Created 2026-05-19 03:40:00">2026-05-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-03-shading/" title="FFT海水渲染在UE中的落地方案（三）：初版Shading方案"><img src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="FFT海水渲染在UE中的落地方案（三）：初版Shading方案" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-03-shading/" title="FFT海水渲染在UE中的落地方案（三）：初版Shading方案">FFT海水渲染在UE中的落地方案（三）：初版Shading方案</a><time datetime="2026-05-18T19:30:00.000Z" title="Created 2026-05-19 03:30:00">2026-05-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-02-meshing-renderer-pass/" title="FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织"><img src="/img/graphics/fft-ocean-rendering-in-ue/cover.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织" loading="lazy" /></a><div class="content"><a class="title" href="/2026/05/19/%E5%9B%BE%E5%BD%A2%E5%AD%A6/fft-ocean-rendering-in-ue-02-meshing-renderer-pass/" title="FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织">FFT海水渲染在UE中的落地方案（二）：Meshing、Renderer与Pass组织</a><time datetime="2026-05-18T19:20:00.000Z" title="Created 2026-05-19 03:20:00">2026-05-19</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/graphics/fft-ocean-rendering-in-ue/cover.png);"><div class="footer-other"><div class="footer-copyright"></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar@0.1.16/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {}
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  const init = (el = document, path = location.pathname) => {
+    twikoo.init({
+      el: el.querySelector('#twikoo-wrap'),
+      envId: 'https://twikoo-three-sepia.vercel.app/',
+      region: '',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      },
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || path
+    })
+
+    
+
+    isShuoshuo && (window.shuoshuoComment.destroyTwikoo = () => {
+      if (el.children.length) {
+        el.innerHTML = ''
+        el.classList.add('no-comment')
+      }
+    })
+  }
+
+  const loadTwikoo = (el, path) => {
+    if (typeof twikoo === 'object') setTimeout(() => init(el, path), 0)
+    else btf.getScript('https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js').then(() => init(el, path))
+  }
+
+  if (isShuoshuo) {
+    'Twikoo' === 'Twikoo'
+      ? window.shuoshuoComment = { loadComment: loadTwikoo }
+      : window.loadOtherComment = loadTwikoo
+    return
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo()
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><script src="/js/fantasy-pixel.js?v=20260519-twikoo-full"></script><script src="/js/post-scroll-pane.js?v=20260516-post-scroll-pane-v2"></script><script src="/js/ambient-nature.js"></script><script src="/js/live2d-kanban.js?v=20260515-body"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+  let paginationScrollTop = null
+
+  const restorePaginationScroll = () => {
+    if (paginationScrollTop === null) return
+
+    const top = paginationScrollTop
+    paginationScrollTop = null
+    const restore = () => window.scrollTo(0, top)
+
+    restore()
+    window.requestAnimationFrame(restore)
+    window.setTimeout(restore, 80)
+    window.setTimeout(restore, 240)
+  }
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('click', e => {
+    const target = e.target.closest ? e.target.closest('nav#pagination .page-number, nav#pagination .extend') : null
+    if (!target) return
+    paginationScrollTop = window.scrollY || window.pageYOffset
+  })
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    restorePaginationScroll()
+
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="Search for Posts" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div></body></html>
